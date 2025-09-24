@@ -54,7 +54,7 @@ export function GlobalHeader() {
                 whileTap={{ scale: 0.95 }}
                 onClick={() => navigate(item.path)}
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 border-2 font-bold transition-all",
+                  "flex items-center gap-2 px-2 py-1 text-sm border-2 font-bold transition-all",
                   "rounded-none shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]",
                   isActive
                     ? "bg-orange-400 border-orange-600 text-black"
@@ -62,7 +62,7 @@ export function GlobalHeader() {
                 )}
                 style={{ fontFamily: "'Pixelify Sans', monospace" }}
               >
-                <Icon size={16} />
+                <Icon size={14} />
                 <span className="hidden lg:inline">{item.label}</span>
               </motion.button>
             );
@@ -107,7 +107,7 @@ export function GlobalHeader() {
             </div>
           )}
 
-          <PixelButton onClick={signOut} variant="danger" size="sm">
+          <PixelButton onClick={signOut} variant="danger" size="sm" className="px-2 py-1 text-sm">
             Logout
           </PixelButton>
         </div>
