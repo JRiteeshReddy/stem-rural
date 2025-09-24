@@ -138,6 +138,121 @@ export default function Tests() {
   }, [location.search]);
 
   // ========================
+  // Chemistry Game: Element Mixer (NEW - drag & drop)
+  // ========================
+  // Level definitions (reuse targets; keep simple & scalable)
+  const mixerLevelTargets: Record<number, Array<string>> = {
+    1: ["H2O", "NaCl", "CO2"],
+    2: ["MgO", "H2SO4", "NH3"],
+    3: ["CH4", "CaCO3", "C6H12O6"],
+  };
+
+  // Available element tiles (include required + distractors)
+  const mixerAvailableSymbols: Array<string> = [
+    "H", "O", "Na", "Cl", "C", "N", "S", "Ca", "Mg",
+  ];
+
+  // Reuse helpers from above: parseFormulaToCounts, formatFormula
+  // Element Mixer state
+  const [elementMixerOpen, setElementMixerOpen] = useState(false);
+  const [mixerOver, setMixerOver] = useState(false);
+  const [mixerScore, setMixerScore] = useState(0);
+  const [mixerLevel, setMixerLevel] = useState(1);
+  const [mixerLives, setMixerLives] = useState(3);
+  const [mixerTargetKey, setMixerTargetKey] = useState<string>("H2O");
+  const mixerTargetCounts = useMemo(() => parseFormulaToCounts(mixerTargetKey), [mixerTargetKey]);
+  const [mixerCollected, setMixerCollected] = useState<Record<string, number>>({});
+  const [mixerStartAt, setMixerStartAt] = useState<number>(Date.now());
+
+  // Start/reset Element Mixer
+  const startElementMixerGame = () => {
+    setElementMixerOpen(true);
+    setMixerOver(false);
+    setMixerScore(0);
+    setMixerLevel(1);
+    setMixerLives(3);
+    setMixerCollected({});
+    const pool = mixerLevelTargets[1];
+    setMixerTargetKey(pool[Math.floor(Math.random() * pool.length)]);
+    setMixerStartAt(Date.now());
+  };
+
+  // Drag handlers
+  const onDragStartTile = (e: React.DragEvent<HTMLDivElement>, symbol: string) => {
+    e.dataTransfer.setData("text/plain", symbol);
+  };
+
+  const onDropIntoChamber = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const symbol = e.dataTransfer.getData("text/plain");
+    if (!symbol) return;
+
+    const need = mixerTargetCounts[symbol] || 0;
+    const have = mixerCollected[symbol] || 0;
+    if (need === 0 || have + 1 > need) {
+      // Wrong or over-collection
+      setMixerLives((l) => {
+        const next = Math.max(0, l - 1);
+        if (next === 0) setMixerOver(true);
+        return next;
+      });
+      toast.error("Wrong element! -1 life");
+      return;
+    }
+
+    // Accept
+    const nextCollected = { ...mixerCollected, [symbol]: have + 1 };
+    setMixerCollected(nextCollected);
+
+    // Check success
+    const success = Object.keys(mixerTargetCounts).every(
+      (k) => (nextCollected[k] || 0) === mixerTargetCounts[k]
+    );
+
+    if (success) {
+      // Time bonus (faster is better)
+      const elapsedSec = Math.floor((Date.now() - mixerStartAt) / 1000);
+      const timeBonus = Math.max(0, 5 - Math.floor(elapsedSec / 10)); // up to +5 → decays every 10s
+      const gain = 2 * mixerLevel + timeBonus;
+      setMixerScore((s) => s + gain);
+      toast.success(`Compound crafted! +${gain} XP`);
+      // Next level
+      const nextLevel = Math.min(3, mixerLevel + 1);
+      setMixerLevel(nextLevel);
+      setMixerCollected({});
+      const pool = mixerLevelTargets[nextLevel] || mixerLevelTargets[3];
+      setMixerTargetKey(pool[Math.floor(Math.random() * pool.length)]);
+      setMixerStartAt(Date.now());
+    }
+  };
+
+  const onDragOverChamber = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+
+  // End session: award XP on close after game over
+  useEffect(() => {
+    if (!elementMixerOpen || !mixerOver) return;
+    (async () => {
+      try {
+        const res = await addCredits({ amount: mixerScore });
+        toast.success(`Game Over! +${mixerScore} XP. Rank: ${res.rank}`);
+      } catch (e) {
+        console.error(e);
+        toast.error("Failed to save score");
+      }
+    })();
+  }, [elementMixerOpen, mixerOver, mixerScore, addCredits]);
+
+  // Auto-start Element Mixer via query ?game=chem
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("game") === "chem") {
+      setTimeout(() => startElementMixerGame(), 0);
+    }
+  }, [location.search]);
+
+  // ========================
   // Chemistry Game: Periodic Pixel Quest
   // ========================
   // State
@@ -352,10 +467,10 @@ export default function Tests() {
     }
   }, [chemLives, chemOpen, chemOver, chemScore, addCredits]);
 
-  // Auto-start chemistry game via query ?game=chem
+  // Auto-start chemistry falling game now moved to ?game=chemfall (Element Mixer uses ?game=chem)
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    if (params.get("game") === "chem") {
+    if (params.get("game") === "chemfall") {
       setTimeout(() => startChemGame(), 0);
     }
   }, [location.search]);
@@ -423,7 +538,7 @@ export default function Tests() {
         {/* Add: Math Game launcher */}
         <div className="mb-4 flex gap-3">
           <PixelButton size="sm" onClick={startGame}>Play Math Game</PixelButton>
-          <PixelButton size="sm" onClick={startChemGame}>Play Chemistry Game</PixelButton>
+          <PixelButton size="sm" onClick={startElementMixerGame}>Play Chemistry Game</PixelButton>
         </div>
 
         {!tests ? (
@@ -775,6 +890,133 @@ export default function Tests() {
                 </div>
                 <div className="ml-auto text-yellow-200 text-xs" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
                   Use ← → to move the mixer
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Element Mixer Overlay (NEW) */}
+        {elementMixerOpen && (
+          <div className="fixed inset-0 z-50 bg-neutral-950/95 backdrop-blur-sm border-4 border-yellow-600">
+            {/* retro grid */}
+            <div className="absolute inset-0 bg-[linear-gradient(transparent_23px,rgba(255,255,255,0.06)_24px),linear-gradient(90deg,transparent_23px,rgba(255,255,255,0.06)_24px)] bg-[length:24px_24px]"></div>
+
+            <div className="relative h-full w-full flex flex-col">
+              {/* Top bar */}
+              <div className="flex items-center justify-between px-4 py-2 bg-black/60 border-b-4 border-yellow-700">
+                <div className="flex items-center gap-3">
+                  <img src="/assets/edufun.png" alt="Logo" className="h-8" style={{ imageRendering: "pixelated" }} />
+                  <span
+                    className="text-yellow-300 font-bold"
+                    style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000,-1px 0 #000,0 1px #000,0 -1px #000" }}
+                  >
+                    Chemistry — Element Mixer
+                  </span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-yellow-300 font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                    XP: {mixerScore}
+                  </span>
+                  <span className="text-yellow-300 font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                    ❤ {mixerLives}
+                  </span>
+                  <span className="text-yellow-300 font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                    Lv {mixerLevel}
+                  </span>
+                  <PixelButton size="sm" variant="secondary" onClick={() => { setElementMixerOpen(false); setMixerOver(false); }}>
+                    Exit
+                  </PixelButton>
+                </div>
+              </div>
+
+              {/* Target compound banner */}
+              <div className="px-4 py-2 bg-black/40 border-b-4 border-yellow-700 flex items-center justify-center">
+                <div
+                  className="text-yellow-300 font-bold text-xl"
+                  style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000,-1px 0 #000,0 1px #000,0 -1px #000" }}
+                >
+                  Create {formatFormula(mixerTargetKey)}
+                </div>
+              </div>
+
+              {/* Game field */}
+              <div className="relative flex-1 overflow-hidden">
+                <div className="h-full w-full grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
+                  {/* Tiles palette */}
+                  <div className="bg-black/50 border-4 border-yellow-700 p-4">
+                    <div className="text-yellow-300 font-bold mb-3" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                      Elements
+                    </div>
+                    <div className="grid grid-cols-6 gap-3">
+                      {mixerAvailableSymbols.map((sym) => (
+                        <div
+                          key={sym}
+                          draggable
+                          onDragStart={(e) => onDragStartTile(e, sym)}
+                          className="w-12 h-12 flex items-center justify-center bg-cyan-300 border-4 border-cyan-700 text-black font-bold shadow-[0_0_10px_rgba(0,255,255,0.5)] cursor-grab active:cursor-grabbing select-none"
+                          style={{ imageRendering: "pixelated", fontFamily: "'Pixelify Sans', monospace" }}
+                          title={`Drag ${sym}`}
+                        >
+                          {sym}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Mixing chamber (drop zone) */}
+                  <div className="bg-black/50 border-4 border-yellow-700 p-4 flex flex-col items-center justify-center">
+                    <div className="text-yellow-200 mb-2" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                      Drag elements here to mix
+                    </div>
+                    <div
+                      onDrop={onDropIntoChamber}
+                      onDragOver={onDragOverChamber}
+                      className="w-64 h-40 bg-yellow-300 border-4 border-yellow-700 shadow-[0_0_16px_rgba(255,255,0,0.6)] flex items-center justify-center"
+                      style={{ imageRendering: "pixelated" }}
+                      title="Mixing Chamber"
+                    >
+                      MIX
+                    </div>
+                    {/* Success / Game Over overlay */}
+                    {mixerOver && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="bg-black/80 border-4 border-yellow-700 p-6 text-center">
+                          <div className="text-3xl font-bold text-yellow-300 mb-2" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                            Game Over!
+                          </div>
+                          <div className="text-yellow-200 mb-4" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                            You earned {mixerScore} XP this run.
+                          </div>
+                          <PixelButton onClick={() => { startElementMixerGame(); }}>Play Again</PixelButton>
+                          <PixelButton variant="secondary" className="ml-2" onClick={() => { setElementMixerOpen(false); setMixerOver(false); }}>
+                            Close
+                          </PixelButton>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Collected HUD */}
+                  <div className="bg-black/50 border-4 border-yellow-700 p-4">
+                    <div className="text-yellow-300 font-bold mb-3" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                      Collected
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      {Object.keys(mixerTargetCounts).map((sym) => (
+                        <div
+                          key={sym}
+                          className="text-yellow-200 font-bold px-2 py-1 bg-black/50 border-2 border-yellow-700"
+                          style={{ fontFamily: "'Pixelify Sans', monospace" }}
+                        >
+                          {sym}: {(mixerCollected[sym] || 0)} / {mixerTargetCounts[sym]}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 text-yellow-200 text-xs" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                      Tip: Don't over-collect a required element — it costs a life.
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
