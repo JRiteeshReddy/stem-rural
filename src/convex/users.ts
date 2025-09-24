@@ -54,3 +54,34 @@ export const deleteStudentAccount = mutation({
     return { success: true };
   },
 });
+
+export const addCredits = mutation({
+  args: { amount: v.number() },
+  handler: async (ctx, { amount }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+    const user = await ctx.db.get(userId);
+    if (!user) throw new Error("User not found");
+
+    const currentCredits = user.credits || 0;
+    const currentTests = user.totalTestsCompleted || 0;
+    const newCredits = Math.max(0, currentCredits + Math.max(0, Math.floor(amount)));
+    const newTotalTests = currentTests + 1; // count this game session as a completed activity
+
+    // Simple rank thresholds
+    const rank =
+      newCredits >= 200 ? "Platinum" :
+      newCredits >= 120 ? "Diamond"  :
+      newCredits >= 70  ? "Gold"     :
+      newCredits >= 30  ? "Silver"   :
+                          "Bronze";
+
+    await ctx.db.patch(userId, {
+      credits: newCredits,
+      totalTestsCompleted: newTotalTests,
+      rank,
+    });
+
+    return { credits: newCredits, totalTestsCompleted: newTotalTests, rank };
+  },
+});
