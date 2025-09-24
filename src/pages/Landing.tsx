@@ -42,7 +42,7 @@ export default function Landing() {
             className="flex items-center gap-3"
           >
             <div className="text-4xl">📘</div>
-            <h1 className="text-2xl font-bold text-white" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+            <h1 className="text-2xl font-bold text-yellow-300" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
               STEM
             </h1>
           </motion.div>
@@ -91,11 +91,11 @@ export default function Landing() {
               📘
             </motion.div>
             
-            <h1 className="text-6xl md:text-8xl font-bold text-white mb-6" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+            <h1 className="text-6xl md:text-8xl font-bold text-yellow-300 mb-6" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1.5px 0 #000, -1.5px 0 #000, 0 1.5px #000, 0 -1.5px #000" }}>
               STEM
             </h1>
             
-            <p className="text-2xl md:text-3xl text-white mb-8 max-w-4xl mx-auto" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+            <p className="text-2xl md:text-3xl text-yellow-300 mb-8 max-w-4xl mx-auto" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
               Retro-inspired learning platform. Level up your knowledge with interactive, pixel-perfect experiences.
             </p>
 
@@ -110,8 +110,8 @@ export default function Landing() {
               
               <motion.div
                 whileHover={{ scale: 1.05 }}
-                className="flex items-center gap-2 text-white font-bold"
-                style={{ fontFamily: "'Pixelify Sans', monospace" }}
+                className="flex items-center gap-2 text-yellow-300 font-bold"
+                style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}
               >
                 <Star className="text-yellow-600" size={20} />
                 <span>Join 1000+ Happy Learners!</span>
@@ -130,10 +130,10 @@ export default function Landing() {
             transition={{ duration: 0.8 }}
             className="text-center mb-12"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+            <h2 className="text-4xl md:text-5xl font-bold text-yellow-300 mb-4" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
               Why Choose STEM? 🤔
             </h2>
-            <p className="text-xl text-white" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+            <p className="text-xl text-yellow-300" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
               We make learning as sweet as a ripe banana!
             </p>
           </motion.div>
@@ -154,10 +154,10 @@ export default function Landing() {
                       <div className="bg-yellow-300 border-2 border-yellow-500 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                         <Icon size={32} className="text-white" />
                       </div>
-                      <h3 className="text-xl font-bold text-white mb-3" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                      <h3 className="text-xl font-bold text-yellow-300 mb-3" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
                         {feature.title}
                       </h3>
-                      <p className="text-white" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                      <p className="text-yellow-300" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
                         {feature.description}
                       </p>
                     </div>
@@ -182,11 +182,11 @@ export default function Landing() {
                 🎓🍌
               </motion.div>
               
-              <h2 className="text-4xl font-bold text-white mb-4" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+              <h2 className="text-4xl font-bold text-yellow-300 mb-4" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
                 Ready to Go Bananas for Learning?
               </h2>
               
-              <p className="text-xl text-white mb-8" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+              <p className="text-xl text-yellow-300 mb-8" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
                 Join thousands of students and teachers in our pixelated learning universe!
               </p>
 
@@ -218,20 +218,20 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="text-3xl">📘</div>
-            <h3 className="text-xl font-bold text-white" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+            <h3 className="text-xl font-bold text-yellow-300" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
               STEM
             </h3>
           </div>
-          <p className="text-white" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+          <p className="text-yellow-300" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
             Making education fun with a retro twist! ✨
           </p>
-          <div className="mt-4 text-sm text-white" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+          <div className="mt-4 text-sm text-yellow-300" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
             Powered by{" "}
             <a
               href="https://vly.ai"
               target="_blank"
               rel="noopener noreferrer"
-              className="underline hover:text-white transition-colors"
+              className="underline hover:text-yellow-200 transition-colors"
             >
               vly.ai
             </a>
