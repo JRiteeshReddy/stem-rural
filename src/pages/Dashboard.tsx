@@ -396,7 +396,7 @@ export default function Dashboard() {
                       <span className="text-yellow-200 text-xs md:text-sm opacity-90">{s.tagline}</span>
                       <PixelButton
                         size="sm"
-                        onClick={() => navigate("/tests")}
+                        onClick={() => navigate(s.key === "mathematics" ? "/tests?game=math" : "/tests")}
                         className={`px-3 py-1 ${s.theme.playGlow}`}
                       >
                         Play

@@ -13,6 +13,7 @@ import { motion } from "framer-motion";
 import { ClipboardList, Loader2, Trophy } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
+import { useLocation } from "react-router";
 import { toast } from "sonner";
 
 type TestDoc = ReturnType<typeof useQuery<typeof api.tests.getPublishedTests>> extends (infer T)[] | undefined ? T : any;
@@ -20,6 +21,7 @@ type TestDoc = ReturnType<typeof useQuery<typeof api.tests.getPublishedTests>> e
 export default function Tests() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const tests = useQuery(api.tests.getPublishedTests);
   const submitTest = useMutation(api.tests.submitTest);
   const addCredits = useConvexMutation(api.users.addCredits);
@@ -125,6 +127,15 @@ export default function Tests() {
     });
     setAnswer("");
   };
+
+  // Auto-start math game when arriving with ?game=math
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("game") === "math") {
+      // Defer to ensure component is mounted
+      setTimeout(() => startGame(), 0);
+    }
+  }, [location.search]);
 
   useEffect(() => {
     if (!isLoading) {
