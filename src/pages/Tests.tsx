@@ -32,6 +32,49 @@ export default function Tests() {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ score: number; totalPoints: number; creditsEarned: number } | null>(null);
 
+  // Add: derive the active test from openId
+  const activeTest = useMemo(() => {
+    if (!tests || !openId) return null;
+    return (tests as any[]).find((t: any) => String(t._id) === openId) ?? null;
+  }, [tests, openId]);
+
+  // Add: initialize per-test state when a test is opened
+  useEffect(() => {
+    if (!activeTest) return;
+    setQuestionIndex(0);
+    setAnswers(Array(activeTest.questions?.length ?? 0).fill(-1));
+    setResult(null);
+    setSubmitting(false);
+  }, [activeTest]);
+
+  // Add: select option helper
+  function selectOption(qIdx: number, choice: number) {
+    setAnswers((prev) => {
+      const next = [...prev];
+      next[qIdx] = choice;
+      return next;
+    });
+  }
+
+  // Add: submit handler
+  async function handleSubmit() {
+    if (!activeTest || submitting) return;
+    setSubmitting(true);
+    try {
+      const resp = await submitTest({
+        testId: (activeTest as any)._id,
+        answers,
+      } as any);
+      setResult(resp as any);
+      toast.success("Test submitted!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to submit test");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   // Add: Math game UI state
   const [gameOpen, setGameOpen] = useState(false);
   const [gameScore, setGameScore] = useState(0);
@@ -454,7 +497,7 @@ export default function Tests() {
         if (penalty > 0) {
           setChemLives((l) => Math.max(0, l - penalty));
           // small feedback
-          toast.error(`Wrong catch! -${penalty} life${penalty > 1 ? "s" : ""}`);
+          toast.error(`Wrong catch! -${penalty} life`);
         }
         setCollected(nextCollected);
 
@@ -524,52 +567,307 @@ export default function Tests() {
     }
   }, [location.search]);
 
-  useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) navigate("/auth");
-      else if (user && !user.role) navigate("/role-selection");
-    }
-  }, [isLoading, isAuthenticated, user, navigate]);
-
-  const activeTest: TestDoc | null = useMemo(() => {
-    if (!tests || !openId) return null;
-    return (tests as any[]).find((t) => String(t._id) === openId) ?? null;
-  }, [tests, openId]);
-
-  useEffect(() => {
-    if (activeTest) {
-      setQuestionIndex(0);
-      setResult(null);
-      setAnswers(new Array(activeTest.questions.length).fill(-1));
-    }
-  }, [activeTest]);
-
-  const selectOption = (qIdx: number, optIdx: number) => {
-    setAnswers((prev) => {
-      const next = [...prev];
-      next[qIdx] = optIdx;
-      return next;
+  // Add: Physics Game (Gravity Dash) state and helpers
+  const [physicsOpen, setPhysicsOpen] = useState(false);
+  const [physicsOver, setPhysicsOver] = useState(false);
+  const [physicsScore, setPhysicsScore] = useState(0);
+  const [physicsLevel, setPhysicsLevel] = useState(1);
+  const [physicsLives, setPhysicsLives] = useState(3);
+  type GravityDir = "down" | "up" | "left" | "right";
+  const [gravity, setGravity] = useState<GravityDir>("down");
+  type PxObstacle = { id: string; x: number; y: number; w: number; h: number; vx: number };
+  type PxOrb = { id: string; x: number; y: number; r: number; vx: number };
+  const [pxObstacles, setPxObstacles] = useState<PxObstacle[]>([]);
+  const [pxOrbs, setPxOrbs] = useState<PxOrb[]>([]);
+  const [runnerPos, setRunnerPos] = useState<{ x: number; y: number }>({ x: 12, y: 70 }); // percent
+  const [pxTick, setPxTick] = useState(0);
+  // Start/reset Physics Game
+  const startPhysicsGame = () => {
+    setPhysicsOpen(true);
+    setPhysicsOver(false);
+    setPhysicsScore(0);
+    setPhysicsLevel(1);
+    setPhysicsLives(3);
+    setGravity("down");
+    setRunnerPos({ x: 12, y: 70 });
+    setPxObstacles([]);
+    setPxOrbs([]);
+    setPxTick(0);
+  };
+  // Cycle gravity
+  const cycleGravity = () => {
+    setGravity((g) => (g === "down" ? "up" : g === "up" ? "left" : g === "left" ? "right" : "down"));
+    // small flip animation hint by nudging runner slightly toward new surface
+    setRunnerPos((p) => {
+      if (gravity === "down") return { x: p.x, y: 30 };
+      if (gravity === "up") return { x: 20, y: p.y };
+      if (gravity === "left") return { x: 80, y: p.y };
+      return { x: p.x, y: 70 };
     });
   };
 
-  const handleSubmit = async () => {
-    if (!activeTest) return;
-    if (answers.some((a) => a < 0)) {
-      toast.error("Please answer all questions before submitting.");
-      return;
-    }
-    try {
-      setSubmitting(true);
-      const res = await submitTest({ testId: activeTest._id, answers });
-      setResult(res);
-      toast.success(`Submitted! Score: ${res.score}/${res.totalPoints}, +${res.creditsEarned} credits`);
-    } catch (e) {
-      console.error(e);
-      toast.error("Failed to submit test");
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  // Auto-start via query ?game=physics
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("game") === "physics") setTimeout(() => startPhysicsGame(), 0);
+  }, [location.search]);
+
+  // Controls: arrow keys or space to cycle gravity
+  useEffect(() => {
+    if (!physicsOpen || physicsOver) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === " " || e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        e.preventDefault();
+        cycleGravity();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [physicsOpen, physicsOver, gravity]);
+
+  // Main loop: spawn/move obstacles & orbs, collisions, level scaling
+  useEffect(() => {
+    if (!physicsOpen || physicsOver) return;
+    const baseSpeed = 0.7 + physicsLevel * 0.15;
+    const interval = setInterval(() => {
+      setPxTick((t) => t + 1);
+      // Move entities left (side-scroller)
+      setPxObstacles((prev) =>
+        prev
+          .map((o) => ({ ...o, x: o.x - (o.vx || baseSpeed) }))
+          .filter((o) => o.x + o.w > -5)
+      );
+      setPxOrbs((prev) =>
+        prev
+          .map((o) => ({ ...o, x: o.x - (o.vx || baseSpeed * 0.9) }))
+          .filter((o) => o.x + o.r > -5)
+      );
+
+      // Spawn logic
+      setPxObstacles((prev) => {
+        const spawnChance = Math.min(0.18 + physicsLevel * 0.03, 0.45);
+        if (prev.length < 6 && Math.random() < spawnChance) {
+          const laneY = [30, 50, 70]; // floor/ceiling/walls alignment targets
+          const y = laneY[Math.floor(Math.random() * laneY.length)];
+          const w = 6 + Math.floor(Math.random() * 6);
+          const h = 8 + Math.floor(Math.random() * 10);
+          const vx = baseSpeed + Math.random() * 0.3;
+          return [...prev, { id: crypto.randomUUID(), x: 102, y, w, h, vx }];
+        }
+        return prev;
+      });
+      setPxOrbs((prev) => {
+        if (prev.length < 4 && Math.random() < 0.25) {
+          const y = 40 + Math.random() * 40;
+          const r = 3 + Math.random() * 2;
+          const vx = baseSpeed * 0.9;
+          return [...prev, { id: crypto.randomUUID(), x: 102, y, r, vx }];
+        }
+        return prev;
+      });
+
+      // Runner auto-adjust towards surface depending on gravity
+      setRunnerPos((p) => {
+        const step = 2.2;
+        if (gravity === "down") return { x: 12, y: Math.min(90, p.y + step) };
+        if (gravity === "up") return { x: 12, y: Math.max(10, p.y - step) };
+        if (gravity === "left") return { x: Math.max(8, p.x - step), y: 50 };
+        return { x: Math.min(20, p.x + step), y: 50 }; // right gravity
+      });
+
+      // Collisions
+      setPxObstacles((obs) => {
+        let hit = false;
+        const runnerBox = { x: runnerPos.x, y: runnerPos.y, w: 6, h: 10 };
+        for (const o of obs) {
+          const overlap =
+            Math.abs(o.x - runnerBox.x) < (o.w + runnerBox.w) / 2 &&
+            Math.abs(o.y - runnerBox.y) < (o.h + runnerBox.h) / 2;
+          if (overlap) {
+            hit = true;
+            break;
+          }
+        }
+        if (hit) {
+          setPhysicsLives((l) => {
+            const next = Math.max(0, l - 1);
+            if (next === 0) {
+              setPhysicsOver(true);
+              (async () => {
+                try {
+                  const res = await addCredits({ amount: physicsScore });
+                  toast.success(`Game Over! +${physicsScore} XP. Rank: ${res.rank}`);
+                } catch (e) {
+                  console.error(e);
+                  toast.error("Failed to save score");
+                }
+              })();
+            } else {
+              toast.message("Ouch! -1 life");
+            }
+            return next;
+          });
+        }
+        return obs;
+      });
+
+      // Orb collection
+      setPxOrbs((orbs) => {
+        const runnerBox = { x: runnerPos.x, y: runnerPos.y, r: 7 };
+        let collectedIds: Set<string> = new Set();
+        for (const o of orbs) {
+          const dist = Math.hypot(o.x - runnerBox.x, o.y - runnerBox.y);
+          if (dist <= o.r + runnerBox.r) {
+            collectedIds.add(o.id);
+            setPhysicsScore((s) => s + 2);
+          }
+        }
+        if (collectedIds.size) {
+          toast.success("+2 Physics XP (orb)");
+        }
+        return orbs.filter((o) => !collectedIds.has(o.id));
+      });
+
+      // Level up
+      setPhysicsScore((s) => {
+        const nextLevel =
+          s >= 40 ? 4 : s >= 24 ? 3 : s >= 10 ? 2 : 1;
+        if (nextLevel !== physicsLevel) setPhysicsLevel(nextLevel);
+        return s;
+      });
+    }, 180);
+    return () => clearInterval(interval);
+  }, [physicsOpen, physicsOver, physicsLevel, gravity, runnerPos, addCredits, physicsScore]);
+
+  // Add a launcher button near existing game buttons
+  // ... keep existing code (UI before the small game launchers section)
+  <div className="mb-4 flex gap-3">
+    <PixelButton size="sm" onClick={startGame}>Play Math Game</PixelButton>
+    <PixelButton size="sm" onClick={startElementMixerGame}>Play Chemistry Game</PixelButton>
+    <PixelButton size="sm" onClick={startPhysicsGame}>Play Physics Game</PixelButton>
+  </div>
+  // ... keep existing code (tests list and dialogs)
+
+  // Physics Game Overlay
+  {physicsOpen && (
+    <div className="fixed inset-0 z-50 bg-neutral-950/95 backdrop-blur-sm border-4 border-yellow-600">
+      <div className="relative h-full w-full flex flex-col">
+        {/* Top bar */}
+        <div className="flex items-center justify-between px-4 py-2 bg-black/60 border-b-4 border-yellow-700">
+          <div className="flex items-center gap-3">
+            <img src="/assets/edufun.png" alt="Logo" className="h-8" style={{ imageRendering: "pixelated" }} />
+            <span className="text-yellow-300 font-bold" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000,-1px 0 #000,0 1px #000,0 -1px #000" }}>
+              Physics — Gravity Dash
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-yellow-300 font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+              XP: {physicsScore}
+            </span>
+            <span className="text-yellow-300 font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+              ❤ {physicsLives}
+            </span>
+            <span className="text-yellow-300 font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+              Lv {physicsLevel}
+            </span>
+            <PixelButton size="sm" onClick={cycleGravity}>
+              Flip Gravity
+            </PixelButton>
+            <PixelButton size="sm" variant="secondary" onClick={() => { setPhysicsOpen(false); setPhysicsOver(false); }}>
+              Exit
+            </PixelButton>
+          </div>
+        </div>
+
+        {/* Game field */}
+        <div className="relative flex-1 overflow-hidden">
+          {/* Background */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(180deg, rgba(10,10,20,1) 0%, rgba(15,20,40,1) 100%)",
+            }}
+          />
+          {/* Runner (reuse hero sprite) */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="absolute"
+            style={{ left: `${runnerPos.x}%`, top: `${runnerPos.y}%`, width: 22, height: 30 }}
+            title="Runner"
+          >
+            <img
+              src="https://harmless-tapir-303.convex.cloud/api/storage/7e1c7ca6-36e4-4752-865f-da24c22d7af5"
+              alt="Runner"
+              className="w-full h-full object-contain"
+              style={{ imageRendering: "pixelated", transform: gravity === "up" ? "rotate(180deg)" : gravity === "left" ? "rotate(-90deg)" : gravity === "right" ? "rotate(90deg)" : "none" }}
+            />
+          </motion.div>
+
+          {/* Obstacles */}
+          {pxObstacles.map((o) => (
+            <div
+              key={o.id}
+              className="absolute bg-rose-400 border-4 border-rose-700"
+              style={{
+                left: `${o.x}%`,
+                top: `${o.y}%`,
+                width: `${o.w}px`,
+                height: `${o.h}px`,
+                imageRendering: "pixelated",
+                boxShadow: "0 0 12px rgba(255,80,120,0.5)",
+              }}
+              title="Lab Obstacle"
+            />
+          ))}
+
+          {/* Orbs (collectibles) */}
+          {pxOrbs.map((c) => (
+            <div
+              key={c.id}
+              className="absolute rounded-full bg-cyan-300 border-4 border-cyan-700"
+              style={{
+                left: `${c.x}%`,
+                top: `${c.y}%`,
+                width: `${c.r * 2}px`,
+                height: `${c.r * 2}px`,
+                transform: "translate(-50%, -50%)",
+                boxShadow: "0 0 12px rgba(0,255,255,0.55)",
+                imageRendering: "pixelated",
+              }}
+              title="Physics Orb (F=ma)"
+            />
+          ))}
+
+          {/* Game Over */}
+          {physicsOver && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="bg-black/80 border-4 border-yellow-700 p-6 text-center">
+                <div className="text-3xl font-bold text-yellow-300 mb-2" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                  Game Over!
+                </div>
+                <div className="text-yellow-200 mb-4" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                  You earned {physicsScore} XP this run.
+                </div>
+                <PixelButton onClick={() => { startPhysicsGame(); }}>Play Again</PixelButton>
+                <PixelButton variant="secondary" className="ml-2" onClick={() => { setPhysicsOpen(false); setPhysicsOver(false); }}>
+                  Close
+                </PixelButton>
+              </div>
+            </div>
+          )}
+        </div>
+        {/* Bottom HUD */}
+        <div className="px-4 py-3 bg-black/60 border-t-4 border-yellow-700 flex items-center gap-4">
+          <span className="text-yellow-300 font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+            Tip: Press Space or Arrow keys to flip gravity
+          </span>
+        </div>
+      </div>
+    </div>
+  )}
+  // ... keep existing code (rest of component and helper functions)
 
   return (
     <div className="min-h-screen bg-transparent">
@@ -588,6 +886,7 @@ export default function Tests() {
         <div className="mb-4 flex gap-3">
           <PixelButton size="sm" onClick={startGame}>Play Math Game</PixelButton>
           <PixelButton size="sm" onClick={startElementMixerGame}>Play Chemistry Game</PixelButton>
+          <PixelButton size="sm" onClick={startPhysicsGame}>Play Physics Game</PixelButton>
         </div>
 
         {!tests ? (
@@ -778,19 +1077,19 @@ export default function Tests() {
               {/* Game field */}
               <div className="relative flex-1 overflow-hidden">
                 {/* Player (left) */}
-<motion.div
-  initial={{ opacity: 0, x: -10 }}
-  animate={{ opacity: 1, x: 0 }}
-  className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-16"
-  title="Player"
->
-  <img
-    src="https://harmless-tapir-303.convex.cloud/api/storage/7e1c7ca6-36e4-4752-865f-da24c22d7af5"
-    alt="Hero"
-    className="w-full h-full object-contain"
-    style={{ imageRendering: "pixelated" }}
-  />
-</motion.div>
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-16"
+                  title="Player"
+                >
+                  <img
+                    src="https://harmless-tapir-303.convex.cloud/api/storage/7e1c7ca6-36e4-4752-865f-da24c22d7af5"
+                    alt="Hero"
+                    className="w-full h-full object-contain"
+                    style={{ imageRendering: "pixelated", transform: "scaleX(-1)" }}
+                  />
+                </motion.div>
 
                 {/* Zombies */}
                 {zombies.map((z) => (
