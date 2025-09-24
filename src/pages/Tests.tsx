@@ -18,6 +18,33 @@ import { toast } from "sonner";
 
 type TestDoc = ReturnType<typeof useQuery<typeof api.tests.getPublishedTests>> extends (infer T)[] | undefined ? T : any;
 
+// Add hoisted helpers to avoid "before initialization" issues for Element Mixer
+function parseFormulaToCounts(formula: string): Record<string, number> {
+  const counts: Record<string, number> = {};
+  const regex = /([A-Z][a-z]?)(\d*)/g;
+  let m: RegExpExecArray | null;
+  while ((m = regex.exec(formula)) !== null) {
+    const sym = m[1];
+    const num = m[2] ? Number(m[2]) : 1;
+    counts[sym] = (counts[sym] || 0) + num;
+  }
+  return counts;
+}
+
+function formatFormula(formula: string) {
+  const parts = [...formula.matchAll(/([A-Z][a-z]?)(\d*)/g)];
+  return (
+    <span>
+      {parts.map(([_, sym, num], idx) => (
+        <span key={idx}>
+          {sym}
+          {num ? <sub className="align-baseline">{num}</sub> : null}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 export default function Tests() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -277,7 +304,7 @@ export default function Tests() {
   };
 
   // Formula map
-  const parseFormulaToCounts = (formula: string): Record<string, number> => {
+  const parseFormulaToCounts2 = (formula: string): Record<string, number> => {
     // e.g. "H2SO4" -> { H: 2, S: 1, O: 4 }
     const counts: Record<string, number> = {};
     const regex = /([A-Z][a-z]?)(\d*)/g;
@@ -292,7 +319,7 @@ export default function Tests() {
 
   const targetCounts = useMemo(() => parseFormulaToCounts(targetKey), [targetKey]);
 
-  const formatFormula = (formula: string) => {
+  const formatFormula2 = (formula: string) => {
     const parts = [...formula.matchAll(/([A-Z][a-z]?)(\d*)/g)];
     return (
       <span>
