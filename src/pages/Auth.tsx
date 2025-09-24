@@ -357,7 +357,13 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
 export default function AuthPage(props: AuthProps) {
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          Loading authentication...
+        </div>
+      }
+    >
       <Auth {...props} />
     </Suspense>
   );
