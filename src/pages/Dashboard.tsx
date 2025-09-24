@@ -131,6 +131,25 @@ export default function Dashboard() {
           </motion.div>
         )}
 
+        {/* Teacher Class Panel */}
+        {isTeacher && (
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4"
+          >
+            <div className="bg-black/70 border-4 border-yellow-600 p-4 flex items-center justify-between shadow-[0_0_12px_rgba(255,255,0,0.5)]"
+                 style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+              <div className="text-yellow-300 font-bold">
+                Managing content for: <span className="px-2 py-1 bg-yellow-700/40 border-2 border-yellow-800 ml-1">Class {user.userClass?.split(" ")[1] || "-"}</span>
+              </div>
+              <div className="text-yellow-200 text-sm">
+                Only students in your class will see your announcements, courses, and tests.
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Quick Play (Student) */}
         {isStudent && (
           <motion.div

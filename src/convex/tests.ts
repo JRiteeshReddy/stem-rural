@@ -6,12 +6,18 @@ import { getCurrentUser } from "./users";
 export const getPublishedTests = query({
   args: {},
   handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || !user.userClass) {
+      return [];
+    }
+
     const tests = await ctx.db
       .query("tests")
-      .withIndex("by_published", (q) => q.eq("isPublished", true))
+      .withIndex("by_class_and_published", (q) =>
+        q.eq("targetClass", user.userClass!).eq("isPublished", true)
+      )
       .collect();
 
-    // Get teacher info for each test
     const testsWithTeacher = await Promise.all(
       tests.map(async (test) => {
         const teacher = await ctx.db.get(test.teacherId);
@@ -79,6 +85,9 @@ export const createTest = mutation({
     if (!user || user.role !== "teacher") {
       throw new Error("Unauthorized");
     }
+    if (!user.userClass) {
+      throw new Error("Teacher must have a registered class before creating tests");
+    }
 
     validateQuestions(args.questions);
     const totalPoints = args.questions.reduce((sum, q) => sum + q.points, 0);
@@ -91,6 +100,8 @@ export const createTest = mutation({
       questions: args.questions,
       totalPoints,
       isPublished: false,
+      // Tag with teacher's class
+      targetClass: user.userClass,
     });
   },
 });

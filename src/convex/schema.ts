@@ -64,8 +64,20 @@ const schema = defineSchema(
       isPublished: v.boolean(),
       enrolledStudents: v.array(v.id("users")),
       totalLessons: v.number(),
+      // Add: class tagging for scoping
+      targetClass: v.union(
+        v.literal("Class 6"),
+        v.literal("Class 7"),
+        v.literal("Class 8"),
+        v.literal("Class 9"),
+        v.literal("Class 10"),
+        v.literal("Class 11"),
+        v.literal("Class 12"),
+      ),
     }).index("by_teacher", ["teacherId"])
-      .index("by_published", ["isPublished"]),
+      .index("by_published", ["isPublished"])
+      // Add: index to query by class & published together
+      .index("by_class_and_published", ["targetClass", "isPublished"]),
 
     // Chapters table (NEW)
     chapters: defineTable({
@@ -91,9 +103,21 @@ const schema = defineSchema(
       })),
       totalPoints: v.number(),
       isPublished: v.boolean(),
+      // Add: class tagging for scoping
+      targetClass: v.union(
+        v.literal("Class 6"),
+        v.literal("Class 7"),
+        v.literal("Class 8"),
+        v.literal("Class 9"),
+        v.literal("Class 10"),
+        v.literal("Class 11"),
+        v.literal("Class 12"),
+      ),
     }).index("by_teacher", ["teacherId"])
       .index("by_course", ["courseId"])
-      .index("by_published", ["isPublished"]),
+      .index("by_published", ["isPublished"])
+      // Add: index to query by class & published together
+      .index("by_class_and_published", ["targetClass", "isPublished"]),
 
     // Test Results table
     testResults: defineTable({
@@ -115,9 +139,21 @@ const schema = defineSchema(
       isGlobal: v.boolean(), // true for admin announcements, false for course-specific
       courseId: v.optional(v.id("courses")),
       priority: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+      // Add: class tagging for scoping
+      targetClass: v.union(
+        v.literal("Class 6"),
+        v.literal("Class 7"),
+        v.literal("Class 8"),
+        v.literal("Class 9"),
+        v.literal("Class 10"),
+        v.literal("Class 11"),
+        v.literal("Class 12"),
+      ),
     }).index("by_author", ["authorId"])
       .index("by_course", ["courseId"])
-      .index("by_global", ["isGlobal"]),
+      .index("by_global", ["isGlobal"])
+      // Add: index to query by class
+      .index("by_targetClass", ["targetClass"]),
 
     // Course Enrollments table
     enrollments: defineTable({

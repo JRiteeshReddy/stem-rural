@@ -7,13 +7,19 @@ import { Id } from "./_generated/dataModel";
 export const getAnnouncements = query({
   args: {},
   handler: async (ctx) => {
-    const announcements = await ctx.db
+    const user = await getCurrentUser(ctx);
+    if (!user || !user.userClass) {
+      return [];
+    }
+
+    // Only fetch announcements for the user's class
+    const anns = await ctx.db
       .query("announcements")
+      .withIndex("by_targetClass", (q) => q.eq("targetClass", user.userClass!))
       .collect();
 
-    // Get author info for each announcement
     const announcementsWithAuthor = await Promise.all(
-      announcements.map(async (announcement) => {
+      anns.map(async (announcement) => {
         const author = await ctx.db.get(announcement.authorId);
         return {
           ...announcement,
@@ -40,14 +46,19 @@ export const createAnnouncement = mutation({
     if (!user || user.role !== "teacher") {
       throw new Error("Unauthorized");
     }
+    if (!user.userClass) {
+      throw new Error("Teacher must have a registered class before posting announcements");
+    }
 
     return await ctx.db.insert("announcements", {
       title: args.title,
       content: args.content,
       authorId: user._id,
-      isGlobal: args.isGlobal,
+      isGlobal: false, // enforce class-scoped announcements
       courseId: args.courseId,
       priority: args.priority,
+      // Tag with teacher's class
+      targetClass: user.userClass,
     });
   },
 });
@@ -75,8 +86,11 @@ export const updateAnnouncement = mutation({
     if (args.title !== undefined) patch.title = args.title;
     if (args.content !== undefined) patch.content = args.content;
     if (args.priority !== undefined) patch.priority = args.priority;
-    if (args.isGlobal !== undefined) patch.isGlobal = args.isGlobal;
-    if (args.courseId !== undefined) patch.courseId = args.courseId ?? undefined; // allow null -> undefined
+    if (args.isGlobal !== undefined) {
+      // Enforce non-global within class-scoped system
+      patch.isGlobal = false;
+    }
+    if (args.courseId !== undefined) patch.courseId = args.courseId ?? undefined;
     await ctx.db.patch(args.announcementId, patch);
     return "Announcement updated";
   },
