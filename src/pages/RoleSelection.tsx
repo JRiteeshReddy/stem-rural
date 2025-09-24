@@ -45,7 +45,7 @@ export default function RoleSelection() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-200 via-orange-200 to-yellow-300 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-transparent flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}

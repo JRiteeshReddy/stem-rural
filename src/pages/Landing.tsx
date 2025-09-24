@@ -33,7 +33,7 @@ export default function Landing() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-200 via-orange-200 to-yellow-300">
+    <div className="min-h-screen bg-transparent">
       {/* Header */}
       <header className="bg-yellow-400 border-b-4 border-yellow-600 px-4 py-3 shadow-[0_4px_0px_0px_rgba(0,0,0,0.2)]">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
