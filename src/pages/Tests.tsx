@@ -1046,7 +1046,7 @@ export default function Tests() {
             <div
               className="absolute inset-0"
               style={{
-                backgroundImage: 'url("https://harmless-tapir-303.convex.cloud/api/storage/654f63e2-0b1c-449e-9c88-b7d4f8ce348a")',
+                backgroundImage: 'url("https://harmless-tapir-303.convex.cloud/api/storage/7e293679-1e76-4aff-ac04-fef5ef1d75dd")',
                 backgroundRepeat: "no-repeat",
                 backgroundPosition: "center",
                 backgroundSize: "contain",
