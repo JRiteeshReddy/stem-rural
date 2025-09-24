@@ -55,16 +55,12 @@ export default function Dashboard() {
 
   // Add: student portal UI state and derived data
   // Today's Goals (quest-style)
-  const [goals, setGoals] = useState<Array<{ text: string; done: boolean }>>([
-    { text: "Solve 1 Math Puzzle", done: false },
-    { text: "Complete Physics Simulation", done: false },
-    { text: "Review Chemistry Notes", done: false },
-    { text: "Practice Coding 20 min", done: false },
-  ]);
-
-  const toggleGoal = (idx: number) => {
-    setGoals((prev) => prev.map((g, i) => (i === idx ? { ...g, done: !g.done } : g)));
-  };
+  const goals = [
+    { text: "Complete any 1 Test", done: (user.totalTestsCompleted || 0) >= 1 },
+    { text: "Earn 10 XP", done: (user.credits || 0) >= 10 },
+    { text: "Set Display Name", done: Boolean(user.name && user.name.trim().length > 0) },
+    { text: "Upload Profile Picture", done: Boolean(user.image && user.image.length > 0) },
+  ];
 
   // Subjects + dynamic progress derived from student activity
   const subjectList: Array<{
@@ -322,20 +318,20 @@ export default function Dashboard() {
                 </h3>
                 <div className="space-y-3" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
                   {goals.map((g, idx) => (
-                    <button
+                    <div
                       key={idx}
-                      onClick={() => toggleGoal(idx)}
                       className={`w-full text-left flex items-center gap-3 px-3 py-2 border-2 ${
                         g.done
                           ? "bg-green-600/40 border-green-700"
                           : "bg-neutral-900/50 border-yellow-700"
                       }`}
+                      style={{ pointerEvents: "none" }}
                     >
                       <span className="text-xl">{g.done ? "✔" : "✖"}</span>
-                      <span className={`text-yellow-100 ${g.done ? "line-through opacity-80" : ""}`}>
+                      <span className={`text-yellow-100 ${g.done ? "opacity-90" : ""}`}>
                         {g.text}
                       </span>
-                    </button>
+                    </div>
                   ))}
                 </div>
               </div>

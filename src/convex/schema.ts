@@ -53,6 +53,13 @@ const schema = defineSchema(
           v.literal("Class 12"),
         )
       ),
+
+      // Additional profile fields
+      schoolName: v.optional(v.string()),
+      bloodGroup: v.optional(v.string()),
+      parentsName: v.optional(v.string()),
+      phoneNumber: v.optional(v.string()),
+      address: v.optional(v.string()),
     }).index("email", ["email"])
       .index("by_role", ["role"]),
 

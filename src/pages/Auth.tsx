@@ -13,6 +13,9 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 import { useAuth } from "@/hooks/use-auth";
 import { ArrowRight, Loader2, Mail, UserX, LogIn } from "lucide-react";
@@ -33,6 +36,14 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [nameInput, setNameInput] = useState("");
   const [mode, setMode] = useState<"login" | "signup">("login");
 
+  // NEW: role & class for signup
+  const [role, setRole] = useState<"teacher" | "student" | "">("");
+  const [userClass, setUserClass] = useState<"Class 6" | "Class 7" | "Class 8" | "Class 9" | "Class 10" | "Class 11" | "Class 12" | "">("");
+
+  // Convex mutations to finalize signup after OTP
+  const setupUserRole = useMutation(api.setup.setupUserRole);
+  const setUserClassMutation = useMutation(api.setup.setUserClass);
+
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
       // Do not auto-redirect; let users explicitly click the continue button.
@@ -44,6 +55,15 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setIsLoading(true);
     setError(null);
     try {
+      // Require role & class in signup mode before sending OTP
+      if (mode === "signup") {
+        if (!nameInput.trim() || !role || !userClass) {
+          setIsLoading(false);
+          setError("Please provide name, role, and class to continue.");
+          return;
+        }
+      }
+
       const formData = new FormData(event.currentTarget);
       await signIn("email-otp", formData);
       setStep({ email: formData.get("email") as string });
@@ -67,7 +87,20 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       const formData = new FormData(event.currentTarget);
       await signIn("email-otp", formData);
 
-      console.log("signed in");
+      // After OTP verification, if this was sign up, persist role & class
+      if (mode === "signup") {
+        try {
+          // Save role + display name (fallback to nameInput)
+          await setupUserRole({
+            role: role as any,
+            name: nameInput.trim(),
+          });
+          // Save class selection
+          await setUserClassMutation({ userClass: userClass as any });
+        } catch (e) {
+          console.error("Post-OTP setup failed:", e);
+        }
+      }
 
       const redirect = redirectAfterAuth || "/";
       navigate(redirect);
@@ -185,6 +218,38 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                           className="rounded-none"
                           required
                         />
+                      </div>
+                    )}
+
+                    {mode === "signup" && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                        <div>
+                          <Select value={role} onValueChange={(v) => setRole(v as any)}>
+                            <SelectTrigger className="rounded-none">
+                              <SelectValue placeholder="Select role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="student">Student</SelectItem>
+                              <SelectItem value="teacher">Teacher</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Select value={userClass} onValueChange={(v) => setUserClass(v as any)}>
+                            <SelectTrigger className="rounded-none">
+                              <SelectValue placeholder="Select class" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Class 6">Class 6</SelectItem>
+                              <SelectItem value="Class 7">Class 7</SelectItem>
+                              <SelectItem value="Class 8">Class 8</SelectItem>
+                              <SelectItem value="Class 9">Class 9</SelectItem>
+                              <SelectItem value="Class 10">Class 10</SelectItem>
+                              <SelectItem value="Class 11">Class 11</SelectItem>
+                              <SelectItem value="Class 12">Class 12</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     )}
 

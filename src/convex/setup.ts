@@ -60,3 +60,25 @@ export const setupExtendedRegistration = mutation({
     return "Extended registration saved";
   },
 });
+
+export const setUserClass = mutation({
+  args: {
+    userClass: v.union(
+      v.literal("Class 6"),
+      v.literal("Class 7"),
+      v.literal("Class 8"),
+      v.literal("Class 9"),
+      v.literal("Class 10"),
+      v.literal("Class 11"),
+      v.literal("Class 12"),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("User not found");
+    await ctx.db.patch(user._id, {
+      userClass: args.userClass,
+    });
+    return "Class saved";
+  },
+});

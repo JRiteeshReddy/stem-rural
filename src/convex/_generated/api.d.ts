@@ -21,6 +21,7 @@ import type * as courses from "../courses.js";
 import type * as http from "../http.js";
 import type * as leaderboard from "../leaderboard.js";
 import type * as profile from "../profile.js";
+import type * as profileDetails from "../profileDetails.js";
 import type * as profileMutations from "../profileMutations.js";
 import type * as setup from "../setup.js";
 import type * as tests from "../tests.js";
@@ -43,6 +44,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   leaderboard: typeof leaderboard;
   profile: typeof profile;
+  profileDetails: typeof profileDetails;
   profileMutations: typeof profileMutations;
   setup: typeof setup;
   tests: typeof tests;
