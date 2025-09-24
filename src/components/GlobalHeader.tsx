@@ -36,9 +36,9 @@ export function GlobalHeader() {
           className="flex items-center gap-3 cursor-pointer"
           onClick={() => navigate("/dashboard")}
         >
-          <div className="text-4xl">🍌</div>
+          <div className="text-4xl">📘</div>
           <h1 className="text-2xl font-bold text-black" style={{ fontFamily: "monospace" }}>
-            SmartBanana
+            STEM
           </h1>
         </motion.div>
 

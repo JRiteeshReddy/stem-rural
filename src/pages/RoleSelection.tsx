@@ -57,10 +57,10 @@ export default function RoleSelection() {
             transition={{ duration: 2, repeat: Infinity }}
             className="text-8xl mb-4"
           >
-            🍌
+            📘
           </motion.div>
           <h1 className="text-4xl font-bold text-black mb-2" style={{ fontFamily: "monospace" }}>
-            Welcome to SmartBanana!
+            Welcome to STEM!
           </h1>
           <p className="text-lg text-gray-700" style={{ fontFamily: "monospace" }}>
             Choose your role to get started

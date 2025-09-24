@@ -30,6 +30,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [nameInput, setNameInput] = useState("");
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -69,6 +70,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
       const redirect = redirectAfterAuth || "/";
       navigate(redirect);
+      // open extended setup in a new tab after OTP confirmation
+      window.open("/extended-setup", "_blank");
     } catch (error) {
       console.error("OTP verification error:", error);
 
@@ -122,6 +125,16 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
               </CardHeader>
               <form onSubmit={handleEmailSubmit}>
                 <CardContent>
+                  <div className="mb-3">
+                    <Input
+                      name="name"
+                      placeholder="Your name (optional)"
+                      type="text"
+                      value={nameInput}
+                      onChange={(e) => setNameInput(e.target.value)}
+                      className="rounded-none"
+                    />
+                  </div>
                   
                   <div className="relative flex items-center gap-2">
                     <div className="relative flex-1">

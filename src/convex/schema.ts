@@ -37,6 +37,22 @@ const schema = defineSchema(
       // Teacher-specific fields
       totalCoursesCreated: v.optional(v.number()),
       totalStudentsEnrolled: v.optional(v.number()),
+
+      // Extended registration profile (new)
+      registrationId: v.optional(v.string()),
+      dateOfBirth: v.optional(v.number()), // store as epoch ms
+      gender: v.optional(v.union(v.literal("Male"), v.literal("Female"), v.literal("Others"))),
+      userClass: v.optional(
+        v.union(
+          v.literal("Class 6"),
+          v.literal("Class 7"),
+          v.literal("Class 8"),
+          v.literal("Class 9"),
+          v.literal("Class 10"),
+          v.literal("Class 11"),
+          v.literal("Class 12"),
+        )
+      ),
     }).index("email", ["email"])
       .index("by_role", ["role"]),
 

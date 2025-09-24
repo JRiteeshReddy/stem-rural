@@ -32,3 +32,31 @@ export const setupUserRole = mutation({
     return "User setup complete";
   },
 });
+
+export const setupExtendedRegistration = mutation({
+  args: {
+    registrationId: v.string(),
+    dateOfBirth: v.number(), // epoch ms
+    gender: v.union(v.literal("Male"), v.literal("Female"), v.literal("Others")),
+    userClass: v.union(
+      v.literal("Class 6"),
+      v.literal("Class 7"),
+      v.literal("Class 8"),
+      v.literal("Class 9"),
+      v.literal("Class 10"),
+      v.literal("Class 11"),
+      v.literal("Class 12"),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("User not found");
+    await ctx.db.patch(user._id, {
+      registrationId: args.registrationId,
+      dateOfBirth: args.dateOfBirth,
+      gender: args.gender,
+      userClass: args.userClass,
+    });
+    return "Extended registration saved";
+  },
+});

@@ -41,9 +41,9 @@ export default function Landing() {
             whileHover={{ scale: 1.1 }}
             className="flex items-center gap-3"
           >
-            <div className="text-4xl">🍌</div>
+            <div className="text-4xl">📘</div>
             <h1 className="text-2xl font-bold text-black" style={{ fontFamily: "monospace" }}>
-              SmartBanana
+              STEM
             </h1>
           </motion.div>
 
@@ -88,16 +88,15 @@ export default function Landing() {
               }}
               className="text-9xl mb-6"
             >
-              🍌
+              📘
             </motion.div>
             
             <h1 className="text-6xl md:text-8xl font-bold text-black mb-6" style={{ fontFamily: "monospace" }}>
-              SmartBanana
+              STEM
             </h1>
             
             <p className="text-2xl md:text-3xl text-gray-800 mb-8 max-w-4xl mx-auto" style={{ fontFamily: "monospace" }}>
-              The most <span className="text-yellow-600 font-bold">a-peel-ing</span> way to learn! 
-              Join our pixelated learning adventure where education meets fun.
+              Retro-inspired learning platform. Level up your knowledge with interactive, pixel-perfect experiences.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -132,7 +131,7 @@ export default function Landing() {
             className="text-center mb-12"
           >
             <h2 className="text-4xl md:text-5xl font-bold text-black mb-4" style={{ fontFamily: "monospace" }}>
-              Why Choose SmartBanana? 🤔
+              Why Choose STEM? 🤔
             </h2>
             <p className="text-xl text-gray-700" style={{ fontFamily: "monospace" }}>
               We make learning as sweet as a ripe banana!
@@ -218,13 +217,13 @@ export default function Landing() {
       <footer className="bg-yellow-400 border-t-4 border-yellow-600 py-8 px-4">
         <div className="max-w-6xl mx-auto text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="text-3xl">🍌</div>
+            <div className="text-3xl">📘</div>
             <h3 className="text-xl font-bold text-black" style={{ fontFamily: "monospace" }}>
-              SmartBanana
+              STEM
             </h3>
           </div>
           <p className="text-black" style={{ fontFamily: "monospace" }}>
-            Making education as sweet as a banana since 2024! 🍌✨
+            Making education fun with a retro twist! ✨
           </p>
           <div className="mt-4 text-sm text-gray-700" style={{ fontFamily: "monospace" }}>
             Powered by{" "}

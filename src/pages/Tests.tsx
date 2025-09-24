@@ -132,7 +132,7 @@ export default function Tests() {
                         {!activeTest ? null : result ? (
                           <div className="space-y-4">
                             <div className="text-center">
-                              <div className="text-6xl mb-2">🍌</div>
+                              <div className="text-6xl mb-2">📘</div>
                               <h3 className="text-2xl font-bold text-black" style={{ fontFamily: "monospace" }}>
                                 Test Complete!
                               </h3>
