@@ -128,11 +128,18 @@ export default function ExtendedSetup() {
                     <SelectValue placeholder="Month" />
                   </SelectTrigger>
                   <SelectContent className="max-h-64 overflow-auto">
-                    {[
-                      ["1", "Jan"],
-                      ["2", "Feb"],
-                      ["3", "Mar"]
-                    ]}
+                    <SelectItem value="1">Jan</SelectItem>
+                    <SelectItem value="2">Feb</SelectItem>
+                    <SelectItem value="3">Mar</SelectItem>
+                    <SelectItem value="4">Apr</SelectItem>
+                    <SelectItem value="5">May</SelectItem>
+                    <SelectItem value="6">Jun</SelectItem>
+                    <SelectItem value="7">Jul</SelectItem>
+                    <SelectItem value="8">Aug</SelectItem>
+                    <SelectItem value="9">Sep</SelectItem>
+                    <SelectItem value="10">Oct</SelectItem>
+                    <SelectItem value="11">Nov</SelectItem>
+                    <SelectItem value="12">Dec</SelectItem>
                   </SelectContent>
                 </Select>
                 {/* Day */}
