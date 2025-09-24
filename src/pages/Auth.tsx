@@ -289,12 +289,16 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             )}
           </Card>
           {/* Small helper to jump to sign-in */}
-          <p className="mt-3 text-xs text-muted-foreground">
-            If you already created an account,{" "}
+          <div
+            className="mt-4 bg-yellow-200 border-2 border-yellow-600 text-black px-3 py-2 rounded-none shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] flex items-center gap-1"
+            style={{ fontFamily: "'Pixelify Sans', monospace" }}
+          >
+            <span>If you already created an account,</span>
             <Button
               type="button"
-              variant="link"
-              className="p-0 h-auto text-xs"
+              variant="secondary"
+              size="sm"
+              className="px-2 py-1 h-auto"
               onClick={() => {
                 setStep("signIn");
                 navigate("/auth");
@@ -302,7 +306,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             >
               sign in
             </Button>
-          </p>
+          </div>
         </div>
       </div>
     </div>
