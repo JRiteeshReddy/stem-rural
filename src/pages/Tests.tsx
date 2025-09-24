@@ -93,23 +93,23 @@ export default function Tests() {
           </div>
         ) : tests.length === 0 ? (
           <PixelCard variant="banana" className="p-6 text-center">
-            <div className="text-black" style={{ fontFamily: "monospace" }}>No tests available yet.</div>
+            <div className="text-black" style={{ fontFamily: "'Pixelify Sans', monospace" }}>No tests available yet.</div>
           </PixelCard>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {tests.map((t: any) => (
               <PixelCard key={String(t._id)} variant="banana" className="p-5">
                 <div className="flex flex-col h-full">
-                  <h3 className="text-2xl font-bold text-black mb-1" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+                  <h3 className="text-2xl font-bold text-black mb-1" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
                     {t.title}
                   </h3>
-                  <p className="text-sm text-gray-800 mb-2" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+                  <p className="text-sm text-gray-800 mb-2" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
                     by {t.teacherName}
                   </p>
-                  <p className="text-black/80 mb-4" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+                  <p className="text-black/80 mb-4" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
                     {t.description}
                   </p>
-                  <span className="text-black font-bold" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+                  <span className="text-black font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
                     Questions: {t.questions?.length ?? 0}
                   </span>
                   <div className="mt-auto flex items-center justify-between">

@@ -91,7 +91,7 @@ export default function Landing() {
               📘
             </motion.div>
             
-            <h1 className="text-6xl md:text-8xl font-bold text-black mb-6" style={{ fontFamily: "monospace" }}>
+            <h1 className="text-6xl md:text-8xl font-bold text-black mb-6" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
               STEM
             </h1>
             
