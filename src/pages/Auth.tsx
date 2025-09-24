@@ -34,8 +34,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      const redirect = redirectAfterAuth || "/";
-      navigate(redirect);
+      // Do not auto-redirect; let users explicitly click the continue button.
+      // This prevents unexpected navigation during OTP flows or when users open /auth intentionally.
     }
   }, [authLoading, isAuthenticated, navigate, redirectAfterAuth]);
   const handleEmailSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
