@@ -11,6 +11,7 @@ import { BookOpen, FileText, Trophy, Users, Plus, TrendingUp } from "lucide-reac
 import { useQuery } from "convex/react";
 import { useNavigate } from "react-router";
 import { useState } from "react";
+import { useEffect } from "react";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -19,9 +20,12 @@ export default function Dashboard() {
   const courses = useQuery(api.courses.getPublishedCourses);
   const tests = useQuery(api.tests.getPublishedTests);
   const leaderboard = useQuery(api.leaderboard.getLeaderboard);
+  const studentCourses = useQuery(api.courses.getAllCoursesForStudent);
 
   const generateUploadUrl = useAction(api.profile.generateUploadUrl);
   const setProfileImage = useMutation(api.profileMutations.setProfileImage);
+  const ensureDefaults = useMutation(api.courses.ensureDefaultCoursesForUserClass);
+  const markCourseAccessed = useMutation(api.courses.markCourseAccessed);
 
   const handleProfileImageUpload = async (file: File) => {
     try {
@@ -186,6 +190,27 @@ export default function Dashboard() {
     { key: "robot_master", label: "Robot Master", icon: "🤖", earned: baseCredits >= 30 },
   ];
 
+  // Ensure default STEM courses exist for this user's class (once for students)
+  useEffect(() => {
+    if (isStudent) {
+      ensureDefaults({}).catch(() => {});
+    }
+  }, [isStudent, ensureDefaults]);
+
+  const handleOpenCourse = async (courseId: string, title: string) => {
+    try {
+      await markCourseAccessed({ courseId: courseId as any });
+      // Simple launch routing: Math -> math game, others -> tests hub
+      if (title === "Mathematics") {
+        navigate("/tests?game=math");
+      } else {
+        navigate("/tests");
+      }
+    } catch (e) {
+      toast.error("Failed to open course");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-transparent">
       <GlobalHeader />
@@ -329,6 +354,68 @@ export default function Dashboard() {
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Student Courses Grid */}
+        {isStudent && (
+          <div className="mb-8">
+            <div className="bg-black/70 border-4 border-yellow-600 p-6 shadow-[0_0_16px_rgba(255,255,0,0.4)]">
+              <h3
+                className="text-2xl font-bold text-yellow-300 mb-4"
+                style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}
+              >
+                Your Courses
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {(studentCourses || []).map((c: any) => (
+                  <div
+                    key={c._id}
+                    className="relative p-4 bg-neutral-900/60 border-2 border-yellow-700"
+                    style={{ fontFamily: "'Pixelify Sans', monospace" }}
+                  >
+                    {c.isNew && (
+                      <span className="absolute -top-3 -right-3 text-xs px-2 py-1 bg-yellow-300 border-2 border-yellow-700 text-black font-bold shadow-[0_0_10px_rgba(255,220,0,0.8)]">
+                        ★ NEW ★
+                      </span>
+                    )}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2 text-yellow-100 font-bold">
+                        <span className="text-xl">
+                          {c.title === "Mathematics" ? "📐" :
+                           c.title === "Physics" ? "⚛️" :
+                           c.title === "Chemistry" ? "🧪" :
+                           c.title === "Biology" ? "🌱" :
+                           c.title === "Computer Science" ? "💻" :
+                           c.title === "Robotics" ? "🤖" :
+                           c.title === "Astronomy" ? "🌌" : "📘"}
+                        </span>
+                        <span>{c.title}</span>
+                      </div>
+                      <div className="text-xs bg-yellow-300 text-black border border-yellow-700 px-2 py-0.5">
+                        {c.subjectType || "custom"}
+                      </div>
+                    </div>
+                    <div className="mb-3 text-yellow-200 text-xs opacity-90">{c.description}</div>
+                    <div className="w-full h-3 bg-neutral-800 border-2 border-yellow-800 mb-3">
+                      <div
+                        className="h-full bg-gradient-to-r from-yellow-400 to-orange-400 shadow-[0_0_10px_rgba(255,200,0,0.8)]"
+                        style={{ width: `${Math.max(0, Math.min(100, c.progress || 0))}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-yellow-300 text-xs font-bold">{Math.round(c.progress || 0)}%</span>
+                      <PixelButton size="sm" onClick={() => handleOpenCourse(c._id, c.title)}>
+                        {c.progress > 0 ? "Continue" : "Play"}
+                      </PixelButton>
+                    </div>
+                  </div>
+                ))}
+                {(!studentCourses || studentCourses.length === 0) && (
+                  <div className="text-yellow-200">No courses yet for your class.</div>
+                )}
               </div>
             </div>
           </div>

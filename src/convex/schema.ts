@@ -81,6 +81,9 @@ const schema = defineSchema(
         v.literal("Class 11"),
         v.literal("Class 12"),
       ),
+      // Add: subject type and updatedAt
+      subjectType: v.optional(v.union(v.literal("default"), v.literal("custom"))),
+      updatedAt: v.optional(v.number()),
     }).index("by_teacher", ["teacherId"])
       .index("by_published", ["isPublished"])
       // Add: index to query by class & published together
@@ -168,6 +171,8 @@ const schema = defineSchema(
       studentId: v.id("users"),
       enrolledAt: v.number(),
       progress: v.number(), // percentage completed
+      // Add: lastAccessed timestamp
+      lastAccessed: v.optional(v.number()),
     }).index("by_course", ["courseId"])
       .index("by_student", ["studentId"])
       .index("by_course_and_student", ["courseId", "studentId"]),
