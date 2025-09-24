@@ -50,6 +50,8 @@ export default function Profile() {
         address: address || undefined,
       });
       toast.success("Profile updated");
+      // Redirect to dashboard after successful save
+      navigate("/dashboard");
     } catch (e) {
       console.error(e);
       toast.error("Failed to update profile");
@@ -101,7 +103,7 @@ export default function Profile() {
               <Input value={bloodGroup} onChange={(e) => setBloodGroup(e.target.value)} className="border-2 border-yellow-600 rounded-none" placeholder="e.g., O+, B-" />
             </div>
             <div>
-              <Label className="text-black font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>Parents’ Name</Label>
+              <Label className="text-black font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>Parents' Name</Label>
               <Input value={parentsName} onChange={(e) => setParentsName(e.target.value)} className="border-2 border-yellow-600 rounded-none" />
             </div>
             <div>
