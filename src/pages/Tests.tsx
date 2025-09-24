@@ -126,8 +126,8 @@ export default function Tests() {
     const interval = setInterval(() => {
       setTick((t) => t + 1);
       setZombies((prev) => {
-        // move zombies
-        const moved = prev.map((z) => ({ ...z, x: z.x - (speedBase + Math.min(0.6, gameScore * 0.02)) }));
+        // move zombies (now move right)
+        const moved = prev.map((z) => ({ ...z, x: z.x + (speedBase + Math.min(0.6, gameScore * 0.02)) }));
         return moved;
       });
       // spawn based on time and score
@@ -137,17 +137,18 @@ export default function Tests() {
         const { eq, ans } = genEquation(Math.max(1, Math.floor(gameScore / 3) + 1));
         const ySlots = [10, 25, 40, 55, 70, 85];
         const y = ySlots[Math.floor(Math.random() * ySlots.length)];
-        const z: Zombie = { id: crypto.randomUUID(), x: 96, y, eq, ans };
+        // start from left now
+        const z: Zombie = { id: crypto.randomUUID(), x: 4, y, eq, ans };
         return [...prev, z];
       });
     }, 250);
     return () => clearInterval(interval);
   }, [gameOpen, gameOver, gameScore]);
 
-  // Add: loss detection
+  // Add: loss detection to right side
   useEffect(() => {
     if (!gameOpen || gameOver) return;
-    const hit = zombies.some((z) => z.x <= 6); // reaches player side
+    const hit = zombies.some((z) => z.x >= 94); // reaches player on right side
     if (hit) {
       setGameOver(true);
       (async () => {
@@ -772,14 +773,21 @@ export default function Tests() {
 
               {/* Game field */}
               <div className="relative flex-1 overflow-hidden">
-                {/* Player (left) */}
+                {/* Player (middle-right) */}
                 <motion.div
-                  initial={{ opacity: 0, x: -10 }}
+                  initial={{ opacity: 0, x: 10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="absolute left-2 bottom-16 w-12 h-16 bg-yellow-300 border-4 border-yellow-700 shadow-[0_0_16px_rgba(255,255,0,0.6)]"
+                  className="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-16"
                   style={{ imageRendering: "pixelated" }}
                   title="Player"
-                />
+                >
+                  <img
+                    src="https://harmless-tapir-303.convex.cloud/api/storage/7e1c7ca6-36e4-4752-865f-da24c22d7af5"
+                    alt="Hero"
+                    className="w-full h-full object-contain"
+                    style={{ imageRendering: "pixelated" }}
+                  />
+                </motion.div>
 
                 {/* Zombies */}
                 {zombies.map((z) => (
