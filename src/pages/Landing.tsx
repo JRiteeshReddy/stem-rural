@@ -95,7 +95,7 @@ export default function Landing() {
               STEM
             </h1>
             
-            <p className="text-2xl md:text-3xl text-white mb-8 max-w-4xl mx-auto" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
+            <p className="text-2xl md:text-3xl text-black mb-8 max-w-4xl mx-auto" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
               Gaming-inspired learning platform. Level up your knowledge with interactive experiences.
             </p>
 
