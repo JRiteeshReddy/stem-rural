@@ -31,6 +31,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nameInput, setNameInput] = useState("");
+  const [mode, setMode] = useState<"login" | "signup">("login");
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -117,6 +118,37 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
               You're already signed in — Continue
             </Button>
           )}
+
+          {/* Simple tabs for Login / Sign Up */}
+          <div className="mb-3 flex gap-2">
+            <Button
+              type="button"
+              variant={mode === "login" ? "default" : "outline"}
+              className="rounded-none"
+              onClick={() => {
+                setMode("login");
+                setStep("signIn");
+                setError(null);
+                setOtp("");
+              }}
+            >
+              Login
+            </Button>
+            <Button
+              type="button"
+              variant={mode === "signup" ? "default" : "outline"}
+              className="rounded-none"
+              onClick={() => {
+                setMode("signup");
+                setStep("signIn");
+                setError(null);
+                setOtp("");
+              }}
+            >
+              Sign Up
+            </Button>
+          </div>
+
           <Card className="min-w-[350px] pb-0 border shadow-md">
             {step === "signIn" ? (
               <>
@@ -131,24 +163,31 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       onClick={() => navigate("/")}
                     />
                   </div>
-                  <CardTitle className="text-xl">Get Started</CardTitle>
+                  <CardTitle className="text-xl">
+                    {mode === "login" ? "Login" : "Sign Up"}
+                  </CardTitle>
                   <CardDescription>
-                    Enter your email to log in or sign up
+                    {mode === "login"
+                      ? "Enter your email to log in"
+                      : "Create your account to get started"}
                   </CardDescription>
                 </CardHeader>
                 <form onSubmit={handleEmailSubmit}>
                   <CardContent>
-                    <div className="mb-3">
-                      <Input
-                        name="name"
-                        placeholder="Your name (optional)"
-                        type="text"
-                        value={nameInput}
-                        onChange={(e) => setNameInput(e.target.value)}
-                        className="rounded-none"
-                      />
-                    </div>
-                    
+                    {mode === "signup" && (
+                      <div className="mb-3">
+                        <Input
+                          name="name"
+                          placeholder="Your name (required)"
+                          type="text"
+                          value={nameInput}
+                          onChange={(e) => setNameInput(e.target.value)}
+                          className="rounded-none"
+                          required
+                        />
+                      </div>
+                    )}
+
                     <div className="relative flex items-center gap-2">
                       <div className="relative flex-1">
                         <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -177,7 +216,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     {error && (
                       <p className="mt-2 text-sm text-red-500">{error}</p>
                     )}
-                    
+
                     <div className="mt-4">
                       <div className="relative">
                         <div className="absolute inset-0 flex items-center">
@@ -189,7 +228,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                           </span>
                         </div>
                       </div>
-                      
+
                       <Button
                         type="button"
                         variant="outline"
@@ -300,7 +339,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
               size="sm"
               className="px-2 py-1 h-auto"
               onClick={() => {
+                setMode("login");
                 setStep("signIn");
+                setError(null);
+                setOtp("");
                 navigate("/auth");
               }}
             >
