@@ -95,7 +95,7 @@ export default function Landing() {
               STEM
             </h1>
             
-            <p className="text-2xl md:text-3xl text-yellow-300 mb-8 max-w-4xl mx-auto" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
+            <p className="text-2xl md:text-3xl text-white mb-8 max-w-4xl mx-auto" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
               Retro-inspired learning platform. Level up your knowledge with interactive, pixel-perfect experiences.
             </p>
 
@@ -133,7 +133,7 @@ export default function Landing() {
             <h2 className="text-4xl md:text-5xl font-bold text-yellow-300 mb-4" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
               Why Choose STEM? 🤔
             </h2>
-            <p className="text-xl text-yellow-300" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
+            <p className="text-xl text-white" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
               We make learning as sweet as a ripe banana!
             </p>
           </motion.div>
@@ -157,7 +157,7 @@ export default function Landing() {
                       <h3 className="text-xl font-bold text-white mb-3" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
                         {feature.title}
                       </h3>
-                      <p className="text-yellow-300" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
+                      <p className="text-white" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
                         {feature.description}
                       </p>
                     </div>
@@ -186,7 +186,7 @@ export default function Landing() {
                 Ready to Go Bananas for Learning?
               </h2>
               
-              <p className="text-xl text-yellow-300 mb-8" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
+              <p className="text-xl text-white mb-8" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
                 Join thousands of students and teachers in our pixelated learning universe!
               </p>
 
@@ -222,7 +222,7 @@ export default function Landing() {
               STEM
             </h3>
           </div>
-          <p className="text-yellow-300" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
+          <p className="text-white" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
             Making education fun with a retro twist! ✨
           </p>
           <div className="mt-4 text-sm text-white" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
