@@ -695,7 +695,16 @@ export default function Tests() {
         {/* Fullscreen Retro Math Game Overlay */}
         {gameOpen && (
           <div className="fixed inset-0 z-50 bg-neutral-950/95 backdrop-blur-sm border-4 border-yellow-600">
-            <div className="absolute inset-0 bg-[linear-gradient(transparent_23px,rgba(255,255,255,0.06)_24px),linear-gradient(90deg,transparent_23px,rgba(255,255,255,0.06)_24px)] bg-[length:24px_24px]"></div>
+            {/* Math game background image */}
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: 'url("https://harmless-tapir-303.convex.cloud/api/storage/654f63e2-0b1c-449e-9c88-b7d4f8ce348a")',
+                backgroundRepeat: "repeat",
+                backgroundSize: "auto",
+                imageRendering: "pixelated",
+              }}
+            ></div>
 
             <div className="relative h-full w-full flex flex-col">
               {/* Top bar */}
