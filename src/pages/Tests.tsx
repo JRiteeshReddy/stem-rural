@@ -125,9 +125,36 @@ export default function Tests() {
       setZombies((prev) => {
         const shouldSpawn = Math.random() < Math.min(0.25 + gameScore * 0.01, 0.6);
         if (!shouldSpawn || prev.length > 6) return prev;
-        const { eq, ans } = genEquation(Math.max(1, Math.floor(gameScore / 3) + 1));
+
+        // ensure unique answer and no vertical overlap (lane-based)
+        const level = Math.max(1, Math.floor(gameScore / 3) + 1);
         const ySlots = [10, 25, 40, 55, 70, 85];
-        const y = ySlots[Math.floor(Math.random() * ySlots.length)];
+
+        // block lanes already in use (avoid vertical overlap)
+        const occupied = new Set<number>();
+        for (const z of prev) {
+          // snap to nearest slot
+          const nearest = ySlots.reduce((a, b) => (Math.abs(z.y - a) < Math.abs(z.y - b) ? a : b));
+          occupied.add(nearest);
+        }
+        const freeSlots = ySlots.filter((s) => !occupied.has(s));
+        if (freeSlots.length === 0) return prev;
+
+        // generate equation ensuring unique answer among active zombies
+        let tries = 0;
+        let eq = "";
+        let ans = 0;
+        do {
+          const g = genEquation(level);
+          eq = g.eq;
+          ans = g.ans;
+          tries++;
+          if (tries > 6) break;
+        } while (prev.some((z) => z.ans === ans));
+
+        if (prev.some((z) => z.ans === ans)) return prev; // give up this tick if still dup
+
+        const y = freeSlots[Math.floor(Math.random() * freeSlots.length)];
         const z: Zombie = { id: crypto.randomUUID(), x: 96, y, eq, ans };
         return [...prev, z];
       });
@@ -1079,7 +1106,8 @@ export default function Tests() {
                 <motion.div
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-16"
+                  className="absolute left-6 top-1/2 -translate-y-1/2"
+                  style={{ width: 53, height: 69 }}
                   title="Player"
                 >
                   <img
@@ -1108,8 +1136,8 @@ export default function Tests() {
                     <img
                       src="https://harmless-tapir-303.convex.cloud/api/storage/1d3f35cb-b4cf-47e9-a170-bb1d29a26e46"
                       alt="Enemy"
-                      className="w-14 h-14 object-contain"
-                      style={{ imageRendering: "pixelated", transform: "scaleX(-1)" }}
+                      className="object-contain"
+                      style={{ imageRendering: "pixelated", transform: "scaleX(-1)", width: 61, height: 61 }}
                     />
                   </motion.div>
                 ))}
