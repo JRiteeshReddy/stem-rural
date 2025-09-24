@@ -16,6 +16,7 @@ import type {
 import type * as announcements from "../announcements.js";
 import type * as auth_emailOtp from "../auth/emailOtp.js";
 import type * as auth from "../auth.js";
+import type * as chapters from "../chapters.js";
 import type * as courses from "../courses.js";
 import type * as http from "../http.js";
 import type * as leaderboard from "../leaderboard.js";
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   announcements: typeof announcements;
   "auth/emailOtp": typeof auth_emailOtp;
   auth: typeof auth;
+  chapters: typeof chapters;
   courses: typeof courses;
   http: typeof http;
   leaderboard: typeof leaderboard;

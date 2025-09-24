@@ -50,6 +50,16 @@ const schema = defineSchema(
     }).index("by_teacher", ["teacherId"])
       .index("by_published", ["isPublished"]),
 
+    // Chapters table (NEW)
+    chapters: defineTable({
+      courseId: v.id("courses"),
+      title: v.string(),
+      content: v.string(),
+      imageUrl: v.optional(v.string()),
+      order: v.number(), // display order within a course
+    }).index("by_course", ["courseId"])
+      .index("by_course_and_order", ["courseId", "order"]),
+
     // Tests table
     tests: defineTable({
       title: v.string(),
