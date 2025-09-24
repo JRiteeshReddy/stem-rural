@@ -154,7 +154,7 @@ export default function Landing() {
                       <div className="bg-yellow-300 border-2 border-yellow-500 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                         <Icon size={32} className="text-white" />
                       </div>
-                      <h3 className="text-xl font-bold text-yellow-300 mb-3" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
+                      <h3 className="text-xl font-bold text-white mb-3" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
                         {feature.title}
                       </h3>
                       <p className="text-yellow-300" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
@@ -218,7 +218,7 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="text-3xl">📘</div>
-            <h3 className="text-xl font-bold text-yellow-300" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
+            <h3 className="text-xl font-bold text-white" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
               STEM
             </h3>
           </div>
