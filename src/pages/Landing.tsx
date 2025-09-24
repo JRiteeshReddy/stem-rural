@@ -32,6 +32,34 @@ export default function Landing() {
     },
   ];
 
+  // Add: student snapshot data (subjects, progress, achievements)
+  const subjects: Array<{ key: string; label: string; icon: string }> = [
+    { key: "mathematics", label: "Mathematics", icon: "📐" },
+    { key: "physics", label: "Physics", icon: "⚛️" },
+    { key: "chemistry", label: "Chemistry", icon: "🧪" },
+    { key: "biology", label: "Biology", icon: "🌱" },
+    { key: "computer_science", label: "Computer Science", icon: "💻" },
+    { key: "robotics", label: "Robotics", icon: "🤖" },
+    { key: "astronomy", label: "Astronomy", icon: "🌌" },
+  ];
+
+  // Target progress derived from user stats (animated from 0%)
+  const baseTests = user?.totalTestsCompleted || 0;
+  const baseCredits = user?.credits || 0;
+  const targetProgress = subjects.map((s, i) => {
+    const pct = Math.min(100, baseTests * 12 + i * 6 + Math.floor(baseCredits / 3));
+    return { ...s, pct };
+  });
+
+  // Achievements rules (glow if earned, grayscale if locked)
+  const achievements = [
+    { key: "math_wizard", label: "Math Wizard", icon: "🧙", earned: baseCredits >= 10 },
+    { key: "coding_hero", label: "Coding Hero", icon: "💾", earned: baseCredits >= 20 },
+    { key: "science_explorer", label: "Science Explorer", icon: "🌌", earned: baseTests >= 3 },
+    { key: "problem_solver", label: "Problem Solver", icon: "🏆", earned: baseTests >= 5 },
+    { key: "robot_master", label: "Robot Master", icon: "🤖", earned: baseCredits >= 30 },
+  ];
+
   return (
     <div className="min-h-screen bg-transparent">
       {/* Header */}
@@ -121,6 +149,142 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Add: Student Snapshot (only for logged-in students) */}
+      {isAuthenticated && user?.role === "student" && (
+        <section className="py-10 px-4">
+          <div className="max-w-6xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6"
+            >
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <h2
+                  className="text-3xl md:text-4xl font-bold text-yellow-300"
+                  style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1.5px 0 #000, -1.5px 0 #000, 0 1.5px #000, 0 -1.5px #000" }}
+                >
+                  👾 Welcome back, {user.name || "Explorer"}!
+                </h2>
+                <div
+                  className="flex items-center gap-3 bg-black/70 border-4 border-yellow-600 px-4 py-2 shadow-[0_0_12px_rgba(255,255,0,0.6)]"
+                  style={{ fontFamily: "'Pixelify Sans', monospace" }}
+                >
+                  <span className="text-yellow-300 text-xl">🪙</span>
+                  <span className="text-yellow-300 font-bold">
+                    XP: {user.credits || 0}
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Progress + Achievements + Mini-Games */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Progress Bars */}
+              <div className="lg:col-span-2 bg-black/70 border-4 border-yellow-600 p-6 shadow-[0_0_16px_rgba(255,255,0,0.4)]">
+                <h3
+                  className="text-2xl font-bold text-yellow-300 mb-4"
+                  style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}
+                >
+                  Student Performance Dashboard
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {targetProgress.map((s) => {
+                    const color =
+                      s.pct < 34 ? "from-yellow-400 to-yellow-500" :
+                      s.pct < 67 ? "from-orange-400 to-orange-500" :
+                                   "from-red-500 to-red-600";
+                    return (
+                      <div
+                        key={s.key}
+                        className="bg-neutral-900/60 border-2 border-yellow-700 p-4"
+                        style={{ fontFamily: "'Pixelify Sans', monospace" }}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2 text-yellow-200 font-bold">
+                            <span>{s.icon}</span>
+                            <span>{s.label}</span>
+                          </div>
+                          <span className="text-yellow-300 font-bold">{s.pct}%</span>
+                        </div>
+                        <div className="w-full h-4 bg-neutral-800 border-2 border-yellow-800 relative overflow-hidden">
+                          <motion.div
+                            className={`h-full bg-gradient-to-r ${color} shadow-[0_0_10px_rgba(255,200,0,0.8)]`}
+                            initial={{ width: "0%" }}
+                            animate={{ width: `${s.pct}%` }}
+                            transition={{ duration: 1.2, ease: "easeOut" }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Achievements */}
+              <div className="bg-black/70 border-4 border-yellow-600 p-6 shadow-[0_0_16px_rgba(255,255,0,0.4)]">
+                <h3
+                  className="text-xl font-bold text-yellow-300 mb-4"
+                  style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}
+                >
+                  Achievements
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {achievements.map((a) => (
+                    <div
+                      key={a.key}
+                      className={`p-4 border-2 ${
+                        a.earned
+                          ? "bg-neutral-900/60 border-yellow-700 shadow-[0_0_14px_rgba(255,220,0,0.6)]"
+                          : "bg-neutral-800/60 border-neutral-700 grayscale opacity-80"
+                      }`}
+                      style={{ fontFamily: "'Pixelify Sans', monospace" }}
+                    >
+                      <div className="text-3xl mb-2">{a.icon}</div>
+                      <div className="text-yellow-100 font-bold">{a.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Mini-Games showcase (routes to existing content) */}
+            <div className="mt-6 bg-black/70 border-4 border-yellow-600 p-6 shadow-[0_0_16px_rgba(255,255,0,0.4)]">
+              <h3
+                className="text-2xl font-bold text-yellow-300 mb-4"
+                style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}
+              >
+                Course Levels & Retro Mini-Games
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { label: "Math Snake", icon: "📐", desc: "Eat correct answers to grow your snake." },
+                  { label: "Physics Logic Builder", icon: "⚛️", desc: "AND/OR/NOT puzzles in retro circuits." },
+                  { label: "Chemistry Mixer", icon: "🧪", desc: "Combine elements to form compounds." },
+                  { label: "Biology Pixel Quest", icon: "🌱", desc: "Match cells/organs to functions." },
+                  { label: "Coding Debugger", icon: "💻", desc: "Fix pixel code to level up." },
+                  { label: "Robotics Builder", icon: "🤖", desc: "Assemble robots to solve tasks." },
+                ].map((g) => (
+                  <div key={g.label} className="p-4 border-2 border-yellow-700 bg-neutral-900/60" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2 text-yellow-200 font-bold">
+                        <span>{g.icon}</span>
+                        <span>{g.label}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-yellow-100 text-sm">{g.desc}</span>
+                      <PixelButton size="sm" onClick={() => navigate("/tests")} className="px-3 py-1">
+                        PLAY
+                      </PixelButton>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Features Section */}
       <section className="py-16 px-4">
         <div className="max-w-6xl mx-auto">
@@ -134,7 +298,7 @@ export default function Landing() {
               Why Choose STEM? 🤔
             </h2>
             <p className="text-xl text-white" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
-              We make learning as sweet as a ripe banana!
+              We make STEM feel like an arcade—learn by playing.
             </p>
           </motion.div>
 
@@ -175,11 +339,11 @@ export default function Landing() {
           <PixelCard variant="orange" className="text-center">
             <div className="p-12">
               <h2 className="text-4xl font-bold text-yellow-300 mb-4" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
-                Ready to Go Bananas for Learning?
+                Ready to Level Up Your Learning?
               </h2>
               
               <p className="text-xl text-white mb-8" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
-                Join thousands of students and teachers in our pixelated learning universe!
+                Join students and teachers in our retro arcade learning universe!
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
