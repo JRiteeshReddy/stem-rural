@@ -75,7 +75,7 @@ export default function Tests() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-200 via-orange-200 to-yellow-300">
+    <div className="min-h-screen bg-transparent">
       <GlobalHeader />
       <main className="max-w-6xl mx-auto p-6">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">

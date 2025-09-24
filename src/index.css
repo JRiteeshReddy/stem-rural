@@ -42,84 +42,109 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/* BANANA THEME - Pixelated 8-bit Retro Colors */
+/* RETRO ARCADE THEME - Pixel sky + grass */
 :root {
-  --radius: 0rem; /* Sharp pixelated edges */
-  --background: oklch(0.98 0.05 85); /* Light banana cream */
-  --foreground: oklch(0.15 0 0); /* Dark brown/black */
-  --card: oklch(0.95 0.08 85); /* Banana white */
-  --card-foreground: oklch(0.15 0 0);
-  --popover: oklch(0.95 0.08 85);
-  --popover-foreground: oklch(0.15 0 0);
-  --primary: oklch(0.75 0.15 85); /* Banana yellow */
-  --primary-foreground: oklch(0.15 0 0);
-  --secondary: oklch(0.85 0.12 65); /* Orange accent */
-  --secondary-foreground: oklch(0.15 0 0);
-  --muted: oklch(0.92 0.06 85);
+  --radius: 0rem;
+
+  /* Neutral foreground */
+  --foreground: oklch(0.15 0 0);
+
+  /* UI surfaces use semi-transparent neutrals so the background image subtly shows through */
+  --background: oklch(0.98 0 0 / 0.85);
+  --card: oklch(0.98 0 0 / 0.9);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.98 0 0 / 0.9);
+  --popover-foreground: var(--foreground);
+
+  /* Primary = sky blue, Secondary = grass green, Accents = darker teal */
+  --primary: oklch(0.78 0.12 230);
+  --primary-foreground: var(--foreground);
+  --secondary: oklch(0.72 0.15 150);
+  --secondary-foreground: var(--foreground);
+  --accent: oklch(0.7 0.1 200);
+  --accent-foreground: var(--foreground);
+
+  /* Borders and inputs lightly tinted */
+  --muted: oklch(0.94 0 0 / 0.75);
   --muted-foreground: oklch(0.45 0 0);
-  --accent: oklch(0.85 0.12 65);
-  --accent-foreground: oklch(0.15 0 0);
-  --destructive: oklch(0.65 0.2 25); /* Red for errors */
-  --border: oklch(0.8 0.1 85);
-  --input: oklch(0.9 0.08 85);
-  --ring: oklch(0.7 0.15 85);
-  --chart-1: oklch(0.75 0.15 85);
-  --chart-2: oklch(0.85 0.12 65);
-  --chart-3: oklch(0.65 0.1 45);
-  --chart-4: oklch(0.8 0.08 105);
-  --chart-5: oklch(0.7 0.12 125);
-  --sidebar: oklch(0.95 0.08 85);
-  --sidebar-foreground: oklch(0.15 0 0);
-  --sidebar-primary: oklch(0.75 0.15 85);
-  --sidebar-primary-foreground: oklch(0.15 0 0);
-  --sidebar-accent: oklch(0.85 0.12 65);
-  --sidebar-accent-foreground: oklch(0.15 0 0);
-  --sidebar-border: oklch(0.8 0.1 85);
-  --sidebar-ring: oklch(0.7 0.15 85);
+  --destructive: oklch(0.6 0.2 25);
+  --border: oklch(0.85 0.03 230);
+  --input: oklch(0.92 0.02 230);
+  --ring: oklch(0.7 0.06 230);
+
+  /* Charts */
+  --chart-1: oklch(0.78 0.12 230); /* sky */
+  --chart-2: oklch(0.72 0.15 150); /* grass */
+  --chart-3: oklch(0.68 0.08 40);  /* soil */
+  --chart-4: oklch(0.74 0.10 270); /* dusk violet */
+  --chart-5: oklch(0.7 0.12 200);  /* teal */
+
+  /* Sidebar */
+  --sidebar: oklch(0.98 0 0 / 0.9);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--foreground);
+  --sidebar-accent: var(--secondary);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
 }
 
+/* Dark mode keeps the same art but darkens surfaces */
 .dark {
-  --background: oklch(0.12 0.02 85); /* Dark banana brown */
-  --foreground: oklch(0.95 0.05 85); /* Light banana */
-  --card: oklch(0.18 0.03 85);
-  --card-foreground: oklch(0.95 0.05 85);
-  --popover: oklch(0.18 0.03 85);
-  --popover-foreground: oklch(0.95 0.05 85);
-  --primary: oklch(0.8 0.15 85); /* Bright banana */
-  --primary-foreground: oklch(0.12 0.02 85);
-  --secondary: oklch(0.25 0.05 85);
-  --secondary-foreground: oklch(0.95 0.05 85);
-  --muted: oklch(0.25 0.05 85);
-  --muted-foreground: oklch(0.65 0.05 85);
-  --accent: oklch(0.25 0.05 85);
-  --accent-foreground: oklch(0.95 0.05 85);
-  --destructive: oklch(0.7 0.2 25);
-  --border: oklch(0.25 0.05 85);
-  --input: oklch(0.25 0.05 85);
-  --ring: oklch(0.6 0.1 85);
-  --chart-1: oklch(0.8 0.15 85);
-  --chart-2: oklch(0.7 0.12 65);
-  --chart-3: oklch(0.6 0.1 45);
-  --chart-4: oklch(0.75 0.08 105);
-  --chart-5: oklch(0.65 0.12 125);
-  --sidebar: oklch(0.18 0.03 85);
-  --sidebar-foreground: oklch(0.95 0.05 85);
-  --sidebar-primary: oklch(0.8 0.15 85);
-  --sidebar-primary-foreground: oklch(0.12 0.02 85);
-  --sidebar-accent: oklch(0.25 0.05 85);
-  --sidebar-accent-foreground: oklch(0.95 0.05 85);
-  --sidebar-border: oklch(0.25 0.05 85);
-  --sidebar-ring: oklch(0.6 0.1 85);
+  --background: oklch(0.1 0.02 240 / 0.9);
+  --foreground: oklch(0.96 0.03 240);
+
+  --card: oklch(0.14 0.02 240 / 0.9);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.14 0.02 240 / 0.9);
+  --popover-foreground: var(--foreground);
+
+  --primary: oklch(0.78 0.12 230);
+  --primary-foreground: oklch(0.12 0.02 240);
+  --secondary: oklch(0.72 0.15 150);
+  --secondary-foreground: var(--foreground);
+  --accent: oklch(0.7 0.1 200);
+  --accent-foreground: var(--foreground);
+
+  --muted: oklch(0.2 0.02 240 / 0.7);
+  --muted-foreground: oklch(0.75 0.02 240);
+  --destructive: oklch(0.72 0.2 25);
+  --border: oklch(0.22 0.02 240);
+  --input: oklch(0.22 0.02 240);
+  --ring: oklch(0.6 0.06 230);
+
+  --chart-1: oklch(0.78 0.12 230);
+  --chart-2: oklch(0.72 0.15 150);
+  --chart-3: oklch(0.68 0.08 40);
+  --chart-4: oklch(0.74 0.10 270);
+  --chart-5: oklch(0.7 0.12 200);
+
+  --sidebar: oklch(0.14 0.02 240 / 0.9);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--foreground);
+  --sidebar-accent: var(--secondary);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    image-rendering: pixelated; /* Pixelated rendering for retro feel */
+    image-rendering: pixelated;
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Courier New', monospace; /* Retro monospace font */
+    font-family: 'Courier New', monospace;
+
+    /* Retro pixel sky background */
+    background-image: url("https://harmless-tapir-303.convex.cloud/api/storage/9a9ef4b3-3db4-472f-9899-af268ab4dcb1");
+    background-size: cover;
+    background-position: center top;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
   }
   button:not([disabled]),
   [role="button"]:not([disabled]) {

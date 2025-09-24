@@ -53,7 +53,7 @@ export default function Dashboard() {
   const isStudent = user.role === "student";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-200 via-orange-200 to-yellow-300">
+    <div className="min-h-screen bg-transparent">
       <GlobalHeader />
       
       <main className="max-w-7xl mx-auto p-6">
