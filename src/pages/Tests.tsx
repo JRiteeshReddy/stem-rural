@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { useLocation } from "react-router";
 import { toast } from "sonner";
+import { useRef } from "react";
 
 type TestDoc = ReturnType<typeof useQuery<typeof api.tests.getPublishedTests>> extends (infer T)[] | undefined ? T : any;
 
@@ -27,6 +28,7 @@ export default function Tests() {
   const tests = useQuery(api.tests.getPublishedTests);
   const submitTest = useMutation(api.tests.submitTest);
   const addCredits = useConvexMutation(api.users.addCredits);
+  const addCreditsBiocell = useMutation(api.users.addCredits);
 
   const [openId, setOpenId] = useState<string | null>(null);
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -891,14 +893,444 @@ export default function Tests() {
       </div>
     </div>
   )}
-  // ... keep existing code (rest of component and helper functions)
 
-  
+  // Add Cell Defender (Biology) game state
+  const [biocellOverlay, setBiocellOverlay] = useState(false);
+  const [biocellScore, setBiocellScore] = useState(0);
+  const [biocellLevel, setBiocellLevel] = useState(1);
+  const [biocellBaseHealth, setBiocellBaseHealth] = useState(100);
+  const [biocellFireRate, setBiocellFireRate] = useState(1);
+  const [biocellBuffActive, setBiocellBuffActive] = useState(false);
+  const [biocellDefeated, setBiocellDefeated] = useState(0);
+
+  // Add: URL params handler
+  // Only auto-open Biology mini-game from URL; do not reference other overlays here
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const game = params.get("game");
+    if (game === "biocell") {
+      setBiocellOverlay(true);
+    }
+  }, []);
+
+  // Cell Defender Game Component
+  const CellDefenderGame = () => {
+    const gameRef = useRef<HTMLDivElement>(null);
+    const [gameState, setGameState] = useState({
+      player: { x: 50, y: 250 },
+      enemies: [] as Array<{
+        id: number;
+        x: number;
+        y: number;
+        type: 'virus' | 'bacteria' | 'toxin';
+        label: string;
+        hp: number;
+        maxHp: number;
+        speed: number;
+      }>,
+      projectiles: [] as Array<{ id: number; x: number; y: number }>,
+      facts: [] as Array<{ id: number; x: number; y: number; text: string; opacity: number }>,
+      powerups: [] as Array<{ id: number; x: number; y: number; type: 'vaccine' }>,
+      paused: false,
+    });
+
+    const keysRef = useRef<Set<string>>(new Set());
+    const gameLoopRef = useRef<number | null>(null);
+    const lastSpawnRef = useRef(0);
+    const nextEnemyIdRef = useRef(1);
+    const nextProjectileIdRef = useRef(1);
+    const nextFactIdRef = useRef(1);
+    const nextPowerupIdRef = useRef(1);
+    const buffTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const enemyTypes: {
+      virus: { hp: number; speed: number; labels: string[] };
+      bacteria: { hp: number; speed: number; labels: string[] };
+      toxin: { hp: number; speed: number; labels: string[] };
+    } = {
+      virus: { hp: 2, speed: 3, labels: ['Influenza', 'Rhinovirus', 'COVID-19'] },
+      bacteria: { hp: 4, speed: 2, labels: ['E. coli', 'Salmonella', 'Streptococcus'] },
+      toxin: { hp: 6, speed: 1, labels: ['Toxin', 'Poison', 'Venom'] },
+    };
+
+    const facts = [
+      "WBCs engulf bacteria by phagocytosis!",
+      "Antibodies neutralize viruses!",
+      "T-cells remember past infections!",
+      "Macrophages are cellular vacuum cleaners!",
+      "Vaccines train your immune system!",
+      "Fever helps fight infections!",
+    ];
+
+    const spawnEnemy = () => {
+      const types = Object.keys(enemyTypes) as Array<keyof typeof enemyTypes>;
+      const availableTypes: Array<keyof typeof enemyTypes> =
+        biocellLevel === 1 ? (['virus', 'bacteria'] as Array<keyof typeof enemyTypes>) : types;
+      const type: keyof typeof enemyTypes =
+        availableTypes[Math.floor(Math.random() * availableTypes.length)];
+      const config = enemyTypes[type];
+      const label = config.labels[Math.floor(Math.random() * config.labels.length)];
+      
+      // Use lanes to prevent overlap
+      const lanes = [100, 150, 200, 250, 300, 350, 400];
+      const y = lanes[Math.floor(Math.random() * lanes.length)];
+
+      const enemy = {
+        id: nextEnemyIdRef.current++,
+        x: 800,
+        y,
+        type,
+        label,
+        hp: config.hp,
+        maxHp: config.hp,
+        speed: config.speed * (1 + biocellLevel * 0.2),
+      };
+
+      setGameState(prev => ({
+        ...prev,
+        enemies: [...prev.enemies, enemy],
+      }));
+    };
+
+    const spawnPowerup = () => {
+      if (Math.random() < 0.1) { // 10% chance
+        const powerup = {
+          id: nextPowerupIdRef.current++,
+          x: 700,
+          y: 100 + Math.random() * 400,
+          type: 'vaccine' as const,
+        };
+        setGameState(prev => ({
+          ...prev,
+          powerups: [...prev.powerups, powerup],
+        }));
+      }
+    };
+
+    const fireProjectile = () => {
+      const projectile = {
+        id: nextProjectileIdRef.current++,
+        x: gameState.player.x + 20,
+        y: gameState.player.y + 10,
+      };
+      setGameState(prev => ({
+        ...prev,
+        projectiles: [...prev.projectiles, projectile],
+      }));
+    };
+
+    const addFact = (x: number, y: number) => {
+      const fact = {
+        id: nextFactIdRef.current++,
+        x,
+        y,
+        text: facts[Math.floor(Math.random() * facts.length)],
+        opacity: 1,
+      };
+      setGameState(prev => ({
+        ...prev,
+        facts: [...prev.facts, fact],
+      }));
+    };
+
+    const gameLoop = () => {
+      if (gameState.paused) return;
+
+      const now = Date.now();
+      const spawnInterval = Math.max(1000, 3000 - biocellLevel * 200);
+
+      // Spawn enemies
+      if (now - lastSpawnRef.current > spawnInterval && gameState.enemies.length < 20) {
+        spawnEnemy();
+        if (Math.random() < 0.3) spawnPowerup();
+        lastSpawnRef.current = now;
+      }
+
+      setGameState(prev => {
+        let newState = { ...prev };
+
+        // Move player
+        const moveSpeed = 4;
+        if (keysRef.current.has('ArrowUp') || keysRef.current.has('KeyW')) {
+          newState.player.y = Math.max(50, newState.player.y - moveSpeed);
+        }
+        if (keysRef.current.has('ArrowDown') || keysRef.current.has('KeyS')) {
+          newState.player.y = Math.min(450, newState.player.y + moveSpeed);
+        }
+        if (keysRef.current.has('ArrowLeft') || keysRef.current.has('KeyA')) {
+          newState.player.x = Math.max(20, newState.player.x - moveSpeed);
+        }
+        if (keysRef.current.has('ArrowRight') || keysRef.current.has('KeyD')) {
+          newState.player.x = Math.min(750, newState.player.x + moveSpeed);
+        }
+
+        // Move enemies
+        newState.enemies = newState.enemies.map(enemy => ({
+          ...enemy,
+          x: enemy.x - enemy.speed,
+        }));
+
+        // Check enemies reaching base
+        const reachedBase = newState.enemies.filter(e => e.x <= 0);
+        if (reachedBase.length > 0) {
+          setBiocellBaseHealth(prev => Math.max(0, prev - reachedBase.length * 10));
+          newState.enemies = newState.enemies.filter(e => e.x > 0);
+        }
+
+        // Move projectiles
+        newState.projectiles = newState.projectiles.map(proj => ({
+          ...proj,
+          x: proj.x + 8,
+        })).filter(proj => proj.x < 850);
+
+        // Move powerups
+        newState.powerups = newState.powerups.map(powerup => ({
+          ...powerup,
+          x: powerup.x - 2,
+        })).filter(powerup => powerup.x > -50);
+
+        // Collision detection - projectiles vs enemies
+        newState.projectiles.forEach(proj => {
+          newState.enemies.forEach(enemy => {
+            if (
+              proj.x < enemy.x + 30 &&
+              proj.x + 10 > enemy.x &&
+              proj.y < enemy.y + 30 &&
+              proj.y + 5 > enemy.y
+            ) {
+              enemy.hp -= 1;
+              newState.projectiles = newState.projectiles.filter(p => p.id !== proj.id);
+            }
+          });
+        });
+
+        // Remove dead enemies and add facts
+        const deadEnemies = newState.enemies.filter(e => e.hp <= 0);
+        deadEnemies.forEach(enemy => {
+          addFact(enemy.x, enemy.y);
+          setBiocellScore(prev => prev + 10);
+          setBiocellDefeated(prev => prev + 1);
+        });
+        newState.enemies = newState.enemies.filter(e => e.hp > 0);
+
+        // Player collision with powerups
+        newState.powerups.forEach(powerup => {
+          if (
+            newState.player.x < powerup.x + 20 &&
+            newState.player.x + 20 > powerup.x &&
+            newState.player.y < powerup.y + 20 &&
+            newState.player.y + 20 > powerup.y
+          ) {
+            setBiocellFireRate(2);
+            setBiocellBuffActive(true);
+            if (buffTimeoutRef.current) clearTimeout(buffTimeoutRef.current);
+            buffTimeoutRef.current = setTimeout(() => {
+              setBiocellFireRate(1);
+              setBiocellBuffActive(false);
+            }, 10000);
+            newState.powerups = newState.powerups.filter(p => p.id !== powerup.id);
+          }
+        });
+
+        // Fade facts
+        newState.facts = newState.facts.map(fact => ({
+          ...fact,
+          opacity: fact.opacity - 0.02,
+          y: fact.y - 1,
+        })).filter(fact => fact.opacity > 0);
+
+        return newState;
+      });
+
+      gameLoopRef.current = requestAnimationFrame(gameLoop);
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      keysRef.current.add(e.code);
+      if (e.code === 'Space') {
+        e.preventDefault();
+        fireProjectile();
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      keysRef.current.delete(e.code);
+    };
+
+    useEffect(() => {
+      window.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('keyup', handleKeyUp);
+      gameLoopRef.current = requestAnimationFrame(gameLoop);
+
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('keyup', handleKeyUp);
+        if (gameLoopRef.current) cancelAnimationFrame(gameLoopRef.current);
+        if (buffTimeoutRef.current) clearTimeout(buffTimeoutRef.current);
+      };
+    }, [gameState.paused]);
+
+    // Level progression
+    useEffect(() => {
+      if (biocellDefeated > 0 && biocellDefeated % 15 === 0) {
+        setBiocellLevel(prev => prev + 1);
+      }
+    }, [biocellDefeated]);
+
+    // Game over check
+    useEffect(() => {
+      if (biocellBaseHealth <= 0) {
+        setGameState(prev => ({ ...prev, paused: true }));
+        toast.error("Game Over! The infection spread!");
+        setTimeout(() => closeBiocellGame(), 2000);
+      }
+    }, [biocellBaseHealth]);
+
+    const togglePause = () => {
+      setGameState(prev => ({ ...prev, paused: !prev.paused }));
+    };
+
+    return (
+      <div
+        ref={gameRef}
+        className="relative w-full h-full overflow-hidden"
+        style={{
+          background: 'linear-gradient(90deg, #8B0000 0%, #DC143C 50%, #8B0000 100%)',
+          backgroundSize: '20px 20px',
+          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 4px)',
+        }}
+      >
+        {/* HUD */}
+        <div className="absolute top-4 left-4 text-white font-bold z-10" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+          <div>Level: {biocellLevel}</div>
+          <div>Score: {biocellScore}</div>
+          <div>Base Health: {biocellBaseHealth}%</div>
+          <div>Defeated: {biocellDefeated}</div>
+          {biocellBuffActive && <div className="text-yellow-300">🚀 VACCINE BOOST!</div>}
+        </div>
+
+        {/* Controls */}
+        <div className="absolute top-4 right-4 flex gap-2 z-10">
+          <PixelButton size="sm" onClick={togglePause}>
+            {gameState.paused ? "Resume" : "Pause"}
+          </PixelButton>
+          <PixelButton size="sm" onClick={closeBiocellGame}>
+            Exit
+          </PixelButton>
+        </div>
+
+        {/* Player (WBC) */}
+        <div
+          className="absolute w-5 h-5 bg-white rounded-full border-2 border-blue-300 shadow-[0_0_10px_rgba(255,255,255,0.8)]"
+          style={{
+            left: gameState.player.x,
+            top: gameState.player.y,
+            transition: 'none',
+          }}
+        />
+
+        {/* Enemies */}
+        {gameState.enemies.map(enemy => (
+          <div key={enemy.id} className="absolute" style={{ left: enemy.x, top: enemy.y }}>
+            <div
+              className={`w-7 h-7 border-2 ${
+                enemy.type === 'virus' ? 'bg-green-500 border-green-700' :
+                enemy.type === 'bacteria' ? 'bg-purple-500 border-purple-700' :
+                'bg-red-500 border-red-700'
+              }`}
+              style={{ borderRadius: enemy.type === 'virus' ? '50%' : '0' }}
+            />
+            <div className="text-xs text-white font-bold mt-1" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+              {enemy.label}
+            </div>
+            <div className="w-7 h-1 bg-gray-700 mt-1">
+              <div
+                className="h-full bg-red-500"
+                style={{ width: `${(enemy.hp / enemy.maxHp) * 100}%` }}
+              />
+            </div>
+          </div>
+        ))}
+
+        {/* Projectiles */}
+        {gameState.projectiles.map(proj => (
+          <div
+            key={proj.id}
+            className="absolute w-2 h-1 bg-yellow-400 border border-yellow-600"
+            style={{ left: proj.x, top: proj.y }}
+          />
+        ))}
+
+        {/* Powerups */}
+        {gameState.powerups.map(powerup => (
+          <div
+            key={powerup.id}
+            className="absolute w-4 h-4 bg-cyan-400 border-2 border-cyan-600 shadow-[0_0_8px_rgba(0,255,255,0.6)]"
+            style={{ left: powerup.x, top: powerup.y }}
+          >
+            💉
+          </div>
+        ))}
+
+        {/* Facts */}
+        {gameState.facts.map(fact => (
+          <div
+            key={fact.id}
+            className="absolute text-xs text-yellow-300 font-bold pointer-events-none"
+            style={{
+              left: fact.x,
+              top: fact.y,
+              opacity: fact.opacity,
+              fontFamily: "'Pixelify Sans', monospace",
+            }}
+          >
+            {fact.text}
+          </div>
+        ))}
+
+        {/* Instructions */}
+        <div className="absolute bottom-4 left-4 text-white text-xs" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+          <div>WASD/Arrows: Move | Space: Shoot | Collect vaccines for boost!</div>
+        </div>
+
+        {/* Pause overlay */}
+        {gameState.paused && biocellBaseHealth > 0 && (
+          <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-20">
+            <div className="text-white text-2xl font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+              PAUSED
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const closeBiocellGame = async () => {
+    setBiocellOverlay(false);
+    if (biocellScore > 0) {
+      try {
+        const creditsEarned = Math.floor(biocellDefeated / 3);
+        if (creditsEarned > 0) {
+          await addCreditsBiocell({ amount: creditsEarned });
+          toast.success(`Cell Defender complete! +${creditsEarned} XP earned!`);
+        }
+      } catch (e) {
+        toast.error("Failed to save progress");
+      }
+    }
+    // Reset game state
+    setBiocellScore(0);
+    setBiocellLevel(1);
+    setBiocellBaseHealth(100);
+    setBiocellFireRate(1);
+    setBiocellBuffActive(false);
+    setBiocellDefeated(0);
+  };
 
   return (
     <div className="min-h-screen bg-transparent">
       <GlobalHeader />
-      <main className="max-w-6xl mx-auto p-6">
+      <main className="max-w-7xl mx-auto p-6">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
           <h1 className="text-4xl font-bold text-black flex items-center gap-2" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
             <ClipboardList size={32} /> Tests
@@ -1425,6 +1857,19 @@ export default function Tests() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Cell Defender (Biology) Game Overlay */}
+        {biocellOverlay && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 bg-black/90 flex items-center justify-center z-50"
+          >
+            <div className="w-full h-full max-w-6xl max-h-[90vh] bg-black border-4 border-green-600 shadow-[0_0_20px_rgba(0,255,0,0.5)] overflow-hidden">
+              <CellDefenderGame />
+            </div>
+          </motion.div>
         )}
       </main>
     </div>

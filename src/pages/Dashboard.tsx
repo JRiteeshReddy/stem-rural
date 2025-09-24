@@ -484,8 +484,8 @@ export default function Dashboard() {
                             navigate(
                               s.key === "mathematics"
                                 ? "/tests?game=math"
-                                : s.key === "physics"
-                                ? "/tests"
+                                : s.key === "biology"
+                                ? "/tests?game=biocell"
                                 : "/tests"
                             )
                           }
