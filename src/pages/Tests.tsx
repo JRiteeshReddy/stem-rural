@@ -126,8 +126,8 @@ export default function Tests() {
     const interval = setInterval(() => {
       setTick((t) => t + 1);
       setZombies((prev) => {
-        // move zombies (now move right)
-        const moved = prev.map((z) => ({ ...z, x: z.x + (speedBase + Math.min(0.6, gameScore * 0.02)) }));
+        // move zombies (now move left towards player on left)
+        const moved = prev.map((z) => ({ ...z, x: z.x - (speedBase + Math.min(0.6, gameScore * 0.02)) }));
         return moved;
       });
       // spawn based on time and score
@@ -137,8 +137,8 @@ export default function Tests() {
         const { eq, ans } = genEquation(Math.max(1, Math.floor(gameScore / 3) + 1));
         const ySlots = [10, 25, 40, 55, 70, 85];
         const y = ySlots[Math.floor(Math.random() * ySlots.length)];
-        // start from left now
-        const z: Zombie = { id: crypto.randomUUID(), x: 4, y, eq, ans };
+        // start from right now
+        const z: Zombie = { id: crypto.randomUUID(), x: 96, y, eq, ans };
         return [...prev, z];
       });
     }, 250);
@@ -148,7 +148,7 @@ export default function Tests() {
   // Add: loss detection to right side
   useEffect(() => {
     if (!gameOpen || gameOver) return;
-    const hit = zombies.some((z) => z.x >= 94); // reaches player on right side
+    const hit = zombies.some((z) => z.x <= 6); // reaches player on left side
     if (hit) {
       setGameOver(true);
       (async () => {
@@ -775,9 +775,9 @@ export default function Tests() {
               <div className="relative flex-1 overflow-hidden">
                 {/* Player (middle-right) */}
                 <motion.div
-                  initial={{ opacity: 0, x: 10 }}
+                  initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-16"
+                  className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-16"
                   style={{ imageRendering: "pixelated" }}
                   title="Player"
                 >
