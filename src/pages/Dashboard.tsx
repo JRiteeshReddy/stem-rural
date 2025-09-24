@@ -172,14 +172,9 @@ export default function Dashboard() {
   // Derive pseudo-dynamic progress from available user stats
   const baseTests = (user.totalTestsCompleted || 0);
   const baseCredits = (user.credits || 0);
+  // Force all subject progress to 0% and Level 1 (progress now tied to course completion, not games)
   const subjectsWithProgress = subjectList.map((s) => {
-    // Start at 0% until any measurable progress exists
-    const hasProgress = baseTests > 0 || baseCredits > 0;
-    const pct = hasProgress
-      ? Math.min(100, baseTests * 12 + Math.floor(baseCredits / 3))
-      : 0;
-    const level = hasProgress ? Math.max(1, Math.floor(pct / 20) + 1) : 1;
-    return { ...s, pct, level };
+    return { ...s, pct: 0, level: 1 };
   });
 
   // Simple achievement rules using credits/tests
