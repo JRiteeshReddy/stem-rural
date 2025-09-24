@@ -137,6 +137,229 @@ export default function Tests() {
     }
   }, [location.search]);
 
+  // ========================
+  // Chemistry Game: Periodic Pixel Quest
+  // ========================
+  // State
+  const [chemOpen, setChemOpen] = useState(false);
+  const [chemOver, setChemOver] = useState(false);
+  const [chemScore, setChemScore] = useState(0);
+  const [chemLevel, setChemLevel] = useState(1);
+  const [chemLives, setChemLives] = useState(3);
+  const [containerX, setContainerX] = useState(50); // 0-100%
+  type Falling = { id: string; symbol: string; x: number; y: number; vx: number };
+  const [falling, setFalling] = useState<Falling[]>([]);
+  const [targetKey, setTargetKey] = useState<string>("H2O");
+  const [collected, setCollected] = useState<Record<string, number>>({});
+  const [chemTick, setChemTick] = useState(0);
+
+  // Level → target pool
+  const levelTargets: Record<number, Array<string>> = {
+    1: ["H2O", "NaCl", "CO2"],
+    2: ["NH3", "H2SO4"],
+    3: ["CH4", "CaCO3"],
+    4: ["C6H12O6"],
+  };
+
+  // Formula map
+  const parseFormulaToCounts = (formula: string): Record<string, number> => {
+    // e.g. "H2SO4" -> { H: 2, S: 1, O: 4 }
+    const counts: Record<string, number> = {};
+    const regex = /([A-Z][a-z]?)(\d*)/g;
+    let m: RegExpExecArray | null;
+    while ((m = regex.exec(formula)) !== null) {
+      const sym = m[1];
+      const num = m[2] ? Number(m[2]) : 1;
+      counts[sym] = (counts[sym] || 0) + num;
+    }
+    return counts;
+  };
+
+  const targetCounts = useMemo(() => parseFormulaToCounts(targetKey), [targetKey]);
+
+  const formatFormula = (formula: string) => {
+    const parts = [...formula.matchAll(/([A-Z][a-z]?)(\d*)/g)];
+    return (
+      <span>
+        {parts.map(([_, sym, num], idx) => (
+          <span key={idx}>
+            {sym}
+            {num ? <sub className="align-baseline">{num}</sub> : null}
+          </span>
+        ))}
+      </span>
+    );
+  };
+
+  const startChemGame = () => {
+    setChemOpen(true);
+    setChemOver(false);
+    setChemScore(0);
+    setChemLevel(1);
+    setChemLives(3);
+    setFalling([]);
+    setCollected({});
+    setChemTick(0);
+    const pool = levelTargets[1];
+    setTargetKey(pool[Math.floor(Math.random() * pool.length)]);
+  };
+
+  // Keyboard controls for container
+  useEffect(() => {
+    if (!chemOpen || chemOver) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") {
+        setContainerX((x) => Math.max(2, x - 6));
+      } else if (e.key === "ArrowRight") {
+        setContainerX((x) => Math.min(98, x + 6));
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [chemOpen, chemOver]);
+
+  // Spawning + falling loop
+  useEffect(() => {
+    if (!chemOpen || chemOver) return;
+    const speed = 0.8 + Math.min(1.4, chemLevel * 0.2); // falling speed factor
+    const spawnChance = Math.min(0.25 + chemLevel * 0.05, 0.6);
+    const possibleSymbols = Array.from(
+      new Set([
+        ...Object.keys(targetCounts),
+        "H", "O", "C", "N", "Na", "Cl", "S", "Ca" // distractors and basics
+      ])
+    );
+
+    const interval = setInterval(() => {
+      setChemTick((t) => t + 1);
+      // move
+      setFalling((prev) =>
+        prev
+          .map((f) => ({ ...f, y: f.y + speed, x: f.x + f.vx }))
+          .filter((f) => f.y <= 96) // beyond this, it hits bottom (handled below)
+      );
+
+      // spawn
+      setFalling((prev) => {
+        if (prev.length > 7) return prev;
+        if (Math.random() < spawnChance) {
+          const symbol = possibleSymbols[Math.floor(Math.random() * possibleSymbols.length)];
+          const x = Math.max(8, Math.min(92, Math.random() * 100));
+          const vx = (Math.random() - 0.5) * 0.4; // slight drift
+          const drop: Falling = { id: crypto.randomUUID(), symbol, x, y: 0, vx };
+          return [...prev, drop];
+        }
+        return prev;
+      });
+    }, 180);
+    return () => clearInterval(interval);
+  }, [chemOpen, chemOver, chemLevel, targetCounts]);
+
+  // Collision with container at bottom
+  useEffect(() => {
+    if (!chemOpen || chemOver) return;
+    const containerWidthPct = 18; // catch zone width
+    const left = containerX - containerWidthPct / 2;
+    const right = containerX + containerWidthPct / 2;
+    const catchY = 92;
+
+    setFalling((prev) => {
+      const survivors: Falling[] = [];
+      let caught: Falling[] = [];
+      for (const f of prev) {
+        if (f.y >= catchY && f.x >= left && f.x <= right) {
+          caught.push(f);
+        } else {
+          survivors.push(f);
+        }
+      }
+      if (caught.length) {
+        // handle catches
+        const nextCollected = { ...collected };
+        let penalty = 0;
+        for (const c of caught) {
+          const need = targetCounts[c.symbol] || 0;
+          const have = nextCollected[c.symbol] || 0;
+          if (need === 0 || have + 1 > need) {
+            // wrong or over-collected -> penalty
+            penalty += 1;
+          } else {
+            nextCollected[c.symbol] = have + 1;
+          }
+        }
+        if (penalty > 0) {
+          setChemLives((l) => Math.max(0, l - penalty));
+          // small feedback
+          toast.error(`Wrong catch! -${penalty} life${penalty > 1 ? "s" : ""}`);
+        }
+        setCollected(nextCollected);
+
+        // Check success
+        const success = Object.keys(targetCounts).every(
+          (k) => (nextCollected[k] || 0) === targetCounts[k]
+        );
+        if (success) {
+          // Award based on level and a small time bonus
+          const bonus = Math.max(0, 3 - Math.floor(chemTick / 30));
+          const gain = 2 * chemLevel + bonus;
+          setChemScore((s) => s + gain);
+          toast.success(`Compound crafted! +${gain} XP`);
+
+          // advance level and new target
+          const nextLevel = Math.min(4, chemLevel + 1);
+          setChemLevel(nextLevel);
+          setCollected({});
+          const pool = levelTargets[nextLevel] || levelTargets[4];
+          setTargetKey(pool[Math.floor(Math.random() * pool.length)]);
+          // small celebratory shake via container move
+          setContainerX((x) => Math.max(6, Math.min(94, x + (Math.random() < 0.5 ? -4 : 4))));
+        }
+      }
+      return survivors;
+    });
+  }, [chemOpen, chemOver, containerX, chemTick, collected, targetCounts, chemLevel]);
+
+  // Bottom misses reduce life
+  useEffect(() => {
+    if (!chemOpen || chemOver) return;
+    // Any falling pieces that reach beyond catch Y but not caught are filtered out in the movement loop.
+    // We also penalize when y passes 96 without being caught (simulate clutter/life loss lightly).
+    // Implement light periodic penalty if too many bypass:
+    const check = setInterval(() => {
+      // Random small chance penalty to simulate clutter buildup
+      if (Math.random() < 0.15) {
+        setChemLives((l) => Math.max(0, l - 1));
+        toast.message("Clutter overflow! -1 life");
+      }
+    }, 2000);
+    return () => clearInterval(check);
+  }, [chemOpen, chemOver]);
+
+  // Game over when lives depleted
+  useEffect(() => {
+    if (!chemOpen || chemOver) return;
+    if (chemLives <= 0) {
+      setChemOver(true);
+      (async () => {
+        try {
+          const res = await addCredits({ amount: chemScore });
+          toast.success(`Game Over! +${chemScore} XP. Rank: ${res.rank}`);
+        } catch (e) {
+          console.error(e);
+          toast.error("Failed to save score");
+        }
+      })();
+    }
+  }, [chemLives, chemOpen, chemOver, chemScore, addCredits]);
+
+  // Auto-start chemistry game via query ?game=chem
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("game") === "chem") {
+      setTimeout(() => startChemGame(), 0);
+    }
+  }, [location.search]);
+
   useEffect(() => {
     if (!isLoading) {
       if (!isAuthenticated) navigate("/auth");
@@ -198,8 +421,9 @@ export default function Tests() {
         </motion.div>
 
         {/* Add: Math Game launcher */}
-        <div className="mb-4">
+        <div className="mb-4 flex gap-3">
           <PixelButton size="sm" onClick={startGame}>Play Math Game</PixelButton>
+          <PixelButton size="sm" onClick={startChemGame}>Play Chemistry Game</PixelButton>
         </div>
 
         {!tests ? (
@@ -439,6 +663,119 @@ export default function Tests() {
                   placeholder="Answer"
                 />
                 <PixelButton size="sm" onClick={submitAnswer}>Solve</PixelButton>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Chemistry Game Overlay */}
+        {chemOpen && (
+          <div className="fixed inset-0 z-50 bg-neutral-950/95 backdrop-blur-sm border-4 border-yellow-600">
+            {/* retro grid */}
+            <div className="absolute inset-0 bg-[linear-gradient(transparent_23px,rgba(255,255,255,0.06)_24px),linear-gradient(90deg,transparent_23px,rgba(255,255,255,0.06)_24px)] bg-[length:24px_24px]"></div>
+
+            <div className="relative h-full w-full flex flex-col">
+              {/* Top bar */}
+              <div className="flex items-center justify-between px-4 py-2 bg-black/60 border-b-4 border-yellow-700">
+                <div className="flex items-center gap-3">
+                  <img src="/assets/edufun.png" alt="Logo" className="h-8" style={{ imageRendering: "pixelated" }} />
+                  <span className="text-yellow-300 font-bold" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000,-1px 0 #000,0 1px #000,0 -1px #000" }}>
+                    Chemistry — Periodic Pixel Quest
+                  </span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-yellow-300 font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                    XP: {chemScore}
+                  </span>
+                  <span className="text-yellow-300 font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                    ❤ {chemLives}
+                  </span>
+                  <span className="text-yellow-300 font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                    Lv {chemLevel}
+                  </span>
+                  <PixelButton size="sm" variant="secondary" onClick={() => { setChemOpen(false); setChemOver(false); }}>
+                    Exit
+                  </PixelButton>
+                </div>
+              </div>
+
+              {/* Target compound banner */}
+              <div className="px-4 py-2 bg-black/40 border-b-4 border-yellow-700 flex items-center justify-center">
+                <div className="text-yellow-300 font-bold text-xl" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000,-1px 0 #000,0 1px #000,0 -1px #000" }}>
+                  Craft {formatFormula(targetKey)}
+                </div>
+              </div>
+
+              {/* Game field */}
+              <div className="relative flex-1 overflow-hidden">
+                {/* Falling elements */}
+                {falling.map((f) => (
+                  <motion.div
+                    key={f.id}
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="absolute"
+                    style={{ left: `${f.x}%`, top: `${f.y}%` }}
+                  >
+                    <div
+                      className="w-10 h-10 flex items-center justify-center bg-cyan-300 border-4 border-cyan-700 text-black font-bold shadow-[0_0_10px_rgba(0,255,255,0.5)]"
+                      style={{ imageRendering: "pixelated", fontFamily: "'Pixelify Sans', monospace" }}
+                    >
+                      {f.symbol}
+                    </div>
+                  </motion.div>
+                ))}
+
+                {/* Container (catcher) */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute bottom-6"
+                  style={{ left: `calc(${containerX}% - 9rem/2)` }}
+                >
+                  <div
+                    className="w-36 h-10 bg-yellow-300 border-4 border-yellow-700 shadow-[0_0_16px_rgba(255,255,0,0.6)] flex items-center justify-center"
+                    style={{ imageRendering: "pixelated" }}
+                    title="Mixer"
+                  >
+                    MIX
+                  </div>
+                </motion.div>
+
+                {/* Success/Overlays */}
+                {chemOver && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="bg-black/80 border-4 border-yellow-700 p-6 text-center">
+                      <div className="text-3xl font-bold text-yellow-300 mb-2" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                        Game Over!
+                      </div>
+                      <div className="text-yellow-200 mb-4" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                        You earned {chemScore} XP this run.
+                      </div>
+                      <PixelButton onClick={() => { startChemGame(); }}>Play Again</PixelButton>
+                      <PixelButton variant="secondary" className="ml-2" onClick={() => { setChemOpen(false); setChemOver(false); }}>
+                        Close
+                      </PixelButton>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Bottom HUD: collected */}
+              <div className="px-4 py-3 bg-black/60 border-t-4 border-yellow-700 flex items-center gap-4 overflow-x-auto">
+                <div className="text-yellow-300 font-bold shrink-0" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                  Collected:
+                </div>
+                <div className="flex items-center gap-3">
+                  {Object.keys(targetCounts).map((sym) => (
+                    <div key={sym} className="text-yellow-200 font-bold px-2 py-1 bg-black/50 border-2 border-yellow-700" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                      {sym}: {(collected[sym] || 0)} / {targetCounts[sym]}
+                    </div>
+                  ))}
+                </div>
+                <div className="ml-auto text-yellow-200 text-xs" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                  Use ← → to move the mixer
+                </div>
               </div>
             </div>
           </div>
