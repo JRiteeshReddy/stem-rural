@@ -17,6 +17,7 @@ import Leaderboard from "./pages/Leaderboard.tsx";
 import Announcements from "./pages/Announcements.tsx";
 import Profile from "./pages/Profile.tsx";
 import ExtendedSetup from "./pages/ExtendedSetup.tsx";
+import Courses from "@/pages/Courses.tsx";
 import "./types/global.d.ts";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
@@ -62,6 +63,7 @@ createRoot(document.getElementById("root")!).render(
               <Route path="/tests" element={<Tests />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/extended-setup" element={<ExtendedSetup />} />
+              <Route path="/courses" element={<Courses />} />
               <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<AuthPage redirectAfterAuth="/role-selection" />} />
               <Route path="/role-selection" element={<RoleSelection />} />
