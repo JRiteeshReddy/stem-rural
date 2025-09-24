@@ -37,7 +37,7 @@ export function GlobalHeader() {
           onClick={() => navigate("/dashboard")}
         >
           <div className="text-4xl">📘</div>
-          <h1 className="text-2xl font-bold text-black" style={{ fontFamily: "monospace" }}>
+          <h1 className="text-2xl font-bold text-black" style={{ fontFamily: "'Press Start 2P', monospace" }}>
             STEM
           </h1>
         </motion.div>
@@ -60,7 +60,7 @@ export function GlobalHeader() {
                     ? "bg-orange-400 border-orange-600 text-black"
                     : "bg-yellow-300 border-yellow-500 text-black hover:bg-yellow-200"
                 )}
-                style={{ fontFamily: "monospace" }}
+                style={{ fontFamily: "'Press Start 2P', monospace" }}
               >
                 <Icon size={16} />
                 <span className="hidden lg:inline">{item.label}</span>
@@ -82,7 +82,7 @@ export function GlobalHeader() {
           </div>
 
           {user.role === "student" && (
-            <div className="flex items-center gap-4 text-black font-bold" style={{ fontFamily: "monospace" }}>
+            <div className="flex items-center gap-4 text-black font-bold" style={{ fontFamily: "'Press Start 2P', monospace" }}>
               <div className="flex items-center gap-1">
                 <span>💰</span>
                 <span>Credits: {user.credits || 0}</span>
@@ -95,7 +95,7 @@ export function GlobalHeader() {
           )}
 
           {user.role === "teacher" && (
-            <div className="flex items-center gap-4 text-black font-bold" style={{ fontFamily: "monospace" }}>
+            <div className="flex items-center gap-4 text-black font-bold" style={{ fontFamily: "'Press Start 2P', monospace" }}>
               <div className="flex items-center gap-1">
                 <span>📚</span>
                 <span>Courses: {user.totalCoursesCreated || 0}</span>

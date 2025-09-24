@@ -59,10 +59,10 @@ export default function RoleSelection() {
           >
             📘
           </motion.div>
-          <h1 className="text-4xl font-bold text-black mb-2" style={{ fontFamily: "monospace" }}>
+          <h1 className="text-4xl font-bold text-black mb-2" style={{ fontFamily: "'Press Start 2P', monospace" }}>
             Welcome to STEM!
           </h1>
-          <p className="text-lg text-gray-700" style={{ fontFamily: "monospace" }}>
+          <p className="text-lg text-gray-700" style={{ fontFamily: "'Press Start 2P', monospace" }}>
             Choose your role to get started
           </p>
         </div>
@@ -70,7 +70,7 @@ export default function RoleSelection() {
         <PixelCard variant="banana" className="p-6">
           <div className="space-y-6">
             <div>
-              <Label htmlFor="name" className="text-lg font-bold text-black" style={{ fontFamily: "monospace" }}>
+              <Label htmlFor="name" className="text-lg font-bold text-black" style={{ fontFamily: "'Press Start 2P', monospace" }}>
                 What's your name?
               </Label>
               <Input
@@ -84,7 +84,7 @@ export default function RoleSelection() {
             </div>
 
             <div>
-              <Label className="text-lg font-bold text-black mb-4 block" style={{ fontFamily: "monospace" }}>
+              <Label className="text-lg font-bold text-black mb-4 block" style={{ fontFamily: "'Press Start 2P', monospace" }}>
                 I am a...
               </Label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -101,10 +101,10 @@ export default function RoleSelection() {
                   >
                     <div className="text-center">
                       <GraduationCap size={48} className="mx-auto mb-3 text-black" />
-                      <h3 className="text-xl font-bold text-black" style={{ fontFamily: "monospace" }}>
+                      <h3 className="text-xl font-bold text-black" style={{ fontFamily: "'Press Start 2P', monospace" }}>
                         Teacher
                       </h3>
-                      <p className="text-sm text-gray-700 mt-2" style={{ fontFamily: "monospace" }}>
+                      <p className="text-sm text-gray-700 mt-2" style={{ fontFamily: "'Press Start 2P', monospace" }}>
                         Create courses, tests, and track student progress
                       </p>
                     </div>
@@ -124,10 +124,10 @@ export default function RoleSelection() {
                   >
                     <div className="text-center">
                       <Users size={48} className="mx-auto mb-3 text-black" />
-                      <h3 className="text-xl font-bold text-black" style={{ fontFamily: "monospace" }}>
+                      <h3 className="text-xl font-bold text-black" style={{ fontFamily: "'Press Start 2P', monospace" }}>
                         Student
                       </h3>
-                      <p className="text-sm text-gray-700 mt-2" style={{ fontFamily: "monospace" }}>
+                      <p className="text-sm text-gray-700 mt-2" style={{ fontFamily: "'Press Start 2P', monospace" }}>
                         Take courses, complete tests, and earn credits
                       </p>
                     </div>

@@ -30,10 +30,10 @@ export default function Leaderboard() {
       <GlobalHeader />
       <main className="max-w-4xl mx-auto p-6">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
-          <h1 className="text-4xl font-bold text-black flex items-center gap-2" style={{ fontFamily: "monospace" }}>
+          <h1 className="text-4xl font-bold text-black flex items-center gap-2" style={{ fontFamily: "'Press Start 2P', monospace" }}>
             <Trophy size={32} /> Leaderboard
           </h1>
-          <p className="text-gray-700" style={{ fontFamily: "monospace" }}>
+          <p className="text-gray-700" style={{ fontFamily: "'Press Start 2P', monospace" }}>
             Top students by total credits. Updates live as students earn points.
           </p>
         </motion.div>
@@ -41,11 +41,11 @@ export default function Leaderboard() {
         <PixelCard variant="orange" className="p-4">
           <div className="space-y-2">
             {!leaderboard ? (
-              <div className="text-black" style={{ fontFamily: "monospace" }}>
+              <div className="text-black" style={{ fontFamily: "'Press Start 2P', monospace" }}>
                 Loading...
               </div>
             ) : leaderboard.length === 0 ? (
-              <div className="text-black" style={{ fontFamily: "monospace" }}>
+              <div className="text-black" style={{ fontFamily: "'Press Start 2P', monospace" }}>
                 No students yet.
               </div>
             ) : (
@@ -67,19 +67,19 @@ export default function Leaderboard() {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="font-bold text-black" style={{ fontFamily: "monospace" }}>
+                      <div className="font-bold text-black" style={{ fontFamily: "'Press Start 2P', monospace" }}>
                         {s.name}
                       </div>
-                      <div className="text-xs text-black/80" style={{ fontFamily: "monospace" }}>
+                      <div className="text-xs text-black/80" style={{ fontFamily: "'Press Start 2P', monospace" }}>
                         Tests: {s.testsCompleted}
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="font-bold text-black" style={{ fontFamily: "monospace" }}>
+                    <span className="font-bold text-black" style={{ fontFamily: "'Press Start 2P', monospace" }}>
                       {s.credits} 💰
                     </span>
-                    <span className="text-xs bg-orange-300 border border-orange-500 px-2 py-0.5 text-black" style={{ fontFamily: "monospace" }}>
+                    <span className="text-xs bg-orange-300 border border-orange-500 px-2 py-0.5 text-black" style={{ fontFamily: "'Press Start 2P', monospace" }}>
                       {s.badge}
                     </span>
                     {user?.role === "teacher" && (

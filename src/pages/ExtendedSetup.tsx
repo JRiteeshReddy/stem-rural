@@ -60,10 +60,10 @@ export default function ExtendedSetup() {
       <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="max-w-2xl w-full">
         <div className="text-center mb-6">
           <div className="text-7xl mb-2">📘</div>
-          <h1 className="text-3xl font-bold text-black" style={{ fontFamily: "monospace" }}>
+          <h1 className="text-3xl font-bold text-black" style={{ fontFamily: "'Press Start 2P', monospace" }}>
             STEM — Complete Your Registration
           </h1>
-          <p className="text-gray-700" style={{ fontFamily: "monospace" }}>
+          <p className="text-gray-700" style={{ fontFamily: "'Press Start 2P', monospace" }}>
             Add your school details to finish setting up your account.
           </p>
         </div>
@@ -71,7 +71,7 @@ export default function ExtendedSetup() {
         <PixelCard variant="banana" className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label className="text-black font-bold" style={{ fontFamily: "monospace" }}>
+              <Label className="text-black font-bold" style={{ fontFamily: "'Press Start 2P', monospace" }}>
                 Registration ID
               </Label>
               <Input
@@ -83,7 +83,7 @@ export default function ExtendedSetup() {
             </div>
 
             <div className="md:col-span-1">
-              <Label className="text-black font-bold" style={{ fontFamily: "monospace" }}>
+              <Label className="text-black font-bold" style={{ fontFamily: "'Press Start 2P', monospace" }}>
                 Date of Birth
               </Label>
               <div className="border-2 border-yellow-600 p-2 bg-yellow-50">
@@ -97,7 +97,7 @@ export default function ExtendedSetup() {
             </div>
 
             <div>
-              <Label className="text-black font-bold" style={{ fontFamily: "monospace" }}>
+              <Label className="text-black font-bold" style={{ fontFamily: "'Press Start 2P', monospace" }}>
                 Gender
               </Label>
               <Select value={gender} onValueChange={(v) => setGender(v as any)}>
@@ -113,7 +113,7 @@ export default function ExtendedSetup() {
             </div>
 
             <div>
-              <Label className="text-black font-bold" style={{ fontFamily: "monospace" }}>
+              <Label className="text-black font-bold" style={{ fontFamily: "'Press Start 2P', monospace" }}>
                 Year/Class
               </Label>
               <Select value={userClass} onValueChange={(v) => setUserClass(v as any)}>
