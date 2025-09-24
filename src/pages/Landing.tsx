@@ -42,7 +42,7 @@ export default function Landing() {
             className="flex items-center gap-3"
           >
             <div className="text-4xl">📘</div>
-            <h1 className="text-2xl font-bold text-yellow-300" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
+            <h1 className="text-2xl font-bold text-white" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
               STEM
             </h1>
           </motion.div>
