@@ -214,7 +214,7 @@ export default function Tests() {
   const [mixerLevel, setMixerLevel] = useState(1);
   const [mixerLives, setMixerLives] = useState(3);
   const [mixerTargetKey, setMixerTargetKey] = useState<string>("H2O");
-  const mixerTargetCounts = useMemo(() => parseFormulaToCounts(mixerTargetKey), [mixerTargetKey]);
+  const mixerTargetCounts = useMemo(() => parseChemFormula(mixerTargetKey), [mixerTargetKey]);
   const [mixerCollected, setMixerCollected] = useState<Record<string, number>>({});
   const [mixerStartAt, setMixerStartAt] = useState<number>(Date.now());
 
@@ -344,7 +344,7 @@ export default function Tests() {
     return counts;
   };
 
-  const targetCounts = useMemo(() => parseFormulaToCounts(targetKey), [targetKey]);
+  const targetCounts = useMemo(() => parseChemFormula(targetKey), [targetKey]);
 
   const formatFormula2 = (formula: string) => {
     const parts = [...formula.matchAll(/([A-Z][a-z]?)(\d*)/g)];
