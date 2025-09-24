@@ -67,14 +67,110 @@ export default function Dashboard() {
   };
 
   // Subjects + dynamic progress derived from student activity
-  const subjectList: Array<{ key: string; label: string; icon: string }> = [
-    { key: "mathematics", label: "Mathematics", icon: "📐" },
-    { key: "physics", label: "Physics", icon: "⚛️" },
-    { key: "chemistry", label: "Chemistry", icon: "🧪" },
-    { key: "biology", label: "Biology", icon: "🌱" },
-    { key: "computer_science", label: "Computer Science", icon: "💻" },
-    { key: "robotics", label: "Robotics", icon: "🤖" },
-    { key: "astronomy", label: "Astronomy", icon: "🌌" },
+  const subjectList: Array<{
+    key: string;
+    label: string;
+    icon: string;
+    tagline: string;
+    theme: {
+      border: string; // full class string for border color
+      bg: string; // full class string for soft tinted background
+      glow: string; // css shadow glow
+      badge: string; // small badge background/border
+      playGlow: string; // play button glow
+    };
+  }> = [
+    {
+      key: "mathematics",
+      label: "Mathematics",
+      icon: "📐",
+      tagline: "Number Ninja — slice equations, master numbers",
+      theme: {
+        border: "border-yellow-700",
+        bg: "bg-yellow-900/20",
+        glow: "shadow-[0_0_16px_rgba(255,255,0,0.35)]",
+        badge: "bg-yellow-300 border-yellow-600 text-black",
+        playGlow: "shadow-[0_0_10px_rgba(255,230,0,0.7)]",
+      },
+    },
+    {
+      key: "physics",
+      label: "Physics",
+      icon: "⚛️",
+      tagline: "Gravity Dash — bend gravity, beat the level",
+      theme: {
+        border: "border-violet-700",
+        bg: "bg-violet-900/20",
+        glow: "shadow-[0_0_16px_rgba(150,120,255,0.35)]",
+        badge: "bg-violet-300 border-violet-600 text-black",
+        playGlow: "shadow-[0_0_10px_rgba(150,120,255,0.7)]",
+      },
+    },
+    {
+      key: "chemistry",
+      label: "Chemistry",
+      icon: "🧪",
+      tagline: "Element Mixer — craft the right compounds",
+      theme: {
+        border: "border-green-700",
+        bg: "bg-green-900/20",
+        glow: "shadow-[0_0_16px_rgba(0,200,120,0.35)]",
+        badge: "bg-green-300 border-green-600 text-black",
+        playGlow: "shadow-[0_0_10px_rgba(0,200,120,0.7)]",
+      },
+    },
+    {
+      key: "biology",
+      label: "Biology",
+      icon: "🌱",
+      tagline: "Cell Defender — hold the line against viruses",
+      theme: {
+        border: "border-emerald-700",
+        bg: "bg-emerald-900/20",
+        glow: "shadow-[0_0_16px_rgba(20,220,160,0.35)]",
+        badge: "bg-emerald-300 border-emerald-600 text-black",
+        playGlow: "shadow-[0_0_10px_rgba(20,220,160,0.7)]",
+      },
+    },
+    {
+      key: "computer_science",
+      label: "Computer Science",
+      icon: "💻",
+      tagline: "Code Runner — debug, escape, and deploy",
+      theme: {
+        border: "border-cyan-700",
+        bg: "bg-cyan-900/20",
+        glow: "shadow-[0_0_16px_rgba(0,200,255,0.35)]",
+        badge: "bg-cyan-300 border-cyan-600 text-black",
+        playGlow: "shadow-[0_0_10px_rgba(0,200,255,0.7)]",
+      },
+    },
+    {
+      key: "robotics",
+      label: "Robotics",
+      icon: "🤖",
+      tagline: "Bot Builder — assemble logic, complete missions",
+      theme: {
+        border: "border-rose-700",
+        bg: "bg-rose-900/20",
+        glow: "shadow-[0_0_16px_rgba(255,90,120,0.35)]",
+        badge: "bg-rose-300 border-rose-600 text-black",
+        playGlow: "shadow-[0_0_10px_rgba(255,90,120,0.7)]",
+      },
+    },
+    {
+      key: "astronomy",
+      label: "Astronomy",
+      icon: "🌌",
+      tagline: "Star Voyager — answer to fuel your voyage",
+      theme: {
+        border: "border-indigo-700",
+        bg: "bg-indigo-900/20",
+        glow: "shadow-[0_0_16px_rgba(120,140,255,0.35)]",
+        badge: "bg-indigo-300 border-indigo-600 text-black",
+        playGlow: "shadow-[0_0_10px_rgba(120,140,255,0.7)]",
+      },
+    },
   ];
 
   // Derive pseudo-dynamic progress from available user stats
@@ -276,7 +372,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Levels & Games */}
+            {/* Levels & Games — per-subject retro arcade tiles with unique looks */}
             <div className="bg-black/70 border-4 border-yellow-600 p-6 shadow-[0_0_16px_rgba(255,255,0,0.4)]">
               <h3
                 className="text-2xl font-bold text-yellow-300 mb-4"
@@ -288,22 +384,24 @@ export default function Dashboard() {
                 {subjectsWithProgress.map((s) => (
                   <div
                     key={s.key}
-                    className="p-4 border-2 border-yellow-700 bg-neutral-900/60"
+                    className={`p-4 border-2 ${s.theme.border} ${s.theme.bg} ${s.theme.glow}`}
                     style={{ fontFamily: "'Pixelify Sans', monospace" }}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2 text-yellow-200 font-bold">
-                        <span>{s.icon}</span>
+                      <div className="flex items-center gap-2 font-bold text-yellow-100">
+                        <span className="text-xl">{s.icon}</span>
                         <span>{s.label}</span>
                       </div>
-                      <div className="text-yellow-300 font-bold">Level {s.level}</div>
+                      <div className={`text-xs px-2 py-0.5 border ${s.theme.badge} font-bold`}>
+                        Level {s.level}
+                      </div>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-yellow-100 text-sm">Difficulty scales with progress</span>
+                      <span className="text-yellow-200 text-xs md:text-sm opacity-90">{s.tagline}</span>
                       <PixelButton
                         size="sm"
                         onClick={() => navigate("/tests")}
-                        className="px-3 py-1"
+                        className={`px-3 py-1 ${s.theme.playGlow}`}
                       >
                         Play
                       </PixelButton>
