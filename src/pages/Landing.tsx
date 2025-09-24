@@ -225,7 +225,7 @@ export default function Landing() {
           <p className="text-yellow-300" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
             Making education fun with a retro twist! ✨
           </p>
-          <div className="mt-4 text-sm text-yellow-300" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
+          <div className="mt-4 text-sm text-white" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
             Powered by{" "}
             <a
               href="https://vly.ai"
