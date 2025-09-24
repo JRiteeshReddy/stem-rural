@@ -219,7 +219,7 @@ export default function Announcements() {
             </div>
 
             <div className="mt-4">
-              <PixelButton onClick={handleCreate}>Post Announcement 🍌</PixelButton>
+              <PixelButton onClick={handleCreate}>Post Announcement</PixelButton>
             </div>
           </PixelCard>
         )}

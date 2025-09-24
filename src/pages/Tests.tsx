@@ -132,7 +132,12 @@ export default function Tests() {
                         {!activeTest ? null : result ? (
                           <div className="space-y-4">
                             <div className="text-center">
-                              <div className="text-6xl mb-2">📘</div>
+                              <img
+                                src="https://harmless-tapir-303.convex.cloud/api/storage/857cf0b8-f2da-411e-9ca6-f8f41d5ba695"
+                                alt="Logo"
+                                className="mx-auto mb-2"
+                                style={{ height: 56, imageRendering: "pixelated" }}
+                              />
                               <h3 className="text-2xl font-bold text-black" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
                                 Test Complete!
                               </h3>

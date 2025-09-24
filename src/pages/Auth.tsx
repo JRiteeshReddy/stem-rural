@@ -188,11 +188,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 <CardHeader className="text-center">
                   <div className="flex justify-center">
                     <img
-                      src="./logo.svg"
-                      alt="Lock Icon"
+                      src="https://harmless-tapir-303.convex.cloud/api/storage/857cf0b8-f2da-411e-9ca6-f8f41d5ba695"
+                      alt="STEM Logo"
                       width={64}
                       height={64}
                       className="rounded-lg mb-4 mt-4 cursor-pointer"
+                      style={{ imageRendering: "pixelated" }}
                       onClick={() => navigate("/")}
                     />
                   </div>

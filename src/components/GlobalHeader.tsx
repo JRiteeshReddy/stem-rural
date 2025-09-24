@@ -36,7 +36,12 @@ export function GlobalHeader() {
           className="flex items-center gap-3 cursor-pointer"
           onClick={() => navigate("/dashboard")}
         >
-          <div className="text-4xl">📘</div>
+          <img
+            src="https://harmless-tapir-303.convex.cloud/api/storage/857cf0b8-f2da-411e-9ca6-f8f41d5ba695"
+            alt="STEM Logo"
+            className="h-9 w-9 border-2 border-yellow-600"
+            style={{ imageRendering: "pixelated" }}
+          />
           <h1 className="text-2xl font-bold text-black" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
             STEM
           </h1>

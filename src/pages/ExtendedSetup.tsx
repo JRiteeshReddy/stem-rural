@@ -78,7 +78,12 @@ export default function ExtendedSetup() {
     <div className="min-h-screen bg-transparent flex items-center justify-center p-4">
       <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="max-w-2xl w-full">
         <div className="text-center mb-6">
-          <div className="text-7xl mb-2">📘</div>
+          <img
+            src="https://harmless-tapir-303.convex.cloud/api/storage/857cf0b8-f2da-411e-9ca6-f8f41d5ba695"
+            alt="Logo"
+            className="mx-auto mb-2"
+            style={{ height: 72, imageRendering: "pixelated" }}
+          />
           <h1 className="text-3xl font-bold text-black" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
             STEM — Complete Your Registration
           </h1>
