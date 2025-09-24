@@ -96,7 +96,7 @@ export default function Landing() {
             </h1>
             
             <p className="text-2xl md:text-3xl text-white mb-8 max-w-4xl mx-auto" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
-              Retro-inspired learning platform. Level up your knowledge with interactive, pixel-perfect experiences.
+              Gaming-inspired learning platform. Level up your knowledge with interactive experiences.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
