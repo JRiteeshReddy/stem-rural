@@ -10,6 +10,7 @@ export const updateProfile = mutation({
     parentsName: v.optional(v.string()),
     phoneNumber: v.optional(v.string()),
     address: v.optional(v.string()),
+    dateOfBirth: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -22,6 +23,7 @@ export const updateProfile = mutation({
     if (args.parentsName !== undefined) patch.parentsName = args.parentsName;
     if (args.phoneNumber !== undefined) patch.phoneNumber = args.phoneNumber;
     if (args.address !== undefined) patch.address = args.address;
+    if (args.dateOfBirth !== undefined) patch.dateOfBirth = args.dateOfBirth;
 
     await ctx.db.patch(user._id, patch);
     return "Profile updated";

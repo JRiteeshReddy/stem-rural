@@ -3,7 +3,6 @@ import { PixelButton } from "@/components/PixelButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation } from "convex/react";
@@ -19,6 +18,9 @@ export default function ExtendedSetup() {
 
   const [registrationId, setRegistrationId] = useState("");
   const [dob, setDob] = useState<Date | undefined>(undefined);
+  const [dobYear, setDobYear] = useState<string>("");
+  const [dobMonth, setDobMonth] = useState<string>(""); // 1-12
+  const [dobDay, setDobDay] = useState<string>("");
   const [gender, setGender] = useState<"Male" | "Female" | "Others" | "">("");
   const [userClass, setUserClass] = useState<
     "Class 6" | "Class 7" | "Class 8" | "Class 9" | "Class 10" | "Class 11" | "Class 12" | ""
@@ -34,21 +36,38 @@ export default function ExtendedSetup() {
   }, [isLoading, isAuthenticated, user, navigate]);
 
   const handleSubmit = async () => {
-    if (!registrationId.trim() || !dob || !gender || !userClass) {
+    if (!registrationId.trim() || !gender || !userClass) {
       toast.error("Please complete all fields");
+      return;
+    }
+    // Build DOB from wheels if provided
+    let dobMs: number | null = null;
+    if (dobYear && dobMonth && dobDay) {
+      const y = parseInt(dobYear, 10);
+      const m = parseInt(dobMonth, 10) - 1;
+      const d = parseInt(dobDay, 10);
+      const candidate = new Date(y, m, d);
+      if (
+        candidate.getFullYear() === y &&
+        candidate.getMonth() === m &&
+        candidate.getDate() === d
+      ) {
+        dobMs = candidate.getTime();
+      }
+    }
+    if (!dobMs) {
+      toast.error("Please select a valid Date of Birth");
       return;
     }
     try {
       await saveExtended({
         registrationId: registrationId.trim(),
-        dateOfBirth: dob.getTime(),
+        dateOfBirth: dobMs,
         gender: gender as any,
         userClass: userClass as any,
       });
       toast.success("Profile details saved!");
-      // Suggest next step
       navigate("/role-selection");
-      // If opened in a new tab, user can close it
     } catch (e) {
       console.error(e);
       toast.error("Failed to save details");
@@ -86,14 +105,56 @@ export default function ExtendedSetup() {
               <Label className="text-black font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
                 Date of Birth
               </Label>
-              <div className="border-2 border-yellow-600 p-2 bg-yellow-50">
-                <Calendar
-                  mode="single"
-                  selected={dob}
-                  onSelect={setDob}
-                  className="rounded-none"
-                />
+              <div className="grid grid-cols-3 gap-2 border-2 border-yellow-600 p-2 bg-yellow-50">
+                {/* Year */}
+                <Select value={dobYear} onValueChange={setDobYear}>
+                  <SelectTrigger className="rounded-none border-2 border-yellow-600 bg-yellow-100 h-10">
+                    <SelectValue placeholder="Year" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-64 overflow-auto">
+                    {Array.from({ length: 60 }).map((_, i) => {
+                      const year = 2020 - i; // 2020..1961
+                      return (
+                        <SelectItem key={year} value={String(year)}>
+                          {year}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+                {/* Month */}
+                <Select value={dobMonth} onValueChange={setDobMonth}>
+                  <SelectTrigger className="rounded-none border-2 border-yellow-600 bg-yellow-100 h-10">
+                    <SelectValue placeholder="Month" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-64 overflow-auto">
+                    {[
+                      ["1", "Jan"],
+                      ["2", "Feb"],
+                      ["3", "Mar"]
+                    ]}
+                  </SelectContent>
+                </Select>
+                {/* Day */}
+                <Select value={dobDay} onValueChange={setDobDay}>
+                  <SelectTrigger className="rounded-none border-2 border-yellow-600 bg-yellow-100 h-10">
+                    <SelectValue placeholder="Day" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-64 overflow-auto">
+                    {Array.from({ length: 31 }).map((_, i) => {
+                      const day = i + 1;
+                      return (
+                        <SelectItem key={day} value={String(day)}>
+                          {day}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
               </div>
+              <p className="text-xs mt-1 text-yellow-800" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                Scroll the lists like retro wheels to pick your date.
+              </p>
             </div>
 
             <div>

@@ -2,6 +2,7 @@ import { PixelCard } from "@/components/PixelCard";
 import { PixelButton } from "@/components/PixelButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/hooks/use-auth";
 import { useAction, useMutation } from "convex/react";
@@ -24,6 +25,10 @@ export default function Profile() {
   const [parentsName, setParentsName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [address, setAddress] = useState("");
+  // Add DOB wheels (prefill from user.dateOfBirth if available)
+  const [dobYear, setDobYear] = useState<string>("");
+  const [dobMonth, setDobMonth] = useState<string>("");
+  const [dobDay, setDobDay] = useState<string>("");
 
   useEffect(() => {
     if (!isLoading) {
@@ -35,12 +40,35 @@ export default function Profile() {
         setParentsName((user as any).parentsName || "");
         setPhoneNumber((user as any).phoneNumber || "");
         setAddress((user as any).address || "");
+        const dobMs = (user as any).dateOfBirth as number | undefined;
+        if (dobMs) {
+          const d = new Date(dobMs);
+          setDobYear(String(d.getFullYear()));
+          setDobMonth(String(d.getMonth() + 1));
+          setDobDay(String(d.getDate()));
+        }
       }
     }
   }, [isLoading, isAuthenticated, user, navigate]);
 
   const handleSave = async () => {
     try {
+      // Build DOB if all parts selected (optional update)
+      let dobMs: number | undefined = undefined;
+      if (dobYear && dobMonth && dobDay) {
+        const y = parseInt(dobYear, 10);
+        const m = parseInt(dobMonth, 10) - 1;
+        const d = parseInt(dobDay, 10);
+        const candidate = new Date(y, m, d);
+        if (
+          candidate.getFullYear() === y &&
+          candidate.getMonth() === m &&
+          candidate.getDate() === d
+        ) {
+          dobMs = candidate.getTime();
+        }
+      }
+
       await updateProfile({
         name: name || undefined,
         schoolName: schoolName || undefined,
@@ -48,9 +76,9 @@ export default function Profile() {
         parentsName: parentsName || undefined,
         phoneNumber: phoneNumber || undefined,
         address: address || undefined,
+        dateOfBirth: dobMs,
       });
       toast.success("Profile updated");
-      // Redirect to dashboard after successful save
       navigate("/dashboard");
     } catch (e) {
       console.error(e);
@@ -109,6 +137,67 @@ export default function Profile() {
             <div>
               <Label className="text-black font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>Phone Number</Label>
               <Input value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="border-2 border-yellow-600 rounded-none" />
+            </div>
+            <div className="md:col-span-2">
+              <Label className="text-black font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                Date of Birth
+              </Label>
+              <div className="grid grid-cols-3 gap-2">
+                <Select value={dobYear} onValueChange={setDobYear}>
+                  <SelectTrigger className="rounded-none border-2 border-yellow-600 bg-yellow-100 h-10">
+                    <SelectValue placeholder="Year" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-64 overflow-auto">
+                    {Array.from({ length: 60 }).map((_, i) => {
+                      const year = 2020 - i;
+                      return (
+                        <SelectItem key={year} value={String(year)}>
+                          {year}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+
+                <Select value={dobMonth} onValueChange={setDobMonth}>
+                  <SelectTrigger className="rounded-none border-2 border-yellow-600 bg-yellow-100 h-10">
+                    <SelectValue placeholder="Month" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-64 overflow-auto">
+                    <SelectItem value="1">Jan</SelectItem>
+                    <SelectItem value="2">Feb</SelectItem>
+                    <SelectItem value="3">Mar</SelectItem>
+                    <SelectItem value="4">Apr</SelectItem>
+                    <SelectItem value="5">May</SelectItem>
+                    <SelectItem value="6">Jun</SelectItem>
+                    <SelectItem value="7">Jul</SelectItem>
+                    <SelectItem value="8">Aug</SelectItem>
+                    <SelectItem value="9">Sep</SelectItem>
+                    <SelectItem value="10">Oct</SelectItem>
+                    <SelectItem value="11">Nov</SelectItem>
+                    <SelectItem value="12">Dec</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={dobDay} onValueChange={setDobDay}>
+                  <SelectTrigger className="rounded-none border-2 border-yellow-600 bg-yellow-100 h-10">
+                    <SelectValue placeholder="Day" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-64 overflow-auto">
+                    {Array.from({ length: 31 }).map((_, i) => {
+                      const day = i + 1;
+                      return (
+                        <SelectItem key={day} value={String(day)}>
+                          {day}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-xs mt-1 text-yellow-800" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                Spin the wheels to set your birth date.
+              </p>
             </div>
             <div className="md:col-span-2">
               <Label className="text-black font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>Address</Label>
