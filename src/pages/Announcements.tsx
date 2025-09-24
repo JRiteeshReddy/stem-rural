@@ -22,14 +22,16 @@ export default function Announcements() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 
+  // Add: compute role booleans before queries
+  const isTeacher = user?.role === "teacher";
+  const isStudent = user?.role === "student";
+
   const announcements = useQuery(api.announcements.getAnnouncements);
-  const coursesForTeacher = useQuery(api.courses.getCoursesByTeacher, user?.role === "teacher" ? {} : "skip");
+  // Fetch teacher courses; backend safely returns [] for non-teachers
+  const coursesForTeacher = useQuery(api.courses.getCoursesByTeacher);
   const createAnnouncement = useMutation(api.announcements.createAnnouncement);
   const updateAnnouncement = useMutation(api.announcements.updateAnnouncement);
   const deleteAnnouncement = useMutation(api.announcements.deleteAnnouncement);
-
-  const isTeacher = user?.role === "teacher";
-  const isStudent = user?.role === "student";
 
   // Form state (create)
   const [title, setTitle] = useState("");

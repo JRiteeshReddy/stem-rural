@@ -31,8 +31,9 @@ export const getCoursesByTeacher = query({
   args: {},
   handler: async (ctx) => {
     const user = await getCurrentUser(ctx);
+    // Return an empty list for non-teachers to avoid Unauthorized errors on pages that always subscribe.
     if (!user || user.role !== "teacher") {
-      throw new Error("Unauthorized");
+      return [];
     }
 
     return await ctx.db
