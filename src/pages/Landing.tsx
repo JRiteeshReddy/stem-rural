@@ -325,7 +325,7 @@ export default function Landing() {
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   whileHover={{ y: -10 }}
                 >
-                  <PixelCard variant="banana" className="h-full">
+                  <PixelCard variant="orange" className="h-full">
                     <div className="p-6 text-center">
                       <div className="bg-yellow-300 border-2 border-yellow-500 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                         <Icon size={32} className="text-white" />
