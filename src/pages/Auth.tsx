@@ -357,7 +357,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
 export default function AuthPage(props: AuthProps) {
   return (
-    <Suspense>
+    <Suspense fallback={null}>
       <Auth {...props} />
     </Suspense>
   );
