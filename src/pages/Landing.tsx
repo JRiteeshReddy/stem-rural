@@ -42,7 +42,7 @@ export default function Landing() {
             className="flex items-center gap-3"
           >
             <div className="text-4xl">📘</div>
-            <h1 className="text-2xl font-bold text-black" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+            <h1 className="text-2xl font-bold text-black" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
               STEM
             </h1>
           </motion.div>
@@ -95,7 +95,7 @@ export default function Landing() {
               STEM
             </h1>
             
-            <p className="text-2xl md:text-3xl text-gray-800 mb-8 max-w-4xl mx-auto" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+            <p className="text-2xl md:text-3xl text-gray-800 mb-8 max-w-4xl mx-auto" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
               Retro-inspired learning platform. Level up your knowledge with interactive, pixel-perfect experiences.
             </p>
 
@@ -111,7 +111,7 @@ export default function Landing() {
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 className="flex items-center gap-2 text-black font-bold"
-                style={{ fontFamily: "'Press Start 2P', monospace" }}
+                style={{ fontFamily: "'Pixelify Sans', monospace" }}
               >
                 <Star className="text-yellow-600" size={20} />
                 <span>Join 1000+ Happy Learners!</span>
@@ -130,10 +130,10 @@ export default function Landing() {
             transition={{ duration: 0.8 }}
             className="text-center mb-12"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-black mb-4" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+            <h2 className="text-4xl md:text-5xl font-bold text-black mb-4" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
               Why Choose STEM? 🤔
             </h2>
-            <p className="text-xl text-gray-700" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+            <p className="text-xl text-gray-700" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
               We make learning as sweet as a ripe banana!
             </p>
           </motion.div>
@@ -154,10 +154,10 @@ export default function Landing() {
                       <div className="bg-yellow-300 border-2 border-yellow-500 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                         <Icon size={32} className="text-black" />
                       </div>
-                      <h3 className="text-xl font-bold text-black mb-3" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+                      <h3 className="text-xl font-bold text-black mb-3" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
                         {feature.title}
                       </h3>
-                      <p className="text-gray-700" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+                      <p className="text-gray-700" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
                         {feature.description}
                       </p>
                     </div>
@@ -182,11 +182,11 @@ export default function Landing() {
                 🎓🍌
               </motion.div>
               
-              <h2 className="text-4xl font-bold text-black mb-4" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+              <h2 className="text-4xl font-bold text-black mb-4" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
                 Ready to Go Bananas for Learning?
               </h2>
               
-              <p className="text-xl text-gray-700 mb-8" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+              <p className="text-xl text-gray-700 mb-8" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
                 Join thousands of students and teachers in our pixelated learning universe!
               </p>
 
@@ -218,14 +218,14 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="text-3xl">📘</div>
-            <h3 className="text-xl font-bold text-black" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+            <h3 className="text-xl font-bold text-black" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
               STEM
             </h3>
           </div>
-          <p className="text-black" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+          <p className="text-black" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
             Making education fun with a retro twist! ✨
           </p>
-          <div className="mt-4 text-sm text-gray-700" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+          <div className="mt-4 text-sm text-gray-700" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
             Powered by{" "}
             <a
               href="https://vly.ai"

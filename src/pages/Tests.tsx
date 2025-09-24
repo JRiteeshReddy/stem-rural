@@ -79,16 +79,16 @@ export default function Tests() {
       <GlobalHeader />
       <main className="max-w-6xl mx-auto p-6">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
-          <h1 className="text-4xl font-bold text-black flex items-center gap-2" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+          <h1 className="text-4xl font-bold text-black flex items-center gap-2" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
             <ClipboardList size={32} /> Tests
           </h1>
-          <p className="text-gray-700" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+          <p className="text-gray-700" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
             Choose a test below. Questions are presented one at a time. Earn 1 credit per correct answer!
           </p>
         </motion.div>
 
         {!tests ? (
-          <div className="flex items-center gap-2 text-black" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+          <div className="flex items-center gap-2 text-black" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
             <Loader2 className="animate-spin" size={18} /> Loading tests...
           </div>
         ) : tests.length === 0 ? (
@@ -124,7 +124,7 @@ export default function Tests() {
                       </DialogTrigger>
                       <DialogContent className="sm:max-w-xl rounded-none border-4 border-yellow-600">
                         <DialogHeader>
-                          <DialogTitle className="text-black" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+                          <DialogTitle className="text-black" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
                             {t.title}
                           </DialogTitle>
                         </DialogHeader>
@@ -133,13 +133,13 @@ export default function Tests() {
                           <div className="space-y-4">
                             <div className="text-center">
                               <div className="text-6xl mb-2">📘</div>
-                              <h3 className="text-2xl font-bold text-black" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+                              <h3 className="text-2xl font-bold text-black" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
                                 Test Complete!
                               </h3>
-                              <p className="text-black" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+                              <p className="text-black" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
                                 Score: <b>{result.score}</b> / {result.totalPoints}
                               </p>
-                              <p className="text-black" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+                              <p className="text-black" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
                                 Credits earned: <b>{result.creditsEarned}</b>
                               </p>
                             </div>
@@ -150,16 +150,16 @@ export default function Tests() {
                         ) : (
                           <div className="space-y-4">
                             <div className="flex items-center justify-between">
-                              <span className="text-sm font-bold text-black" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+                              <span className="text-sm font-bold text-black" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
                                 Question {questionIndex + 1} / {activeTest.questions.length}
                               </span>
-                              <span className="text-sm text-black" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+                              <span className="text-sm text-black" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
                                 Total points: {activeTest.totalPoints}
                               </span>
                             </div>
 
                             <PixelCard variant="orange" className="p-4">
-                              <div className="text-black font-bold" style={{ fontFamily: "'Press Start 2P', monospace" }}>
+                              <div className="text-black font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
                                 {activeTest.questions[questionIndex].question}
                               </div>
                             </PixelCard>
@@ -179,7 +179,7 @@ export default function Tests() {
                                     <Label
                                       htmlFor={`q${questionIndex}-o${idx}`}
                                       className="text-black font-bold cursor-pointer"
-                                      style={{ fontFamily: "'Press Start 2P', monospace" }}
+                                      style={{ fontFamily: "'Pixelify Sans', monospace" }}
                                     >
                                       {opt}
                                     </Label>

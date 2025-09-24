@@ -55,7 +55,7 @@ export function PixelButton({
         )}
         style={{
           imageRendering: "pixelated",
-          fontFamily: "'Press Start 2P', monospace",
+          fontFamily: "'Pixelify Sans', monospace",
         }}
       >
         {children}
