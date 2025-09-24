@@ -4,7 +4,7 @@ import { InstrumentationProvider } from "@/instrumentation.tsx";
 import AuthPage from "@/pages/Auth.tsx";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { ConvexReactClient } from "convex/react";
-import { StrictMode, useEffect } from "react";
+import { StrictMode, useEffect, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router";
 import "./index.css";
@@ -51,18 +51,20 @@ createRoot(document.getElementById("root")!).render(
       <ConvexAuthProvider client={convex}>
         <BrowserRouter>
           <RouteSyncer />
-          <Routes>
-            <Route path="/tests" element={<Tests />} />
-            <Route path="/leaderboard" element={<Leaderboard />} />
-            <Route path="/extended-setup" element={<ExtendedSetup />} />
-            <Route path="/" element={<Landing />} />
-            <Route path="/auth" element={<AuthPage redirectAfterAuth="/role-selection" />} />
-            <Route path="/role-selection" element={<RoleSelection />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/announcements" element={<Announcements />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+            <Routes>
+              <Route path="/tests" element={<Tests />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/extended-setup" element={<ExtendedSetup />} />
+              <Route path="/" element={<Landing />} />
+              <Route path="/auth" element={<AuthPage redirectAfterAuth="/role-selection" />} />
+              <Route path="/role-selection" element={<RoleSelection />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/announcements" element={<Announcements />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
         <Toaster />
       </ConvexAuthProvider>
