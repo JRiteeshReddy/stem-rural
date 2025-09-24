@@ -174,14 +174,6 @@ export default function Landing() {
         <div className="max-w-4xl mx-auto">
           <PixelCard variant="orange" className="text-center">
             <div className="p-12">
-              <motion.div
-                animate={{ rotate: [0, 5, -5, 0] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="text-6xl mb-6"
-              >
-                🎓🍌
-              </motion.div>
-              
               <h2 className="text-4xl font-bold text-yellow-300 mb-4" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
                 Ready to Go Bananas for Learning?
               </h2>
