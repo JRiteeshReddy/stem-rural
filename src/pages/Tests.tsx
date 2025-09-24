@@ -18,6 +18,8 @@ import { toast } from "sonner";
 
 type TestDoc = ReturnType<typeof useQuery<typeof api.tests.getPublishedTests>> extends (infer T)[] | undefined ? T : any;
 
+const ENABLE_PHYSICS = false; // Disable Gravity Dash entirely
+
 export default function Tests() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -608,6 +610,7 @@ export default function Tests() {
 
   // Auto-start via query ?game=physics
   useEffect(() => {
+    if (!ENABLE_PHYSICS) return;
     const params = new URLSearchParams(location.search);
     if (params.get("game") === "physics") setTimeout(() => startPhysicsGame(), 0);
   }, [location.search]);
@@ -739,17 +742,11 @@ export default function Tests() {
     return () => clearInterval(interval);
   }, [physicsOpen, physicsOver, physicsLevel, gravity, runnerPos, addCredits, physicsScore]);
 
-  // Add a launcher button near existing game buttons
-  // ... keep existing code (UI before the small game launchers section)
-  <div className="mb-4 flex gap-3">
-    <PixelButton size="sm" onClick={startGame}>Play Math Game</PixelButton>
-    <PixelButton size="sm" onClick={startElementMixerGame}>Play Chemistry Game</PixelButton>
-    <PixelButton size="sm" onClick={startPhysicsGame}>Play Physics Game</PixelButton>
-  </div>
-  // ... keep existing code (tests list and dialogs)
+  // Removed stray physics launcher block
 
   // Physics Game Overlay
-  {physicsOpen && (
+  {/* Physics game removed */}
+  {false && (
     <div className="fixed inset-0 z-50 bg-neutral-950/95 backdrop-blur-sm border-4 border-yellow-600">
       <div className="relative h-full w-full flex flex-col">
         {/* Top bar */}
@@ -869,6 +866,8 @@ export default function Tests() {
   )}
   // ... keep existing code (rest of component and helper functions)
 
+  
+
   return (
     <div className="min-h-screen bg-transparent">
       <GlobalHeader />
@@ -886,7 +885,7 @@ export default function Tests() {
         <div className="mb-4 flex gap-3">
           <PixelButton size="sm" onClick={startGame}>Play Math Game</PixelButton>
           <PixelButton size="sm" onClick={startElementMixerGame}>Play Chemistry Game</PixelButton>
-          <PixelButton size="sm" onClick={startPhysicsGame}>Play Physics Game</PixelButton>
+          
         </div>
 
         {!tests ? (

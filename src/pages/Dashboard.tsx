@@ -372,33 +372,43 @@ export default function Dashboard() {
                 Course Levels & Games
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {subjectsWithProgress.map((s) => (
-                  <div
-                    key={s.key}
-                    className={`p-4 border-2 ${s.theme.border} ${s.theme.bg} ${s.theme.glow}`}
-                    style={{ fontFamily: "'Pixelify Sans', monospace" }}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2 font-bold text-yellow-100">
-                        <span className="text-xl">{s.icon}</span>
-                        <span>{s.label}</span>
+                {subjectsWithProgress
+                  .filter((s) => s.key !== "physics")
+                  .map((s) => (
+                    <div
+                      key={s.key}
+                      className={`p-4 border-2 ${s.theme.border} ${s.theme.bg} ${s.theme.glow}`}
+                      style={{ fontFamily: "'Pixelify Sans', monospace" }}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 font-bold text-yellow-100">
+                          <span className="text-xl">{s.icon}</span>
+                          <span>{s.label}</span>
+                        </div>
+                        <div className={`text-xs px-2 py-0.5 border ${s.theme.badge} font-bold`}>
+                          Level {s.level}
+                        </div>
                       </div>
-                      <div className={`text-xs px-2 py-0.5 border ${s.theme.badge} font-bold`}>
-                        Level {s.level}
+                      <div className="flex items-center justify-between">
+                        <span className="text-yellow-200 text-xs md:text-sm opacity-90">{s.tagline}</span>
+                        <PixelButton
+                          size="sm"
+                          onClick={() =>
+                            navigate(
+                              s.key === "mathematics"
+                                ? "/tests?game=math"
+                                : s.key === "physics"
+                                ? "/tests"
+                                : "/tests"
+                            )
+                          }
+                          className={`px-3 py-1 ${s.theme.playGlow}`}
+                        >
+                          Play
+                        </PixelButton>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-yellow-200 text-xs md:text-sm opacity-90">{s.tagline}</span>
-                      <PixelButton
-                        size="sm"
-                        onClick={() => navigate(s.key === "mathematics" ? "/tests?game=math" : s.key === "physics" ? "/tests?game=physics" : "/tests")}
-                        className={`px-3 py-1 ${s.theme.playGlow}`}
-                      >
-                        Play
-                      </PixelButton>
-                    </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             </div>
           </div>
