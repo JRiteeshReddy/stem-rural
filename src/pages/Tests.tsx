@@ -18,60 +18,6 @@ import { toast } from "sonner";
 
 type TestDoc = ReturnType<typeof useQuery<typeof api.tests.getPublishedTests>> extends (infer T)[] | undefined ? T : any;
 
-// Add hoisted helpers to avoid "before initialization" issues for Element Mixer
-function parseFormulaToCounts(formula: string): Record<string, number> {
-  const counts: Record<string, number> = {};
-  const regex = /([A-Z][a-z]?)(\d*)/g;
-  let m: RegExpExecArray | null;
-  while ((m = regex.exec(formula)) !== null) {
-    const sym = m[1];
-    const num = m[2] ? Number(m[2]) : 1;
-    counts[sym] = (counts[sym] || 0) + num;
-  }
-  return counts;
-}
-
-function formatFormula(formula: string) {
-  const parts = [...formula.matchAll(/([A-Z][a-z]?)(\d*)/g)];
-  return (
-    <span>
-      {parts.map(([_, sym, num], idx) => (
-        <span key={idx}>
-          {sym}
-          {num ? <sub className="align-baseline">{num}</sub> : null}
-        </span>
-      ))}
-    </span>
-  );
-}
-
-// Hoisted unique helpers to avoid TDZ/shadowing issues
-function parseChemFormula(formula: string): Record<string, number> {
-  const counts: Record<string, number> = {};
-  const regex = /([A-Z][a-z]?)(\d*)/g;
-  let m: RegExpExecArray | null;
-  while ((m = regex.exec(formula)) !== null) {
-    const sym = m[1];
-    const num = m[2] ? Number(m[2]) : 1;
-    counts[sym] = (counts[sym] || 0) + num;
-  }
-  return counts;
-}
-
-function formatChemFormula(formula: string) {
-  const parts = [...formula.matchAll(/([A-Z][a-z]?)(\d*)/g)];
-  return (
-    <span>
-      {parts.map(([_, sym, num], idx) => (
-        <span key={idx}>
-          {sym}
-          {num ? <sub className="align-baseline">{num}</sub> : null}
-        </span>
-      ))}
-    </span>
-  );
-}
-
 export default function Tests() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -126,7 +72,7 @@ export default function Tests() {
     const interval = setInterval(() => {
       setTick((t) => t + 1);
       setZombies((prev) => {
-        // move zombies (now move left towards player on left)
+        // move zombies
         const moved = prev.map((z) => ({ ...z, x: z.x - (speedBase + Math.min(0.6, gameScore * 0.02)) }));
         return moved;
       });
@@ -137,7 +83,6 @@ export default function Tests() {
         const { eq, ans } = genEquation(Math.max(1, Math.floor(gameScore / 3) + 1));
         const ySlots = [10, 25, 40, 55, 70, 85];
         const y = ySlots[Math.floor(Math.random() * ySlots.length)];
-        // start from right now
         const z: Zombie = { id: crypto.randomUUID(), x: 96, y, eq, ans };
         return [...prev, z];
       });
@@ -145,10 +90,10 @@ export default function Tests() {
     return () => clearInterval(interval);
   }, [gameOpen, gameOver, gameScore]);
 
-  // Add: loss detection to right side
+  // Add: loss detection
   useEffect(() => {
     if (!gameOpen || gameOver) return;
-    const hit = zombies.some((z) => z.x <= 6); // reaches player on left side
+    const hit = zombies.some((z) => z.x <= 6); // reaches player side
     if (hit) {
       setGameOver(true);
       (async () => {
@@ -215,7 +160,7 @@ export default function Tests() {
   const [mixerLevel, setMixerLevel] = useState(1);
   const [mixerLives, setMixerLives] = useState(3);
   const [mixerTargetKey, setMixerTargetKey] = useState<string>("H2O");
-  const mixerTargetCounts = useMemo(() => parseChemFormula(mixerTargetKey), [mixerTargetKey]);
+  const mixerTargetCounts = useMemo(() => parseChemFormulaCounts(mixerTargetKey), [mixerTargetKey]);
   const [mixerCollected, setMixerCollected] = useState<Record<string, number>>({});
   const [mixerStartAt, setMixerStartAt] = useState<number>(Date.now());
 
@@ -332,7 +277,7 @@ export default function Tests() {
   };
 
   // Formula map
-  const parseFormulaToCounts2 = (formula: string): Record<string, number> => {
+  function parseFormulaToCounts(formula: string): Record<string, number> {
     // e.g. "H2SO4" -> { H: 2, S: 1, O: 4 }
     const counts: Record<string, number> = {};
     const regex = /([A-Z][a-z]?)(\d*)/g;
@@ -343,11 +288,11 @@ export default function Tests() {
       counts[sym] = (counts[sym] || 0) + num;
     }
     return counts;
-  };
+  }
 
-  const targetCounts = useMemo(() => parseChemFormula(targetKey), [targetKey]);
+  const targetCounts = useMemo(() => parseChemFormulaCounts(targetKey), [targetKey]);
 
-  const formatFormula2 = (formula: string) => {
+  function formatFormula(formula: string) {
     const parts = [...formula.matchAll(/([A-Z][a-z]?)(\d*)/g)];
     return (
       <span>
@@ -359,7 +304,7 @@ export default function Tests() {
         ))}
       </span>
     );
-  };
+  }
 
   const startChemGame = () => {
     setChemOpen(true);
@@ -773,21 +718,20 @@ export default function Tests() {
 
               {/* Game field */}
               <div className="relative flex-1 overflow-hidden">
-                {/* Player (middle-right) */}
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-16"
-                  style={{ imageRendering: "pixelated" }}
-                  title="Player"
-                >
-                  <img
-                    src="https://harmless-tapir-303.convex.cloud/api/storage/7e1c7ca6-36e4-4752-865f-da24c22d7af5"
-                    alt="Hero"
-                    className="w-full h-full object-contain"
-                    style={{ imageRendering: "pixelated" }}
-                  />
-                </motion.div>
+                {/* Player (left) */}
+<motion.div
+  initial={{ opacity: 0, x: -10 }}
+  animate={{ opacity: 1, x: 0 }}
+  className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-16"
+  title="Player"
+>
+  <img
+    src="https://harmless-tapir-303.convex.cloud/api/storage/7e1c7ca6-36e4-4752-865f-da24c22d7af5"
+    alt="Hero"
+    className="w-full h-full object-contain"
+    style={{ imageRendering: "pixelated" }}
+  />
+</motion.div>
 
                 {/* Zombies */}
                 {zombies.map((z) => (
@@ -879,7 +823,7 @@ export default function Tests() {
               {/* Target compound banner */}
               <div className="px-4 py-2 bg-black/40 border-b-4 border-yellow-700 flex items-center justify-center">
                 <div className="text-yellow-300 font-bold text-xl" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000,-1px 0 #000,0 1px #000,0 -1px #000" }}>
-                  Craft {formatChemFormula(targetKey)}
+                  Craft {formatChemFormulaJSX(targetKey)}
                 </div>
               </div>
 
@@ -998,7 +942,7 @@ export default function Tests() {
                   className="text-yellow-300 font-bold text-xl"
                   style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000,-1px 0 #000,0 1px #000,0 -1px #000" }}
                 >
-                  Create {formatChemFormula(mixerTargetKey)}
+                  Create {formatChemFormulaJSX(mixerTargetKey)}
                 </div>
               </div>
 
@@ -1086,5 +1030,31 @@ export default function Tests() {
         )}
       </main>
     </div>
+  );
+}
+
+function parseChemFormulaCounts(formula: string) {
+  const counts: Record<string, number> = {};
+  const regex = /([A-Z][a-z]?)(\d*)/g;
+  let m: RegExpExecArray | null;
+  while ((m = regex.exec(formula)) !== null) {
+    const sym = m[1];
+    const num = m[2] ? Number(m[2]) : 1;
+    counts[sym] = (counts[sym] || 0) + num;
+  }
+  return counts;
+}
+
+function formatChemFormulaJSX(formula: string) {
+  const parts = [...formula.matchAll(/([A-Z][a-z]?)(\d*)/g)];
+  return (
+    <span>
+      {parts.map(([_, sym, num], idx) => (
+        <span key={idx}>
+          {sym}
+          {num ? <sub className="align-baseline">{num}</sub> : null}
+        </span>
+      ))}
+    </span>
   );
 }
