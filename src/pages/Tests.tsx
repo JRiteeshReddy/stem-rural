@@ -163,6 +163,8 @@ export default function Tests() {
   const mixerTargetCounts = useMemo(() => parseChemFormulaCounts(mixerTargetKey), [mixerTargetKey]);
   const [mixerCollected, setMixerCollected] = useState<Record<string, number>>({});
   const [mixerStartAt, setMixerStartAt] = useState<number>(Date.now());
+  // ADD: 30s session timer for Element Mixer
+  const [mixerTimeLeft, setMixerTimeLeft] = useState(30);
 
   // Start/reset Element Mixer
   const startElementMixerGame = () => {
@@ -175,7 +177,25 @@ export default function Tests() {
     const pool = mixerLevelTargets[1];
     setMixerTargetKey(pool[Math.floor(Math.random() * pool.length)]);
     setMixerStartAt(Date.now());
+    // ADD: reset timer
+    setMixerTimeLeft(30);
   };
+
+  // ADD: countdown for Element Mixer timer
+  useEffect(() => {
+    if (!elementMixerOpen || mixerOver) return;
+    const id = setInterval(() => {
+      setMixerTimeLeft((t) => {
+        if (t <= 1) {
+          clearInterval(id);
+          setMixerOver(true); // awarding is handled by existing effect on mixerOver
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [elementMixerOpen, mixerOver]);
 
   // Drag handlers
   const onDragStartTile = (e: React.DragEvent<HTMLDivElement>, symbol: string) => {
@@ -267,6 +287,8 @@ export default function Tests() {
   const [targetKey, setTargetKey] = useState<string>("H2O");
   const [collected, setCollected] = useState<Record<string, number>>({});
   const [chemTick, setChemTick] = useState(0);
+  // ADD: 30s session timer for Periodic Pixel Quest
+  const [chemTimeLeft, setChemTimeLeft] = useState(30);
 
   // Level → target pool
   const levelTargets: Record<number, Array<string>> = {
@@ -317,7 +339,34 @@ export default function Tests() {
     setChemTick(0);
     const pool = levelTargets[1];
     setTargetKey(pool[Math.floor(Math.random() * pool.length)]);
+    // ADD: reset timer
+    setChemTimeLeft(30);
   };
+
+  // ADD: countdown for Periodic Pixel Quest timer (also awards on timeout)
+  useEffect(() => {
+    if (!chemOpen || chemOver) return;
+    const id = setInterval(() => {
+      setChemTimeLeft((t) => {
+        if (t <= 1) {
+          clearInterval(id);
+          setChemOver(true);
+          (async () => {
+            try {
+              const res = await addCredits({ amount: chemScore });
+              toast.success(`Time's up! +${chemScore} XP. Rank: ${res.rank}`);
+            } catch (e) {
+              console.error(e);
+              toast.error("Failed to save score");
+            }
+          })();
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [chemOpen, chemOver, chemScore, addCredits]);
 
   // Keyboard controls for container
   useEffect(() => {
@@ -820,6 +869,10 @@ export default function Tests() {
                   </span>
                 </div>
                 <div className="flex items-center gap-4">
+                  {/* ADD: Timer */}
+                  <span className="text-yellow-300 font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                    ⏱ {chemTimeLeft}s
+                  </span>
                   <span className="text-yellow-300 font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
                     XP: {chemScore}
                   </span>
@@ -936,6 +989,10 @@ export default function Tests() {
                   </span>
                 </div>
                 <div className="flex items-center gap-4">
+                  {/* ADD: Timer */}
+                  <span className="text-yellow-300 font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                    ⏱ {mixerTimeLeft}s
+                  </span>
                   <span className="text-yellow-300 font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
                     XP: {mixerScore}
                   </span>
