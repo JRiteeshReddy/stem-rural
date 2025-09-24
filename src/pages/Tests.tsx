@@ -1086,7 +1086,7 @@ export default function Tests() {
                     src="https://harmless-tapir-303.convex.cloud/api/storage/7e1c7ca6-36e4-4752-865f-da24c22d7af5"
                     alt="Hero"
                     className="w-full h-full object-contain"
-                    style={{ imageRendering: "pixelated", transform: "scaleX(-1)" }}
+                    style={{ imageRendering: "pixelated" }}
                   />
                 </motion.div>
 
