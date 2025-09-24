@@ -45,6 +45,33 @@ function formatFormula(formula: string) {
   );
 }
 
+// Hoisted unique helpers to avoid TDZ/shadowing issues
+function parseChemFormula(formula: string): Record<string, number> {
+  const counts: Record<string, number> = {};
+  const regex = /([A-Z][a-z]?)(\d*)/g;
+  let m: RegExpExecArray | null;
+  while ((m = regex.exec(formula)) !== null) {
+    const sym = m[1];
+    const num = m[2] ? Number(m[2]) : 1;
+    counts[sym] = (counts[sym] || 0) + num;
+  }
+  return counts;
+}
+
+function formatChemFormula(formula: string) {
+  const parts = [...formula.matchAll(/([A-Z][a-z]?)(\d*)/g)];
+  return (
+    <span>
+      {parts.map(([_, sym, num], idx) => (
+        <span key={idx}>
+          {sym}
+          {num ? <sub className="align-baseline">{num}</sub> : null}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 export default function Tests() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -844,7 +871,7 @@ export default function Tests() {
               {/* Target compound banner */}
               <div className="px-4 py-2 bg-black/40 border-b-4 border-yellow-700 flex items-center justify-center">
                 <div className="text-yellow-300 font-bold text-xl" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000,-1px 0 #000,0 1px #000,0 -1px #000" }}>
-                  Craft {formatFormula(targetKey)}
+                  Craft {formatChemFormula(targetKey)}
                 </div>
               </div>
 
@@ -963,7 +990,7 @@ export default function Tests() {
                   className="text-yellow-300 font-bold text-xl"
                   style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000,-1px 0 #000,0 1px #000,0 -1px #000" }}
                 >
-                  Create {formatFormula(mixerTargetKey)}
+                  Create {formatChemFormula(mixerTargetKey)}
                 </div>
               </div>
 
