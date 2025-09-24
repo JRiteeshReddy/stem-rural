@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import { BookOpen, FileText, Trophy, Users, Plus, TrendingUp } from "lucide-react";
 import { useQuery } from "convex/react";
 import { useNavigate } from "react-router";
+import { useState } from "react";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -52,89 +53,271 @@ export default function Dashboard() {
   const isTeacher = user.role === "teacher";
   const isStudent = user.role === "student";
 
+  // Add: student portal UI state and derived data
+  // Today's Goals (quest-style)
+  const [goals, setGoals] = useState<Array<{ text: string; done: boolean }>>([
+    { text: "Solve 1 Math Puzzle", done: false },
+    { text: "Complete Physics Simulation", done: false },
+    { text: "Review Chemistry Notes", done: false },
+    { text: "Practice Coding 20 min", done: false },
+  ]);
+
+  const toggleGoal = (idx: number) => {
+    setGoals((prev) => prev.map((g, i) => (i === idx ? { ...g, done: !g.done } : g)));
+  };
+
+  // Subjects + dynamic progress derived from student activity
+  const subjectList: Array<{ key: string; label: string; icon: string }> = [
+    { key: "mathematics", label: "Mathematics", icon: "📐" },
+    { key: "physics", label: "Physics", icon: "⚛️" },
+    { key: "chemistry", label: "Chemistry", icon: "🧪" },
+    { key: "biology", label: "Biology", icon: "🌱" },
+    { key: "computer_science", label: "Computer Science", icon: "💻" },
+    { key: "robotics", label: "Robotics", icon: "🤖" },
+    { key: "astronomy", label: "Astronomy", icon: "🌌" },
+  ];
+
+  // Derive pseudo-dynamic progress from available user stats
+  const baseTests = (user.totalTestsCompleted || 0);
+  const baseCredits = (user.credits || 0);
+  const subjectsWithProgress = subjectList.map((s, i) => {
+    const pct = Math.min(100, (baseTests * 12) + (i * 6) + Math.floor(baseCredits / 3));
+    const level = Math.max(1, Math.floor(pct / 20) + 1);
+    return { ...s, pct, level };
+  });
+
+  // Simple achievement rules using credits/tests
+  const achievements = [
+    { key: "math_wizard", label: "Math Wizard", icon: "🧙", earned: baseCredits >= 10 },
+    { key: "coding_hero", label: "Coding Hero", icon: "💾", earned: baseCredits >= 20 },
+    { key: "science_explorer", label: "Science Explorer", icon: "🌌", earned: baseTests >= 3 },
+    { key: "problem_solver", label: "Problem Solver", icon: "🏆", earned: baseTests >= 5 },
+    { key: "robot_master", label: "Robot Master", icon: "🤖", earned: baseCredits >= 30 },
+  ];
+
   return (
     <div className="min-h-screen bg-transparent">
       <GlobalHeader />
       
       <main className="max-w-7xl mx-auto p-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <h1 className="text-4xl font-bold text-black mb-2" style={{ fontFamily: "monospace" }}>
-            Welcome back, {user.name}! 🍌
-          </h1>
-          <p className="text-lg text-gray-700" style={{ fontFamily: "monospace" }}>
-            {isTeacher ? "Manage your courses and track student progress" : "Continue your learning journey"}
-          </p>
-        </motion.div>
+        {/* Student Portal Header (retro, neon) */}
+        {isStudent && (
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
+          >
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <h1
+                className="text-3xl md:text-4xl font-bold text-yellow-300"
+                style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1.5px 0 #000, -1.5px 0 #000, 0 1.5px #000, 0 -1.5px #000" }}
+              >
+                👾 Welcome back, {user.name || "Explorer"}!
+              </h1>
+              <div
+                className="flex items-center gap-3 bg-black/70 border-4 border-yellow-600 px-4 py-2 shadow-[0_0_12px_rgba(255,255,0,0.6)]"
+                style={{ fontFamily: "'Pixelify Sans', monospace" }}
+              >
+                <span className="text-yellow-300 text-xl">🪙</span>
+                <span className="text-yellow-300 font-bold">
+                  XP: {user.credits || 0}
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {/* Quick Stats */}
-          {isStudent && (
-            <>
-              <PixelCard variant="banana">
-                <div className="p-6 text-center">
-                  <div className="flex items-center justify-center mb-3">
-                    <Avatar className="h-16 w-16 border-2 border-yellow-600 rounded-none">
-                      <AvatarImage src={user.image || undefined} alt={user.name || "User"} />
-                      <AvatarFallback className="rounded-none bg-yellow-300 text-black">
-                        {user.name?.[0]?.toUpperCase() || "?"}
-                      </AvatarFallback>
-                    </Avatar>
+        {/* Quick Play (Student) */}
+        {isStudent && (
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <div className="bg-black/70 border-4 border-yellow-600 p-6 shadow-[0_0_16px_rgba(255,255,0,0.5)]">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div
+                  className="text-yellow-300 font-bold"
+                  style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}
+                >
+                  Ready to continue your learning quest?
+                </div>
+                <PixelButton
+                  size="lg"
+                  className="text-xl px-8 py-4"
+                  onClick={() => navigate("/tests")}
+                >
+                  🎮 Continue Your Quest
+                </PixelButton>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Student Performance + Goals */}
+        {isStudent && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            {/* Performance Dashboard */}
+            <div className="lg:col-span-2">
+              <div className="bg-black/70 border-4 border-yellow-600 p-6 shadow-[0_0_16px_rgba(255,255,0,0.4)]">
+                <h2
+                  className="text-2xl font-bold text-yellow-300 mb-4"
+                  style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}
+                >
+                  Student Performance Dashboard
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {subjectsWithProgress.map((s) => (
+                    <div
+                      key={s.key}
+                      className="bg-neutral-900/60 border-2 border-yellow-700 p-4"
+                      style={{ fontFamily: "'Pixelify Sans', monospace" }}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 text-yellow-200 font-bold">
+                          <span>{s.icon}</span>
+                          <span>{s.label}</span>
+                        </div>
+                        <span className="text-yellow-300 font-bold">{s.pct}%</span>
+                      </div>
+                      <div className="w-full h-4 bg-neutral-800 border-2 border-yellow-800 relative">
+                        <div
+                          className="h-full bg-gradient-to-r from-yellow-400 to-orange-400 shadow-[0_0_10px_rgba(255,200,0,0.8)]"
+                          style={{ width: `${s.pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Today's Goals */}
+            <div className="">
+              <div className="bg-black/70 border-4 border-yellow-600 p-6 shadow-[0_0_16px_rgba(255,255,0,0.4)]">
+                <h3
+                  className="text-xl font-bold text-yellow-300 mb-4"
+                  style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}
+                >
+                  Today's Goals
+                </h3>
+                <div className="space-y-3" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                  {goals.map((g, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => toggleGoal(idx)}
+                      className={`w-full text-left flex items-center gap-3 px-3 py-2 border-2 ${
+                        g.done
+                          ? "bg-green-600/40 border-green-700"
+                          : "bg-neutral-900/50 border-yellow-700"
+                      }`}
+                    >
+                      <span className="text-xl">{g.done ? "✔" : "✖"}</span>
+                      <span className={`text-yellow-100 ${g.done ? "line-through opacity-80" : ""}`}>
+                        {g.text}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Achievements + Levels & Games */}
+        {isStudent && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Achievements */}
+            <div className="bg-black/70 border-4 border-yellow-600 p-6 shadow-[0_0_16px_rgba(255,255,0,0.4)]">
+              <h3
+                className="text-2xl font-bold text-yellow-300 mb-4"
+                style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}
+              >
+                Achievements
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {achievements.map((a) => (
+                  <div
+                    key={a.key}
+                    className={`p-4 border-2 ${
+                      a.earned
+                        ? "bg-neutral-900/60 border-yellow-700 shadow-[0_0_14px_rgba(255,220,0,0.6)]"
+                        : "bg-neutral-800/60 border-neutral-700 grayscale opacity-80"
+                    }`}
+                    style={{ fontFamily: "'Pixelify Sans', monospace" }}
+                  >
+                    <div className="text-3xl mb-2">{a.icon}</div>
+                    <div className="text-yellow-100 font-bold">{a.label}</div>
                   </div>
-                  <label className="block">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) handleProfileImageUpload(f);
-                      }}
-                    />
-                    <PixelButton size="sm" className="mt-2">
-                      Edit Profile Picture
-                    </PixelButton>
-                  </label>
-                </div>
-              </PixelCard>
+                ))}
+              </div>
+            </div>
 
-              <PixelCard variant="banana">
-                <div className="p-6 text-center">
-                  <div className="text-4xl mb-2">💰</div>
-                  <h3 className="text-2xl font-bold text-black" style={{ fontFamily: "monospace" }}>
-                    {user.credits || 0}
-                  </h3>
-                  <p className="text-gray-700" style={{ fontFamily: "monospace" }}>Credits Earned</p>
-                </div>
-              </PixelCard>
+            {/* Levels & Games */}
+            <div className="bg-black/70 border-4 border-yellow-600 p-6 shadow-[0_0_16px_rgba(255,255,0,0.4)]">
+              <h3
+                className="text-2xl font-bold text-yellow-300 mb-4"
+                style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}
+              >
+                Course Levels & Games
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {subjectsWithProgress.map((s) => (
+                  <div
+                    key={s.key}
+                    className="p-4 border-2 border-yellow-700 bg-neutral-900/60"
+                    style={{ fontFamily: "'Pixelify Sans', monospace" }}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2 text-yellow-200 font-bold">
+                        <span>{s.icon}</span>
+                        <span>{s.label}</span>
+                      </div>
+                      <div className="text-yellow-300 font-bold">Level {s.level}</div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-yellow-100 text-sm">Difficulty scales with progress</span>
+                      <PixelButton
+                        size="sm"
+                        onClick={() => navigate("/tests")}
+                        className="px-3 py-1"
+                      >
+                        Play
+                      </PixelButton>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
-              <PixelCard variant="orange">
-                <div className="p-6 text-center">
-                  <div className="text-4xl mb-2">🏅</div>
-                  <h3 className="text-xl font-bold text-black" style={{ fontFamily: "monospace" }}>
-                    {user.rank || "Banana Sprout"}
-                  </h3>
-                  <p className="text-gray-700" style={{ fontFamily: "monospace" }}>Current Rank</p>
-                </div>
-              </PixelCard>
+        {/* Footer / Navigation (Student) */}
+        {isStudent && (
+          <div className="flex justify-center mb-4">
+            <PixelButton size="md" onClick={() => navigate("/")}>
+              🕹 Back to Arcade Lobby
+            </PixelButton>
+          </div>
+        )}
 
-              <PixelCard variant="default">
-                <div className="p-6 text-center">
-                  <div className="text-4xl mb-2">📝</div>
-                  <h3 className="text-2xl font-bold text-black" style={{ fontFamily: "monospace" }}>
-                    {user.totalTestsCompleted || 0}
-                  </h3>
-                  <p className="text-gray-700" style={{ fontFamily: "monospace" }}>Tests Completed</p>
-                </div>
-              </PixelCard>
-            </>
-          )}
+        {/* Teacher View (unchanged) */}
+        {isTeacher && (
+          <>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8"
+            >
+              <h1 className="text-4xl font-bold text-black mb-2" style={{ fontFamily: "monospace" }}>
+                Welcome back, {user.name}!
+              </h1>
+              <p className="text-lg text-gray-700" style={{ fontFamily: "monospace" }}>
+                Manage your courses and track student progress
+              </p>
+            </motion.div>
 
-          {isTeacher && (
-            <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               <PixelCard variant="banana">
                 <div className="p-6 text-center">
                   <div className="text-4xl mb-2">📚</div>
@@ -163,94 +346,92 @@ export default function Dashboard() {
                   </PixelButton>
                 </div>
               </PixelCard>
-            </>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Courses */}
-          <PixelCard variant="banana">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-black flex items-center gap-2" style={{ fontFamily: "monospace" }}>
-                  <BookOpen size={24} />
-                  Recent Courses
-                </h2>
-                <PixelButton onClick={() => navigate("/courses")} size="sm">
-                  View All
-                </PixelButton>
-              </div>
-              <div className="space-y-3">
-                {courses?.slice(0, 3).map((course) => (
-                  <motion.div
-                    key={course._id}
-                    whileHover={{ scale: 1.02 }}
-                    className="bg-yellow-300 border-2 border-yellow-500 p-3 cursor-pointer"
-                    onClick={() => navigate(`/courses/${course._id}`)}
-                  >
-                    <h3 className="font-bold text-black" style={{ fontFamily: "monospace" }}>
-                      {course.title}
-                    </h3>
-                    <p className="text-sm text-gray-700" style={{ fontFamily: "monospace" }}>
-                      by {course.teacherName}
-                    </p>
-                  </motion.div>
-                )) || (
-                  <p className="text-gray-700" style={{ fontFamily: "monospace" }}>
-                    No courses available yet
-                  </p>
-                )}
-              </div>
             </div>
-          </PixelCard>
 
-          {/* Leaderboard Preview */}
-          <PixelCard variant="orange">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-black flex items-center gap-2" style={{ fontFamily: "monospace" }}>
-                  <Trophy size={24} />
-                  Top Students
-                </h2>
-                <PixelButton onClick={() => navigate("/leaderboard")} size="sm">
-                  View All
-                </PixelButton>
-              </div>
-              <div className="space-y-2">
-                {leaderboard?.slice(0, 5).map((student, index) => (
-                  <div key={index} className="flex items-center justify-between bg-orange-200 border-2 border-orange-400 p-2">
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg">
-                        {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : "🏅"}
-                      </span>
-                      <Avatar className="h-8 w-8 border border-orange-600 rounded-none">
-                        <AvatarImage src={(student as any).image || undefined} alt={student.name} />
-                        <AvatarFallback className="rounded-none bg-orange-300 text-black">
-                          {student.name?.[0]?.toUpperCase() || "?"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="font-bold text-black" style={{ fontFamily: "monospace" }}>
-                        {student.name}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="font-bold text-black" style={{ fontFamily: "monospace" }}>
-                        {student.credits} 💰
-                      </span>
-                      <span className="text-xs bg-orange-300 border border-orange-500 px-2 py-0.5 text-black">
-                        {(student as any).badge || "Banana Sprout"}
-                      </span>
-                    </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <PixelCard variant="banana">
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold text-black flex items-center gap-2" style={{ fontFamily: "monospace" }}>
+                      <BookOpen size={24} />
+                      Recent Courses
+                    </h2>
+                    <PixelButton onClick={() => navigate("/courses")} size="sm">
+                      View All
+                    </PixelButton>
                   </div>
-                )) || (
-                  <p className="text-gray-700" style={{ fontFamily: "monospace" }}>
-                    No students on leaderboard yet
-                  </p>
-                )}
-              </div>
+                  <div className="space-y-3">
+                    {courses?.slice(0, 3).map((course) => (
+                      <motion.div
+                        key={course._id}
+                        whileHover={{ scale: 1.02 }}
+                        className="bg-yellow-300 border-2 border-yellow-500 p-3 cursor-pointer"
+                        onClick={() => navigate(`/courses/${course._id}`)}
+                      >
+                        <h3 className="font-bold text-black" style={{ fontFamily: "monospace" }}>
+                          {course.title}
+                        </h3>
+                        <p className="text-sm text-gray-700" style={{ fontFamily: "monospace" }}>
+                          by {course.teacherName}
+                        </p>
+                      </motion.div>
+                    )) || (
+                      <p className="text-gray-700" style={{ fontFamily: "monospace" }}>
+                        No courses available yet
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </PixelCard>
+
+              <PixelCard variant="orange">
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold text-black flex items-center gap-2" style={{ fontFamily: "monospace" }}>
+                      <Trophy size={24} />
+                      Top Students
+                    </h2>
+                    <PixelButton onClick={() => navigate("/leaderboard")} size="sm">
+                      View All
+                    </PixelButton>
+                  </div>
+                  <div className="space-y-2">
+                    {leaderboard?.slice(0, 5).map((student, index) => (
+                      <div key={index} className="flex items-center justify-between bg-orange-200 border-2 border-orange-400 p-2">
+                        <div className="flex items-center gap-3">
+                          <span className="text-lg">
+                            {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : "🏅"}
+                          </span>
+                          <Avatar className="h-8 w-8 border border-orange-600 rounded-none">
+                            <AvatarImage src={(student as any).image || undefined} alt={student.name} />
+                            <AvatarFallback className="rounded-none bg-orange-300 text-black">
+                              {student.name?.[0]?.toUpperCase() || "?"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-bold text-black" style={{ fontFamily: "monospace" }}>
+                            {student.name}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-black" style={{ fontFamily: "monospace" }}>
+                            {student.credits} 💰
+                          </span>
+                          <span className="text-xs bg-orange-300 border border-orange-500 px-2 py-0.5 text-black">
+                            {(student as any).badge || "Banana Sprout"}
+                          </span>
+                        </div>
+                      </div>
+                    )) || (
+                      <p className="text-gray-700" style={{ fontFamily: "monospace" }}>
+                        No students on leaderboard yet
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </PixelCard>
             </div>
-          </PixelCard>
-        </div>
+          </>
+        )}
       </main>
     </div>
   );
