@@ -80,9 +80,13 @@ export default function Dashboard() {
   // Derive pseudo-dynamic progress from available user stats
   const baseTests = (user.totalTestsCompleted || 0);
   const baseCredits = (user.credits || 0);
-  const subjectsWithProgress = subjectList.map((s, i) => {
-    const pct = Math.min(100, (baseTests * 12) + (i * 6) + Math.floor(baseCredits / 3));
-    const level = Math.max(1, Math.floor(pct / 20) + 1);
+  const subjectsWithProgress = subjectList.map((s) => {
+    // Start at 0% until any measurable progress exists
+    const hasProgress = baseTests > 0 || baseCredits > 0;
+    const pct = hasProgress
+      ? Math.min(100, baseTests * 12 + Math.floor(baseCredits / 3))
+      : 0;
+    const level = hasProgress ? Math.max(1, Math.floor(pct / 20) + 1) : 1;
     return { ...s, pct, level };
   });
 

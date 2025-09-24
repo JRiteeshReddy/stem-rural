@@ -4,10 +4,22 @@ import { useAuth } from "@/hooks/use-auth";
 import { motion } from "framer-motion";
 import { BookOpen, Trophy, Users, Zap, Star, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router";
+import { useEffect } from "react";
 
 export default function Landing() {
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect logged-in users away from homepage based on role
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (!user) return;
+    if (user.role) {
+      navigate("/dashboard");
+    } else {
+      navigate("/role-selection");
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const features = [
     {
