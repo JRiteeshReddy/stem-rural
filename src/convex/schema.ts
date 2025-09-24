@@ -2,17 +2,15 @@ import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { Infer, v } from "convex/values";
 
-// default user roles. can add / remove based on the project as needed
+// SmartBanana user roles
 export const ROLES = {
-  ADMIN: "admin",
-  USER: "user",
-  MEMBER: "member",
+  TEACHER: "teacher",
+  STUDENT: "student",
 } as const;
 
 export const roleValidator = v.union(
-  v.literal(ROLES.ADMIN),
-  v.literal(ROLES.USER),
-  v.literal(ROLES.MEMBER),
+  v.literal(ROLES.TEACHER),
+  v.literal(ROLES.STUDENT),
 );
 export type Role = Infer<typeof roleValidator>;
 
@@ -30,14 +28,79 @@ const schema = defineSchema(
       isAnonymous: v.optional(v.boolean()), // is the user anonymous. do not remove
 
       role: v.optional(roleValidator), // role of the user. do not remove
+      
+      // Student-specific fields
+      credits: v.optional(v.number()), // student credits earned
+      rank: v.optional(v.string()), // student rank/level
+      totalTestsCompleted: v.optional(v.number()),
+      
+      // Teacher-specific fields
+      totalCoursesCreated: v.optional(v.number()),
+      totalStudentsEnrolled: v.optional(v.number()),
     }).index("email", ["email"]), // index for the email. do not remove or modify
 
-    // add other tables here
+    // Courses table
+    courses: defineTable({
+      title: v.string(),
+      description: v.string(),
+      teacherId: v.id("users"),
+      isPublished: v.boolean(),
+      enrolledStudents: v.array(v.id("users")),
+      totalLessons: v.number(),
+    }).index("by_teacher", ["teacherId"])
+      .index("by_published", ["isPublished"]),
 
-    // tableName: defineTable({
-    //   ...
-    //   // table fields
-    // }).index("by_field", ["field"])
+    // Tests table
+    tests: defineTable({
+      title: v.string(),
+      description: v.string(),
+      courseId: v.optional(v.id("courses")),
+      teacherId: v.id("users"),
+      questions: v.array(v.object({
+        question: v.string(),
+        options: v.array(v.string()),
+        correctAnswer: v.number(),
+        points: v.number(),
+      })),
+      totalPoints: v.number(),
+      isPublished: v.boolean(),
+    }).index("by_teacher", ["teacherId"])
+      .index("by_course", ["courseId"])
+      .index("by_published", ["isPublished"]),
+
+    // Test Results table
+    testResults: defineTable({
+      testId: v.id("tests"),
+      studentId: v.id("users"),
+      score: v.number(),
+      totalPoints: v.number(),
+      answers: v.array(v.number()),
+      completedAt: v.number(),
+    }).index("by_test", ["testId"])
+      .index("by_student", ["studentId"])
+      .index("by_test_and_student", ["testId", "studentId"]),
+
+    // Announcements table
+    announcements: defineTable({
+      title: v.string(),
+      content: v.string(),
+      authorId: v.id("users"),
+      isGlobal: v.boolean(), // true for admin announcements, false for course-specific
+      courseId: v.optional(v.id("courses")),
+      priority: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+    }).index("by_author", ["authorId"])
+      .index("by_course", ["courseId"])
+      .index("by_global", ["isGlobal"]),
+
+    // Course Enrollments table
+    enrollments: defineTable({
+      courseId: v.id("courses"),
+      studentId: v.id("users"),
+      enrolledAt: v.number(),
+      progress: v.number(), // percentage completed
+    }).index("by_course", ["courseId"])
+      .index("by_student", ["studentId"])
+      .index("by_course_and_student", ["courseId", "studentId"]),
   },
   {
     schemaValidation: false,
