@@ -288,6 +288,21 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
               </>
             )}
           </Card>
+          {/* Small helper to jump to sign-in */}
+          <p className="mt-3 text-xs text-muted-foreground">
+            If you already created an account,{" "}
+            <Button
+              type="button"
+              variant="link"
+              className="p-0 h-auto text-xs"
+              onClick={() => {
+                setStep("signIn");
+                navigate("/auth");
+              }}
+            >
+              sign in
+            </Button>
+          </p>
         </div>
       </div>
     </div>
