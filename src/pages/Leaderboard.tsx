@@ -8,11 +8,15 @@ import { motion } from "framer-motion";
 import { Trophy } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
+import { PixelButton } from "@/components/PixelButton";
+import { useMutation } from "convex/react";
+import { toast } from "sonner";
 
 export default function Leaderboard() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const leaderboard = useQuery(api.leaderboard.getLeaderboard);
+  const deleteStudent = useMutation(api.users.deleteStudentAccount);
 
   useEffect(() => {
     if (!isLoading) {
@@ -78,6 +82,23 @@ export default function Leaderboard() {
                     <span className="text-xs bg-orange-300 border border-orange-500 px-2 py-0.5 text-black" style={{ fontFamily: "monospace" }}>
                       {s.badge}
                     </span>
+                    {user?.role === "teacher" && (
+                      <PixelButton
+                        size="sm"
+                        variant="danger"
+                        onClick={async () => {
+                          try {
+                            await deleteStudent({ targetUserId: s.userId });
+                            toast.success("Student account deleted");
+                          } catch (e) {
+                            console.error(e);
+                            toast.error("Failed to delete student");
+                          }
+                        }}
+                      >
+                        Delete
+                      </PixelButton>
+                    )}
                   </div>
                 </motion.div>
               ))

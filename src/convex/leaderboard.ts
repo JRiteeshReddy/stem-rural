@@ -15,6 +15,8 @@ export const getLeaderboard = query({
       .slice(0, 10);
 
     return sortedStudents.map((student, index) => ({
+      // include user id so teachers can manage accounts
+      userId: student._id,
       rank: index + 1,
       name: student.name || "Anonymous",
       credits: student.credits || 0,
