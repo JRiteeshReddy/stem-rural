@@ -14,6 +14,7 @@ import RoleSelection from "./pages/RoleSelection.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import Tests from "./pages/Tests.tsx";
 import Leaderboard from "./pages/Leaderboard.tsx";
+import Announcements from "./pages/Announcements.tsx";
 import "./types/global.d.ts";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
@@ -55,6 +56,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/auth" element={<AuthPage redirectAfterAuth="/role-selection" />} />
             <Route path="/role-selection" element={<RoleSelection />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/announcements" element={<Announcements />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
