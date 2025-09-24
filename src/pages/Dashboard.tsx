@@ -1,6 +1,9 @@
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { PixelButton } from "@/components/PixelButton";
 import { PixelCard } from "@/components/PixelCard";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAction, useMutation } from "convex/react";
+import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/hooks/use-auth";
 import { motion } from "framer-motion";
@@ -15,6 +18,26 @@ export default function Dashboard() {
   const courses = useQuery(api.courses.getPublishedCourses);
   const tests = useQuery(api.tests.getPublishedTests);
   const leaderboard = useQuery(api.leaderboard.getLeaderboard);
+
+  const generateUploadUrl = useAction(api.profile.generateUploadUrl);
+  const setProfileImage = useMutation(api.profileMutations.setProfileImage);
+
+  const handleProfileImageUpload = async (file: File) => {
+    try {
+      const uploadUrl = await generateUploadUrl({});
+      const res = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      const { storageId } = await res.json();
+      await setProfileImage({ fileId: storageId });
+      toast.success("Profile picture updated!");
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to update profile picture");
+    }
+  };
 
   if (!user) {
     navigate("/auth");
@@ -53,6 +76,33 @@ export default function Dashboard() {
             <>
               <PixelCard variant="banana">
                 <div className="p-6 text-center">
+                  <div className="flex items-center justify-center mb-3">
+                    <Avatar className="h-16 w-16 border-2 border-yellow-600 rounded-none">
+                      <AvatarImage src={user.image || undefined} alt={user.name || "User"} />
+                      <AvatarFallback className="rounded-none bg-yellow-300 text-black">
+                        {user.name?.[0]?.toUpperCase() || "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                  <label className="block">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleProfileImageUpload(f);
+                      }}
+                    />
+                    <PixelButton size="sm" className="mt-2">
+                      Edit Profile Picture
+                    </PixelButton>
+                  </label>
+                </div>
+              </PixelCard>
+
+              <PixelCard variant="banana">
+                <div className="p-6 text-center">
                   <div className="text-4xl mb-2">💰</div>
                   <h3 className="text-2xl font-bold text-black" style={{ fontFamily: "monospace" }}>
                     {user.credits || 0}
@@ -63,7 +113,7 @@ export default function Dashboard() {
 
               <PixelCard variant="orange">
                 <div className="p-6 text-center">
-                  <div className="text-4xl mb-2">🏆</div>
+                  <div className="text-4xl mb-2">🏅</div>
                   <h3 className="text-xl font-bold text-black" style={{ fontFamily: "monospace" }}>
                     {user.rank || "Banana Sprout"}
                   </h3>
@@ -169,15 +219,28 @@ export default function Dashboard() {
               <div className="space-y-2">
                 {leaderboard?.slice(0, 5).map((student, index) => (
                   <div key={index} className="flex items-center justify-between bg-orange-200 border-2 border-orange-400 p-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : "🏅"}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg">
+                        {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : "🏅"}
+                      </span>
+                      <Avatar className="h-8 w-8 border border-orange-600 rounded-none">
+                        <AvatarImage src={(student as any).image || undefined} alt={student.name} />
+                        <AvatarFallback className="rounded-none bg-orange-300 text-black">
+                          {student.name?.[0]?.toUpperCase() || "?"}
+                        </AvatarFallback>
+                      </Avatar>
                       <span className="font-bold text-black" style={{ fontFamily: "monospace" }}>
                         {student.name}
                       </span>
                     </div>
-                    <span className="font-bold text-black" style={{ fontFamily: "monospace" }}>
-                      {student.credits} 💰
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-black" style={{ fontFamily: "monospace" }}>
+                        {student.credits} 💰
+                      </span>
+                      <span className="text-xs bg-orange-300 border border-orange-500 px-2 py-0.5 text-black">
+                        {(student as any).badge || "Banana Sprout"}
+                      </span>
+                    </div>
                   </div>
                 )) || (
                   <p className="text-gray-700" style={{ fontFamily: "monospace" }}>

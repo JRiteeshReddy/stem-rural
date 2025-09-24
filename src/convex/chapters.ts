@@ -143,3 +143,84 @@ export const deleteChapter = mutation({
     return "Chapter deleted";
   },
 });
+
+function computeRank(credits: number): string {
+  if (credits >= 100) return "Platinum";
+  if (credits >= 80) return "Diamond";
+  if (credits >= 60) return "Gold";
+  if (credits >= 40) return "Silver";
+  if (credits >= 20) return "Bronze";
+  return "Banana Sprout";
+}
+
+// Mark a chapter as completed by a student (+1 credit, update progress & rank)
+export const completeChapter = mutation({
+  args: {
+    chapterId: v.id("chapters"),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "student") {
+      throw new Error("Unauthorized");
+    }
+
+    const chapter = await ctx.db.get(args.chapterId);
+    if (!chapter) throw new Error("Chapter not found");
+    const course = await ctx.db.get(chapter.courseId);
+    if (!course || !course.isPublished) throw new Error("Course not found or not published");
+
+    // Check if already completed
+    const existing = await ctx.db
+      .query("chapterCompletions")
+      .withIndex("by_student_and_chapter", (q) =>
+        q.eq("studentId", user._id).eq("chapterId", args.chapterId),
+      )
+      .unique();
+
+    if (existing) {
+      return "Already completed";
+    }
+
+    // Record completion
+    await ctx.db.insert("chapterCompletions", {
+      chapterId: args.chapterId,
+      courseId: chapter.courseId,
+      studentId: user._id,
+      completedAt: Date.now(),
+    });
+
+    // Update credits (+1) and rank
+    const newCredits = (user.credits || 0) + 1;
+    const newRank = computeRank(newCredits);
+    await ctx.db.patch(user._id, {
+      credits: newCredits,
+      rank: newRank,
+    });
+
+    // Update enrollment progress if enrolled
+    const enrollment = await ctx.db
+      .query("enrollments")
+      .withIndex("by_course_and_student", (q) =>
+        q.eq("courseId", chapter.courseId).eq("studentId", user._id),
+      )
+      .unique();
+
+    if (enrollment) {
+      const allChapters = await ctx.db
+        .query("chapters")
+        .withIndex("by_course", (q) => q.eq("courseId", chapter.courseId))
+        .collect();
+      const completedCount = await ctx.db
+        .query("chapterCompletions")
+        .withIndex("by_student", (q) => q.eq("studentId", user._id))
+        .collect()
+        .then((rows) => rows.filter((r) => r.courseId === chapter.courseId).length);
+
+      const total = allChapters.length || 1;
+      const progress = Math.round((completedCount / total) * 100);
+      await ctx.db.patch(enrollment._id, { progress });
+    }
+
+    return "Chapter completed";
+  },
+});

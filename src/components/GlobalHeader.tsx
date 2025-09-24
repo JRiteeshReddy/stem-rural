@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { BookOpen, Home, Trophy, Users, FileText, Bell, User } from "lucide-react";
 import { useNavigate, useLocation } from "react-router";
 import { PixelButton } from "./PixelButton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function GlobalHeader() {
   const { user, signOut } = useAuth();
@@ -70,6 +71,16 @@ export function GlobalHeader() {
 
         {/* User Stats & Actions */}
         <div className="flex items-center gap-4">
+          {/* Show avatar */}
+          <div className="hidden sm:flex items-center">
+            <Avatar className="h-9 w-9 border-2 border-yellow-600 rounded-none">
+              <AvatarImage src={user.image || undefined} alt={user.name || "User"} />
+              <AvatarFallback className="rounded-none bg-yellow-300 text-black">
+                {user.name?.[0]?.toUpperCase() || "?"}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+
           {user.role === "student" && (
             <div className="flex items-center gap-4 text-black font-bold" style={{ fontFamily: "monospace" }}>
               <div className="flex items-center gap-1">
@@ -77,7 +88,7 @@ export function GlobalHeader() {
                 <span>Credits: {user.credits || 0}</span>
               </div>
               <div className="flex items-center gap-1">
-                <span>🏆</span>
+                <span>🏅</span>
                 <span>Rank: {user.rank || "Banana Sprout"}</span>
               </div>
             </div>

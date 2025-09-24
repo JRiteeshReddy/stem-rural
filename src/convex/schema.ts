@@ -37,7 +37,8 @@ const schema = defineSchema(
       // Teacher-specific fields
       totalCoursesCreated: v.optional(v.number()),
       totalStudentsEnrolled: v.optional(v.number()),
-    }).index("email", ["email"]), // index for the email. do not remove or modify
+    }).index("email", ["email"])
+      .index("by_role", ["role"]),
 
     // Courses table
     courses: defineTable({
@@ -111,6 +112,17 @@ const schema = defineSchema(
     }).index("by_course", ["courseId"])
       .index("by_student", ["studentId"])
       .index("by_course_and_student", ["courseId", "studentId"]),
+
+    // Track student completions of chapters
+    chapterCompletions: defineTable({
+      chapterId: v.id("chapters"),
+      courseId: v.id("courses"),
+      studentId: v.id("users"),
+      completedAt: v.number(),
+    })
+      .index("by_student", ["studentId"])
+      .index("by_chapter", ["chapterId"])
+      .index("by_student_and_chapter", ["studentId", "chapterId"]),
   },
   {
     schemaValidation: false,

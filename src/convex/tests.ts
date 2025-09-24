@@ -246,11 +246,13 @@ export const submitTest = mutation({
       throw new Error("Test not found or not published");
     }
 
-    // Calculate score
+    // Calculate score and correct answer count
     let score = 0;
+    let correctCount = 0;
     test.questions.forEach((question, index) => {
       if (args.answers[index] === question.correctAnswer) {
         score += question.points;
+        correctCount += 1;
       }
     });
 
@@ -264,16 +266,27 @@ export const submitTest = mutation({
       completedAt: Date.now(),
     });
 
-    // Update student credits and stats
-    const creditsEarned = Math.floor(score / 10); // 1 credit per 10 points
+    // Credits: +1 per correct answer; update rank and stats
+    const newCredits = (user.credits || 0) + correctCount;
+    const newRank = computeRank(newCredits);
     await ctx.db.patch(user._id, {
-      credits: (user.credits || 0) + creditsEarned,
+      credits: newCredits,
+      rank: newRank,
       totalTestsCompleted: (user.totalTestsCompleted || 0) + 1,
     });
 
-    return { score, totalPoints: test.totalPoints, creditsEarned };
+    return { score, totalPoints: test.totalPoints, creditsEarned: correctCount };
   },
 });
+
+function computeRank(credits: number): string {
+  if (credits >= 100) return "Platinum";
+  if (credits >= 80) return "Diamond";
+  if (credits >= 60) return "Gold";
+  if (credits >= 40) return "Silver";
+  if (credits >= 20) return "Bronze";
+  return "Banana Sprout";
+}
 
 // Get student's test results
 export const getStudentTestResults = query({
