@@ -92,13 +92,13 @@ export default function Tests() {
             <Loader2 className="animate-spin" size={18} /> Loading tests...
           </div>
         ) : tests.length === 0 ? (
-          <PixelCard variant="banana" className="p-6 text-center">
+          <PixelCard variant="orange" className="p-6 text-center">
             <div className="text-black" style={{ fontFamily: "'Pixelify Sans', monospace" }}>No tests available yet.</div>
           </PixelCard>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {tests.map((t: any) => (
-              <PixelCard key={String(t._id)} variant="banana" className="p-5">
+              <PixelCard key={String(t._id)} variant="orange" className="p-5">
                 <div className="flex flex-col h-full">
                   <h3 className="text-2xl font-bold text-black mb-1" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
                     {t.title}

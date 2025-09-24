@@ -94,7 +94,7 @@ export function GlobalHeader() {
               </div>
               <div className="flex items-center gap-1">
                 <span>🏅</span>
-                <span>Rank: {user.rank || "Banana Sprout"}</span>
+                <span>Rank: {user.rank || "Bronze"}</span>
               </div>
             </div>
           )}

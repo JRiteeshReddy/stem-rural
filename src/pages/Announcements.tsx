@@ -143,7 +143,7 @@ export default function Announcements() {
         </motion.div>
 
         {isTeacher && (
-          <PixelCard variant="banana" className="p-6 mb-8">
+          <PixelCard variant="orange" className="p-6 mb-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label className="text-black font-bold" style={{ fontFamily: "monospace" }}>

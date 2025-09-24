@@ -116,7 +116,7 @@ export default function Profile() {
           </p>
         </div>
 
-        <PixelCard variant="banana" className="p-6">
+        <PixelCard variant="orange" className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label className="text-black font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>Full Name</Label>
