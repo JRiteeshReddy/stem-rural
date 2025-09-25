@@ -5,9 +5,10 @@ import { BookOpen, Home, Trophy, Users, FileText, Bell, User } from "lucide-reac
 import { useNavigate, useLocation } from "react-router";
 import { PixelButton } from "./PixelButton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { PASSWORD_AUTH_ENABLED } from "@/lib/authFlags";
 
 export function GlobalHeader() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, signOutPassword } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -19,6 +20,14 @@ export function GlobalHeader() {
     { label: "Leaderboard", path: "/leaderboard", icon: Trophy },
     { label: "Profile", path: "/profile", icon: User },
   ];
+
+  const handleLogout = async () => {
+    if (PASSWORD_AUTH_ENABLED && signOutPassword) {
+      await signOutPassword();
+    } else {
+      signOut();
+    }
+  };
 
   if (!user) return null;
 
@@ -37,13 +46,13 @@ export function GlobalHeader() {
           onClick={() => navigate("/dashboard")}
         >
           <img
-            src="https://harmless-tapir-303.convex.cloud/api/storage/857cf0b8-f2da-411e-9ca6-f8f41d5ba695"
-            alt="STEM Logo"
+            src="/assets/edufun.png"
+            alt="Edufun Logo"
             className="h-9 w-9 border-2 border-yellow-600"
             style={{ imageRendering: "pixelated" }}
           />
           <h1 className="text-2xl font-bold text-black" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
-            STEM
+            Edufun
           </h1>
         </motion.div>
 
@@ -112,7 +121,7 @@ export function GlobalHeader() {
             </div>
           )}
 
-          <PixelButton onClick={signOut} variant="danger" size="sm" className="px-2 py-1 text-sm">
+          <PixelButton onClick={handleLogout} variant="danger" size="sm" className="px-2 py-1 text-sm">
             Logout
           </PixelButton>
         </div>

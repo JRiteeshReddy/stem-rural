@@ -13,6 +13,8 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as _shared_authFlags from "../_shared/authFlags.js";
+import type * as _shared_authServer from "../_shared/authServer.js";
 import type * as announcements from "../announcements.js";
 import type * as auth_emailOtp from "../auth/emailOtp.js";
 import type * as auth from "../auth.js";
@@ -20,6 +22,8 @@ import type * as chapters from "../chapters.js";
 import type * as courses from "../courses.js";
 import type * as http from "../http.js";
 import type * as leaderboard from "../leaderboard.js";
+import type * as passwordAuth from "../passwordAuth.js";
+import type * as passwordAuthActions from "../passwordAuthActions.js";
 import type * as profile from "../profile.js";
 import type * as profileDetails from "../profileDetails.js";
 import type * as profileMutations from "../profileMutations.js";
@@ -36,6 +40,8 @@ import type * as users from "../users.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  "_shared/authFlags": typeof _shared_authFlags;
+  "_shared/authServer": typeof _shared_authServer;
   announcements: typeof announcements;
   "auth/emailOtp": typeof auth_emailOtp;
   auth: typeof auth;
@@ -43,6 +49,8 @@ declare const fullApi: ApiFromModules<{
   courses: typeof courses;
   http: typeof http;
   leaderboard: typeof leaderboard;
+  passwordAuth: typeof passwordAuth;
+  passwordAuthActions: typeof passwordAuthActions;
   profile: typeof profile;
   profileDetails: typeof profileDetails;
   profileMutations: typeof profileMutations;

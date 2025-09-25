@@ -60,8 +60,34 @@ const schema = defineSchema(
       parentsName: v.optional(v.string()),
       phoneNumber: v.optional(v.string()),
       address: v.optional(v.string()),
+
+      // Password authentication fields
+      passwordHash: v.optional(v.string()),
+      passwordAlgo: v.optional(v.literal("scrypt")),
+      lastLoginAt: v.optional(v.number()),
     }).index("email", ["email"])
       .index("by_role", ["role"]),
+
+    // Sessions table for password auth
+    sessions: defineTable({
+      userId: v.id("users"),
+      tokenHash: v.string(),
+      userAgent: v.optional(v.string()),
+      ip: v.optional(v.string()),
+      createdAt: v.number(),
+      expiresAt: v.number(),
+    }).index("by_userId", ["userId"])
+      .index("by_tokenHash", ["tokenHash"]),
+
+    // Password reset tokens table
+    passwordResetTokens: defineTable({
+      userId: v.id("users"),
+      tokenHash: v.string(),
+      requestedAt: v.number(),
+      expiresAt: v.number(),
+      used: v.boolean(),
+    }).index("by_userId", ["userId"])
+      .index("by_tokenHash", ["tokenHash"]),
 
     // Courses table
     courses: defineTable({
