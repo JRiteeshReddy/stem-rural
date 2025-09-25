@@ -2285,7 +2285,7 @@ toast.error("Wrong element! -1 life");
                     <div
                       onDrop={onDropIntoChamber} style={{ background: "transparent" }}
                       onDragOver={onDropIntoChamber}
-                      className="w-64 h-40 bg-yellow-300 border-4 border-yellow-700 shadow-[0_0_16px_rgba(255,255,0,0.6)] flex items-center justify-center"
+                      className="w-96 h-72 bg-transparent flex items-center justify-center"
                       style={{ imageRendering: "pixelated" }}
                       title="Mixing Chamber"
                     >
