@@ -8,7 +8,7 @@ import { useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import {
+import { 
   BookOpen,
   Play,
   Users,
@@ -29,8 +29,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-//// Removed custom chart UI wrappers; using Recharts Tooltip directly
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import CourseForm from "@/components/dashboard/CourseForm";
+import StudentForm from "@/components/dashboard/StudentForm";
 
 export default function Dashboard() {
   const { user, isLoading } = useAuth();
@@ -46,8 +46,6 @@ export default function Dashboard() {
   const allAnnouncements = useQuery(api.announcements.listAllAnnouncements, user?.role === "teacher" ? {} : "skip");
 
   // Mutations
-  const generateUploadUrl = useAction(api.profile.generateUploadUrl);
-  const setProfileImage = useMutation(api.profileMutations.setProfileImage);
   const ensureDefaults = useMutation(api.courses.ensureDefaultCoursesForUserClass);
   const markCourseAccessed = useMutation(api.courses.markCourseAccessed);
   
@@ -68,6 +66,7 @@ export default function Dashboard() {
   const [courseDialog, setCourseDialog] = useState({ open: false, course: null as any });
   const [testDialog, setTestDialog] = useState({ open: false, test: null as any });
   const [studentDialog, setStudentDialog] = useState({ open: false, student: null as any });
+  const [announcementDialog, setAnnouncementDialog] = useState({ open: false, announcement: null as any });
   const [searchTerm, setSearchTerm] = useState("");
   const [classFilter, setClassFilter] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("");
@@ -81,6 +80,8 @@ export default function Dashboard() {
   }, [user?.role, user?.userClass, ensureDefaults]);
 
   // ... keep existing handlers
+
+  // Profile image upload is handled on the Profile page.
 
   const handleOpenCourse = async (courseId: string, courseTitle: string) => {
     await markCourseAccessed({ courseId: courseId as any });
@@ -413,10 +414,7 @@ export default function Dashboard() {
       (!searchTerm || student.name.toLowerCase().includes(searchTerm.toLowerCase()))
     ) || [];
 
-    const filteredAnnouncements = allAnnouncements?.filter(announcement => 
-      (!classFilter || announcement.targetClass === classFilter) &&
-      (!searchTerm || announcement.title.toLowerCase().includes(searchTerm.toLowerCase()))
-    ) || [];
+    // Announcements filtered list will be implemented when the "News" tab is expanded.
 
     // Analytics data
     const analyticsData = {
@@ -426,10 +424,7 @@ export default function Dashboard() {
       testParticipation: Math.round((filteredStudents.filter(s => (s.totalTestsCompleted || 0) > 0).length / (filteredStudents.length || 1)) * 100),
     };
 
-    const chartData = [
-      { name: "Active", value: analyticsData.activeStudents, fill: "#22c55e" },
-      { name: "Inactive", value: analyticsData.totalStudents - analyticsData.activeStudents, fill: "#ef4444" },
-    ];
+    // Chart data removed for now (using textual summary instead).
 
     return (
       <div className="min-h-screen bg-transparent">
@@ -756,57 +751,6 @@ export default function Dashboard() {
                 </div>
               </TabsContent>
 
-              {/* Announcements Tab */}
-              <TabsContent value="announcements" className="space-y-4">
-                <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-                  <h2 className="text-2xl font-bold">📢 Announcements</h2>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Search announcements..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-48"
-                    />
-                    <Select value={classFilter || undefined} onValueChange={(v) => setClassFilter(v === "ALL_CLASSES" ? "" : v)}>
-                      <SelectTrigger className="w-32">
-                        <SelectValue placeholder="Class" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ALL_CLASSES">All Classes</SelectItem>
-                        <SelectItem value="Class 6">Class 6</SelectItem>
-                        <SelectItem value="Class 7">Class 7</SelectItem>
-                        <SelectItem value="Class 8">Class 8</SelectItem>
-                        <SelectItem value="Class 9">Class 9</SelectItem>
-                        <SelectItem value="Class 10">Class 10</SelectItem>
-                        <SelectItem value="Class 11">Class 11</SelectItem>
-                        <SelectItem value="Class 12">Class 12</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="bg-black/20 rounded-lg border-2 border-yellow-400 overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Title</TableHead>
-                        <TableHead>Class</TableHead>
-                        <TableHead>Created</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredAnnouncements?.map((a) => (
-                        <TableRow key={a._id}>
-                          <TableCell className="font-medium">{a.title}</TableCell>
-                          <TableCell>{a.targetClass || "—"}</TableCell>
-                          <TableCell>{a._creationTime ? new Date(a._creationTime).toLocaleDateString() : "N/A"}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </TabsContent>
-
               {/* Analytics Tab */}
               <TabsContent value="analytics" className="space-y-6">
                 <h2 className="text-2xl font-bold">📊 Analytics Dashboard</h2>
@@ -852,24 +796,8 @@ export default function Dashboard() {
                       <CardTitle>Student Activity</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="h-[200px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={chartData}
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={60}
-                              outerRadius={80}
-                              dataKey="value"
-                            >
-                              {chartData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.fill} />
-                              ))}
-                            </Pie>
-                            <Tooltip />
-                          </PieChart>
-                        </ResponsiveContainer>
+                      <div className="h-[200px] w-full flex items-center justify-center text-sm text-muted-foreground">
+                        Activity chart unavailable. Data summary: {analyticsData.activeStudents} active / {analyticsData.totalStudents - analyticsData.activeStudents} inactive.
                       </div>
                     </CardContent>
                   </Card>
@@ -1000,72 +928,6 @@ function CourseForm({ course, onSubmit, onCancel }: any) {
       <div className="flex gap-2">
         <Button type="submit" className="bg-green-500 hover:bg-green-600">
           {course ? "Update" : "Create"}
-        </Button>
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-      </div>
-    </form>
-  );
-}
-
-function StudentForm({ student, onSubmit, onCancel }: any) {
-  const [formData, setFormData] = useState({
-    name: student?.name || "",
-    userClass: student?.userClass || "",
-    phoneNumber: student?.phoneNumber || "",
-    address: student?.address || "",
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="text-sm font-medium">Name</label>
-        <Input
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          required
-        />
-      </div>
-      <div>
-        <label className="text-sm font-medium">Class</label>
-        <Select value={formData.userClass || undefined} onValueChange={(value) => setFormData({ ...formData, userClass: value })}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select class" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Class 6">Class 6</SelectItem>
-            <SelectItem value="Class 7">Class 7</SelectItem>
-            <SelectItem value="Class 8">Class 8</SelectItem>
-            <SelectItem value="Class 9">Class 9</SelectItem>
-            <SelectItem value="Class 10">Class 10</SelectItem>
-            <SelectItem value="Class 11">Class 11</SelectItem>
-            <SelectItem value="Class 12">Class 12</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div>
-        <label className="text-sm font-medium">Phone Number</label>
-        <Input
-          value={formData.phoneNumber}
-          onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-        />
-      </div>
-      <div>
-        <label className="text-sm font-medium">Address</label>
-        <Textarea
-          value={formData.address}
-          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-        />
-      </div>
-      <div className="flex gap-2">
-        <Button type="submit" className="bg-green-500 hover:bg-green-600">
-          Update
         </Button>
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel

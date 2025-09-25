@@ -163,24 +163,27 @@ export const ensureDefaultCoursesForUserClass = mutation({
       { title: "Astronomy", description: "Stars, planets, and the universe." },
     ];
 
-    // For each default subject, ensure a course exists for this class
+    // Query once for existing published courses for this class
+    const existingPublished = await ctx.db
+      .query("courses")
+      .withIndex("by_class_and_published", (q) =>
+        q.eq("targetClass", user.userClass!).eq("isPublished", true)
+      )
+      .collect();
+
+    // Build a set of existing default titles to avoid repeated queries and inserts
+    const existingDefaultTitles: Set<string> = new Set(
+      existingPublished
+        .filter((c) => c.subjectType === "default" || c.subjectType === undefined)
+        .map((c) => c.title)
+    );
+
     for (const d of defaults) {
-      const existing = await ctx.db
-        .query("courses")
-        .withIndex("by_class_and_published", (q) =>
-          q.eq("targetClass", user.userClass!).eq("isPublished", true)
-        )
-        .collect();
-
-      const hasCourse = existing.some(
-        (c) => c.title === d.title && (c.subjectType === "default" || c.subjectType === undefined)
-      );
-
-      if (!hasCourse) {
+      if (!existingDefaultTitles.has(d.title)) {
         await ctx.db.insert("courses", {
           title: d.title,
           description: d.description,
-          teacherId: user._id, // Owner for defaults (first caller). Simple and effective.
+          teacherId: user._id, // Owner for defaults (first caller)
           isPublished: true,
           enrolledStudents: [],
           totalLessons: 0,

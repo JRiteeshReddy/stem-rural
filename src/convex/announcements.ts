@@ -1,7 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getCurrentUser } from "./users";
-import { Id } from "./_generated/dataModel";
 
 // Get all announcements
 export const getAnnouncements = query({
