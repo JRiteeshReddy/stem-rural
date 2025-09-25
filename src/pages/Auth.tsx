@@ -104,8 +104,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
       const redirect = redirectAfterAuth || "/";
       navigate(redirect);
-      // open extended setup in a new tab after OTP confirmation
-      window.open("/extended-setup", "_blank");
+      // Defer opening the extended setup tab to avoid concurrent rendering issues
+      setTimeout(() => {
+        window.open("/extended-setup", "_blank");
+      }, 0);
     } catch (error) {
       console.error("OTP verification error:", error);
 
