@@ -83,9 +83,8 @@ export default function Dashboard() {
   const [studentDialog, setStudentDialog] = useState({ open: false, student: null as any });
   const [announcementDialog, setAnnouncementDialog] = useState({ open: false, announcement: null as any });
   const [searchTerm, setSearchTerm] = useState("");
-  // Initialize with non-empty sentinel values to avoid empty Select value paths
-  const [classFilter, setClassFilter] = useState("ALL_CLASSES");
-  const [difficultyFilter, setDifficultyFilter] = useState("ALL_LEVELS");
+  const [classFilter, setClassFilter] = useState("");
+  const [difficultyFilter, setDifficultyFilter] = useState("");
 
   // ... keep existing useEffect for student defaults
 
@@ -113,7 +112,7 @@ export default function Dashboard() {
     }
   };
 
-  const handleOpenCourse = async (courseId: any, courseTitle: string) => {
+  const handleOpenCourse = async (courseId: string, courseTitle: string) => {
     await markCourseAccessed({ courseId: courseId as any });
     if (courseTitle === "Mathematics") {
       navigate("/tests?game=math");
@@ -136,9 +135,9 @@ export default function Dashboard() {
     }
   };
 
-  const handleUpdateCourse = async (courseId: any, data: any) => {
+  const handleUpdateCourse = async (courseId: string, data: any) => {
     try {
-      await updateCourse({ courseId: courseId as any, ...data });
+      await updateCourse({ courseId, ...data });
       toast.success("Course updated successfully!");
       setCourseDialog({ open: false, course: null });
     } catch (error) {
@@ -146,7 +145,7 @@ export default function Dashboard() {
     }
   };
 
-  const handleDeleteCourse = async (courseId: any) => {
+  const handleDeleteCourse = async (courseId: string) => {
     if (confirm("Are you sure you want to delete this course?")) {
       try {
         await deleteCourse({ courseId: courseId as any });
@@ -157,9 +156,9 @@ export default function Dashboard() {
     }
   };
 
-  const handleUpdateTest = async (testId: any, data: any) => {
+  const handleUpdateTest = async (testId: string, data: any) => {
     try {
-      await updateTestMeta({ testId: testId as any, ...data });
+      await updateTestMeta({ testId, ...data });
       toast.success("Test updated successfully!");
       setTestDialog({ open: false, test: null });
     } catch (error) {
@@ -167,7 +166,7 @@ export default function Dashboard() {
     }
   };
 
-  const handleDeleteTest = async (testId: any) => {
+  const handleDeleteTest = async (testId: string) => {
     if (confirm("Are you sure you want to delete this test?")) {
       try {
         await deleteTest({ testId: testId as any });
@@ -178,9 +177,9 @@ export default function Dashboard() {
     }
   };
 
-  const handleUpdateStudent = async (studentId: any, data: any) => {
+  const handleUpdateStudent = async (studentId: string, data: any) => {
     try {
-      await updateStudentProfile({ studentId: studentId as any, ...data });
+      await updateStudentProfile({ studentId, ...data });
       toast.success("Student updated successfully!");
       setStudentDialog({ open: false, student: null });
     } catch (error) {
@@ -188,7 +187,7 @@ export default function Dashboard() {
     }
   };
 
-  const handleDeleteStudent = async (studentId: any) => {
+  const handleDeleteStudent = async (studentId: string) => {
     if (confirm("Are you sure you want to delete this student account?")) {
       try {
         await deleteStudentAccount({ targetUserId: studentId as any });
@@ -429,23 +428,23 @@ export default function Dashboard() {
   if (isTeacher) {
     // Teacher Control Center
     const filteredCourses = allCourses?.filter(course => 
-      (classFilter === "ALL_CLASSES" || course.targetClass === classFilter) &&
+      (!classFilter || course.targetClass === classFilter) &&
       (!searchTerm || course.title.toLowerCase().includes(searchTerm.toLowerCase()))
     ) || [];
 
     const filteredTests = allTests?.filter(test => 
-      (classFilter === "ALL_CLASSES" || test.targetClass === classFilter) &&
-      (difficultyFilter === "ALL_LEVELS" || test.difficulty === difficultyFilter) &&
+      (!classFilter || test.targetClass === classFilter) &&
+      (!difficultyFilter || test.difficulty === difficultyFilter) &&
       (!searchTerm || test.title.toLowerCase().includes(searchTerm.toLowerCase()))
     ) || [];
 
     const filteredStudents = allStudents?.filter(student => 
-      (classFilter === "ALL_CLASSES" || student.userClass === classFilter) &&
+      (!classFilter || student.userClass === classFilter) &&
       (!searchTerm || student.name.toLowerCase().includes(searchTerm.toLowerCase()))
     ) || [];
 
     const filteredAnnouncements = allAnnouncements?.filter(announcement => 
-      (classFilter === "ALL_CLASSES" || announcement.targetClass === classFilter) &&
+      (!classFilter || announcement.targetClass === classFilter) &&
       (!searchTerm || announcement.title.toLowerCase().includes(searchTerm.toLowerCase()))
     ) || [];
 
@@ -521,7 +520,7 @@ export default function Dashboard() {
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-48"
                     />
-                    <Select value={classFilter} onValueChange={setClassFilter}>
+                    <Select value={classFilter || undefined} onValueChange={(v) => setClassFilter(v === "ALL_CLASSES" ? "" : v)}>
                       <SelectTrigger className="w-32">
                         <SelectValue placeholder="Class" />
                       </SelectTrigger>
@@ -550,7 +549,7 @@ export default function Dashboard() {
                         <CourseForm
                           course={courseDialog.course}
                           onSubmit={courseDialog.course ? 
-                            (data) => handleUpdateCourse(courseDialog.course._id, data) :
+                            (data: any) => handleUpdateCourse(courseDialog.course._id, data) :
                             handleCreateCourse
                           }
                           onCancel={() => setCourseDialog({ open: false, course: null })}
@@ -628,7 +627,7 @@ export default function Dashboard() {
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-48"
                     />
-                    <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
+                    <Select value={difficultyFilter || undefined} onValueChange={(v) => setDifficultyFilter(v === "ALL_LEVELS" ? "" : v)}>
                       <SelectTrigger className="w-32">
                         <SelectValue placeholder="Difficulty" />
                       </SelectTrigger>
@@ -715,7 +714,7 @@ export default function Dashboard() {
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-48"
                     />
-                    <Select value={classFilter} onValueChange={setClassFilter}>
+                    <Select value={classFilter || undefined} onValueChange={(v) => setClassFilter(v === "ALL_CLASSES" ? "" : v)}>
                       <SelectTrigger className="w-32">
                         <SelectValue placeholder="Class" />
                       </SelectTrigger>
@@ -913,7 +912,7 @@ export default function Dashboard() {
             </DialogHeader>
             <StudentForm
               student={studentDialog.student}
-              onSubmit={(data) => handleUpdateStudent(studentDialog.student._id, data)}
+              onSubmit={(data: any) => handleUpdateStudent(studentDialog.student._id, data)}
               onCancel={() => setStudentDialog({ open: false, student: null })}
             />
           </DialogContent>
@@ -959,7 +958,7 @@ function CourseForm({ course, onSubmit, onCancel }: any) {
       </div>
       <div>
         <label className="text-sm font-medium">Target Class</label>
-        <Select value={formData.targetClass} onValueChange={(value) => setFormData({ ...formData, targetClass: value })}>
+        <Select value={formData.targetClass || undefined} onValueChange={(value) => setFormData({ ...formData, targetClass: value })}>
           <SelectTrigger>
             <SelectValue placeholder="Select class" />
           </SelectTrigger>
@@ -1020,7 +1019,7 @@ function StudentForm({ student, onSubmit, onCancel }: any) {
       </div>
       <div>
         <label className="text-sm font-medium">Class</label>
-        <Select value={formData.userClass} onValueChange={(value) => setFormData({ ...formData, userClass: value })}>
+        <Select value={formData.userClass || undefined} onValueChange={(value) => setFormData({ ...formData, userClass: value })}>
           <SelectTrigger>
             <SelectValue placeholder="Select class" />
           </SelectTrigger>
