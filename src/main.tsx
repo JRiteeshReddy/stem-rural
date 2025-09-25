@@ -68,6 +68,8 @@ createRoot(document.getElementById("root")!).render(
               <Route path="/auth" element={<AuthPage redirectAfterAuth="/role-selection" />} />
               <Route path="/role-selection" element={<RoleSelection />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/student-portal" element={<Dashboard />} />
+              <Route path="/teacher-portal" element={<Dashboard />} />
               <Route path="/announcements" element={<Announcements />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="*" element={<NotFound />} />

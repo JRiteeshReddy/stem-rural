@@ -97,24 +97,18 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       // After OTP verification, if this was sign up, persist role & class
       if (mode === "signup") {
         try {
-          // Save role + display name (fallback to nameInput)
           await setupUserRole({
             role: role as any,
             name: nameInput.trim(),
           });
-          // Save class selection
           await setUserClassMutation({ userClass: userClass as any });
         } catch (e) {
           console.error("Post-OTP setup failed:", e);
         }
       }
 
-      const redirect = redirectAfterAuth || "/";
-      navigate(redirect);
-      // Defer opening the extended setup tab to avoid concurrent rendering issues
-      setTimeout(() => {
-        window.open("/extended-setup", "_blank");
-      }, 0);
+      // Navigate to extended setup in the same tab (remove window.open/setTimeout hack)
+      navigate("/extended-setup");
     } catch (error) {
       console.error("OTP verification error:", error);
 
@@ -135,10 +129,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       const email = formData.get("email") as string;
       const password = formData.get("password") as string;
 
-      await signInPassword({ email, password });
-      
-      const redirect = redirectAfterAuth || "/";
-      navigate(redirect);
+      const res = await signInPassword({ email, password });
+      // Redirect based on role in the same tab
+      const role = res?.user?.role as "teacher" | "student" | undefined;
+      const dest = role === "teacher" ? "/teacher-portal" : "/student-portal";
+      navigate(dest);
       toast.success("Login successful!");
     } catch (error) {
       console.error("Password login error:", error);
@@ -176,8 +171,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       });
 
       toast.success("Account created successfully!");
-      const redirect = redirectAfterAuth || "/";
-      navigate(redirect);
+      // Move to extended setup in the same tab (no window.open)
+      navigate("/extended-setup");
     } catch (error) {
       console.error("Password signup error:", error);
       setError(error instanceof Error ? error.message : "Registration failed");
