@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { PixelButton } from "@/components/PixelButton";
 import { PixelCard } from "@/components/PixelCard";
@@ -214,322 +213,6 @@ export default function Tests() {
 
   // Add: Math game intro modal state
   const [showMathIntro, setShowMathIntro] = useState(false);
-
-  // Add: History Game state
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const [historyOver, setHistoryOver] = useState(false);
-  const [historyScore, setHistoryScore] = useState(0);
-  const [historyLevel, setHistoryLevel] = useState(1);
-  const [historyLives, setHistoryLives] = useState(3);
-  const [historyTimer, setHistoryTimer] = useState(45);
-  const [historyPowerups, setHistoryPowerups] = useState({ freeze: 1, bomb: 0 });
-  const [historyFreezeActive, setHistoryFreezeActive] = useState(false);
-  const [historyAnswerMode, setHistoryAnswerMode] = useState<'mcq' | 'text'>('mcq');
-  const [historyTextAnswer, setHistoryTextAnswer] = useState('');
-  
-  type HistoryAnomaly = {
-    id: string;
-    x: number;
-    y: number;
-    question: string;
-    options?: string[];
-    correctIndex?: number;
-    correctAnswer?: string;
-    speed: number;
-    type: 'mcq' | 'text';
-  };
-  
-  const [historyAnomalies, setHistoryAnomalies] = useState<HistoryAnomaly[]>([]);
-  const [historyTick, setHistoryTick] = useState(0);
-
-  // History questions by level
-  const historyQuestions = {
-    1: [ // Ancient History - MCQ
-      {
-        question: "Who was the first Emperor of Rome?",
-        options: ["Julius Caesar", "Augustus", "Nero", "Caligula"],
-        correctIndex: 1
-      },
-      {
-        question: "Which wonder was located in Alexandria?",
-        options: ["Colossus", "Lighthouse", "Hanging Gardens", "Mausoleum"],
-        correctIndex: 1
-      },
-      {
-        question: "The Rosetta Stone helped decode which script?",
-        options: ["Latin", "Greek", "Hieroglyphs", "Cuneiform"],
-        correctIndex: 2
-      },
-      {
-        question: "Which civilization built Machu Picchu?",
-        options: ["Aztec", "Maya", "Inca", "Olmec"],
-        correctIndex: 2
-      },
-      {
-        question: "The Code of Hammurabi originated in which empire?",
-        options: ["Egyptian", "Babylonian", "Persian", "Assyrian"],
-        correctIndex: 1
-      }
-    ],
-    2: [ // Medieval History - MCQ
-      {
-        question: "The Battle of Hastings occurred in which year?",
-        options: ["1066", "1086", "1056", "1076"],
-        correctIndex: 0
-      },
-      {
-        question: "Who led the First Crusade?",
-        options: ["Richard I", "Godfrey of Bouillon", "Saladin", "Frederick Barbarossa"],
-        correctIndex: 1
-      },
-      {
-        question: "The Black Death peaked in which century?",
-        options: ["13th", "14th", "15th", "16th"],
-        correctIndex: 1
-      },
-      {
-        question: "Which empire was ruled by Genghis Khan?",
-        options: ["Ottoman", "Mongol", "Byzantine", "Holy Roman"],
-        correctIndex: 1
-      },
-      {
-        question: "The Magna Carta was signed in which country?",
-        options: ["France", "Germany", "England", "Italy"],
-        correctIndex: 2
-      }
-    ],
-    3: [ // Modern History - Text input
-      {
-        question: "Who was the first President of the United States?",
-        correctAnswer: "George Washington"
-      },
-      {
-        question: "In which year did World War II end?",
-        correctAnswer: "1945"
-      },
-      {
-        question: "What was the name of the ship that brought the Pilgrims to America?",
-        correctAnswer: "Mayflower"
-      },
-      {
-        question: "Which country gifted the Statue of Liberty to the United States?",
-        correctAnswer: "France"
-      },
-      {
-        question: "Who wrote the Declaration of Independence?",
-        correctAnswer: "Thomas Jefferson"
-      }
-    ]
-  };
-
-  // Start History Game
-  const startHistoryGame = () => {
-    setHistoryOpen(true);
-    setHistoryOver(false);
-    setHistoryScore(0);
-    setHistoryLevel(1);
-    setHistoryLives(3);
-    setHistoryTimer(45);
-    setHistoryPowerups({ freeze: 1, bomb: 0 });
-    setHistoryFreezeActive(false);
-    setHistoryAnswerMode('mcq');
-    setHistoryTextAnswer('');
-    setHistoryAnomalies([]);
-    setHistoryTick(0);
-  };
-
-  // Generate anomaly
-  const generateHistoryAnomaly = (level: number): HistoryAnomaly => {
-    const questions = historyQuestions[level as keyof typeof historyQuestions];
-    const question = questions[Math.floor(Math.random() * questions.length)];
-    const lanes = [15, 30, 45, 60, 75];
-    const y = lanes[Math.floor(Math.random() * lanes.length)];
-    const speed = 0.4 + level * 0.2;
-
-    if (level <= 2) {
-      return {
-        id: crypto.randomUUID(),
-        x: 95,
-        y,
-        question: question.question,
-        options: (question as any).options,
-        correctIndex: (question as any).correctIndex,
-        speed: historyFreezeActive ? speed * 0.3 : speed,
-        type: 'mcq'
-      };
-    } else {
-      return {
-        id: crypto.randomUUID(),
-        x: 95,
-        y,
-        question: question.question,
-        correctAnswer: (question as any).correctAnswer,
-        speed: historyFreezeActive ? speed * 0.3 : speed,
-        type: 'text'
-      };
-    }
-  };
-
-  // History game loop
-  useEffect(() => {
-    if (!historyOpen || historyOver) return;
-
-    const interval = setInterval(() => {
-      setHistoryTick(t => t + 1);
-      
-      // Timer countdown
-      setHistoryTimer(t => {
-        if (t <= 1) {
-          // Level complete or game over
-          if (historyLevel < 3 && historyLives > 0) {
-            // Next level
-            const nextLevel = historyLevel + 1;
-            setHistoryLevel(nextLevel);
-            setHistoryTimer(nextLevel === 2 ? 60 : 75);
-            setHistoryAnomalies([]);
-            if (nextLevel === 2) {
-              setHistoryPowerups(prev => ({ ...prev, freeze: prev.freeze + 1 }));
-            } else if (nextLevel === 3) {
-              setHistoryPowerups(prev => ({ ...prev, bomb: 1 }));
-              setHistoryAnswerMode('text');
-            }
-            toast.success(`Level ${nextLevel} unlocked!`);
-            return nextLevel === 2 ? 60 : 75;
-          } else {
-            setHistoryOver(true);
-            return 0;
-          }
-        }
-        return t - 1;
-      });
-
-      // Move anomalies
-      setHistoryAnomalies(prev => {
-        const moved = prev.map(a => ({
-          ...a,
-          x: a.x - a.speed,
-          speed: historyFreezeActive ? (0.4 + historyLevel * 0.2) * 0.3 : (0.4 + historyLevel * 0.2)
-        }));
-
-        // Check for life loss
-        const reachedLeft = moved.filter(a => a.x <= 5);
-        if (reachedLeft.length > 0) {
-          setHistoryLives(l => Math.max(0, l - reachedLeft.length));
-          toast.error(`Timeline corrupted! -${reachedLeft.length} life`);
-        }
-
-        return moved.filter(a => a.x > 5);
-      });
-
-      // Spawn new anomalies
-      setHistoryAnomalies(prev => {
-        const spawnChance = Math.min(0.15 + historyLevel * 0.05, 0.4);
-        if (prev.length < 4 && Math.random() < spawnChance) {
-          // Ensure no duplicate correct answers
-          const newAnomaly = generateHistoryAnomaly(historyLevel);
-          const hasDuplicate = prev.some(a => 
-            (a.type === 'mcq' && newAnomaly.type === 'mcq' && a.correctIndex === newAnomaly.correctIndex) ||
-            (a.type === 'text' && newAnomaly.type === 'text' && a.correctAnswer === newAnomaly.correctAnswer)
-          );
-          
-          if (!hasDuplicate) {
-            return [...prev, newAnomaly];
-          }
-        }
-        return prev;
-      });
-    }, 200);
-
-    return () => clearInterval(interval);
-  }, [historyOpen, historyOver, historyLevel, historyLives, historyFreezeActive]);
-
-  // Game over check
-  useEffect(() => {
-    if (!historyOpen || historyOver) return;
-    if (historyLives <= 0) {
-      setHistoryOver(true);
-    }
-  }, [historyLives, historyOpen, historyOver]);
-
-  // Award XP on game over
-  useEffect(() => {
-    if (!historyOpen || !historyOver || historyScore === 0) return;
-    (async () => {
-      try {
-        const res = await addCredits({ amount: historyScore });
-        const badges = [];
-        if (historyLevel >= 1) badges.push("Ancient Explorer");
-        if (historyLevel >= 2) badges.push("Freedom Fighter");
-        if (historyLevel >= 3) badges.push("World Historian");
-        
-        toast.success(`Timeline restored! +${historyScore} XP. Rank: ${res.rank}${badges.length ? `. Badges: ${badges.join(', ')}` : ''}`);
-      } catch (e) {
-        console.error(e);
-        toast.error("Failed to save progress");
-      }
-    })();
-  }, [historyOpen, historyOver, historyScore, addCredits, historyLevel]);
-
-  // Answer handlers
-  const handleHistoryMCQ = (selectedIndex: number) => {
-    const targetAnomaly = historyAnomalies.find(a => a.type === 'mcq');
-    if (!targetAnomaly) return;
-
-    if (selectedIndex === targetAnomaly.correctIndex) {
-      setHistoryScore(s => s + 1);
-      setHistoryAnomalies(prev => prev.filter(a => a.id !== targetAnomaly.id));
-      toast.success("Anomaly dispelled! +1 XP");
-    } else {
-      toast.error("Wrong answer! Timeline still corrupted.");
-    }
-  };
-
-  const handleHistoryTextSubmit = () => {
-    if (!historyTextAnswer.trim()) return;
-    
-    const targetAnomaly = historyAnomalies.find(a => a.type === 'text');
-    if (!targetAnomaly) return;
-
-    const userAnswer = historyTextAnswer.trim().toLowerCase();
-    const correctAnswer = targetAnomaly.correctAnswer?.toLowerCase() || '';
-    
-    if (userAnswer === correctAnswer) {
-      setHistoryScore(s => s + 1);
-      setHistoryAnomalies(prev => prev.filter(a => a.id !== targetAnomaly.id));
-      toast.success("Anomaly dispelled! +1 XP");
-      setHistoryTextAnswer('');
-    } else {
-      toast.error("Wrong answer! Timeline still corrupted.");
-      setHistoryTextAnswer('');
-    }
-  };
-
-  // Power-ups
-  const useTimeFreeze = () => {
-    if (historyPowerups.freeze <= 0 || historyFreezeActive) return;
-    setHistoryPowerups(prev => ({ ...prev, freeze: prev.freeze - 1 }));
-    setHistoryFreezeActive(true);
-    toast.info("Time Freeze activated!");
-    setTimeout(() => setHistoryFreezeActive(false), 5000);
-  };
-
-  const useKnowledgeBomb = () => {
-    if (historyPowerups.bomb <= 0) return;
-    setHistoryPowerups(prev => ({ ...prev, bomb: prev.bomb - 1 }));
-    setHistoryAnomalies([]);
-    toast.info("Knowledge Bomb deployed!");
-  };
-
-  // Auto-start history game
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    if (params.get("game") === "history") {
-      setTimeout(() => setShowHistoryIntro(true), 0);
-    }
-  }, [location.search]);
-
-  // Add: History Game intro modal state
-  const [showHistoryIntro, setShowHistoryIntro] = useState(false);
 
   // ========================
   // Chemistry Game: Element Mixer (NEW - drag & drop)
@@ -1647,6 +1330,435 @@ export default function Tests() {
     setBiocellDefeated(0);
   };
 
+  // Add: History Timeline Defender mini-game component
+  function HistoryGame({ onClose }: { onClose: () => void }) {
+    // Local game state
+    const [gameState, setGameState] = useState<"playing" | "paused" | "summary">("playing");
+    const [level, setLevel] = useState(1);
+    const [lives, setLives] = useState(3);
+    const [xp, setXp] = useState(0);
+    const [timer, setTimer] = useState(45); // Level 1 default
+    const [enemies, setEnemies] = useState<Array<{
+      id: string;
+      x: number;
+      y: number;
+      speed: number;
+      question: string;
+      options: string[];
+      correctIndex: number;
+      correctText: string;
+      mode: "mcq" | "text";
+    }>>([]);
+    const [activeEnemy, setActiveEnemy] = useState<string | null>(null);
+    const [typingValue, setTypingValue] = useState("");
+
+    // Power-ups: counts and states
+    const [freezeActive, setFreezeActive] = useState(false);
+    const [freezeCooldown, setFreezeCooldown] = useState(0);
+    const [bombCooldown, setBombCooldown] = useState(0);
+    const [powerCounts, setPowerCounts] = useState({ freeze: 1, bomb: 0 });
+
+    const addCredits = useMutation(api.users.addCredits);
+
+    const levelDurations: Record<number, number> = { 1: 45, 2: 60, 3: 75 };
+
+    // Questions pool
+    const historyPools: Record<number, Array<{ q: string; options: string[]; correct: number; answer: string }>> = {
+      1: [
+        { q: "Who was the first Emperor of Rome?", options: ["Julius Caesar", "Augustus", "Nero", "Trajan"], correct: 1, answer: "Augustus" },
+        { q: "Which civilization built the pyramids?", options: ["Greeks", "Romans", "Egyptians", "Babylonians"], correct: 2, answer: "Egyptians" },
+        { q: "What year did Alexander the Great die?", options: ["336 BC", "323 BC", "356 BC", "300 BC"], correct: 1, answer: "323 BC" },
+        { q: "Which river was crucial to ancient Egypt?", options: ["Euphrates", "Nile", "Tigris", "Indus"], correct: 1, answer: "Nile" },
+        { q: "Who wrote the Iliad and the Odyssey?", options: ["Sophocles", "Aristotle", "Homer", "Plato"], correct: 2, answer: "Homer" },
+      ],
+      2: [
+        { q: "When was the Battle of Hastings?", options: ["1066", "1086", "1056", "1076"], correct: 0, answer: "1066" },
+        { q: "First Holy Roman Emperor?", options: ["Otto I", "Charlemagne", "Frederick I", "Henry IV"], correct: 1, answer: "Charlemagne" },
+        { q: "Which plague hit Europe in the 14th century?", options: ["Cholera", "Black Death", "Smallpox", "Typhus"], correct: 1, answer: "Black Death" },
+        { q: "The Crusades were primarily:", options: ["Trade routes", "Religious wars", "Territorial expansion", "Cultural exchange"], correct: 1, answer: "Religious wars" },
+        { q: "Who wrote the Divine Comedy?", options: ["Chaucer", "Dante", "Petrarch", "Boccaccio"], correct: 1, answer: "Dante" },
+      ],
+      3: [
+        { q: "When did World War I begin?", options: ["1912", "1914", "1916", "1918"], correct: 1, answer: "1914" },
+        { q: "First US President?", options: ["Jefferson", "John Adams", "George Washington", "Franklin"], correct: 2, answer: "George Washington" },
+        { q: "Year Berlin Wall fell?", options: ["1987", "1989", "1991", "1993"], correct: 1, answer: "1989" },
+        { q: "First on the moon?", options: ["Soviet Union", "United States", "China", "UK"], correct: 1, answer: "United States" },
+        { q: "India gained independence in:", options: ["1945", "1947", "1949", "1950"], correct: 1, answer: "1947" },
+      ],
+    };
+
+    // Set power-up counts by level
+    useEffect(() => {
+      if (level === 1) setPowerCounts({ freeze: 1, bomb: 0 });
+      if (level === 2) setPowerCounts({ freeze: 2, bomb: 0 });
+      if (level === 3) setPowerCounts({ freeze: 2, bomb: 1 });
+    }, [level]);
+
+    // Timer tick (1s)
+    useEffect(() => {
+      if (gameState !== "playing") return;
+      const t = setInterval(() => {
+        setTimer((prev) => Math.max(0, prev - 1));
+      }, 1000);
+      return () => clearInterval(t);
+    }, [gameState]);
+
+    // Movement + cooldowns (50ms)
+    useEffect(() => {
+      if (gameState !== "playing") return;
+      const loop = setInterval(() => {
+        setEnemies((prev) =>
+          prev
+            .map((e) => ({
+              ...e,
+              x: e.x - (freezeActive ? e.speed * 0.3 : e.speed),
+            }))
+            .filter((e) => {
+              if (e.x <= 50) {
+                setLives((l) => Math.max(0, l - 1));
+                return false;
+              }
+              return true;
+            })
+        );
+
+        setFreezeCooldown((c) => Math.max(0, c - 1));
+        setBombCooldown((c) => Math.max(0, c - 1));
+      }, 50);
+      return () => clearInterval(loop);
+    }, [gameState, freezeActive]);
+
+    // Enemy spawn (2.5s base minus 0.5s per level)
+    const spawnEnemy = useCallback(() => {
+      if (gameState !== "playing") return;
+
+      const pool = historyPools[level] || historyPools[1];
+      const base = pool[Math.floor(Math.random() * pool.length)];
+
+      // Shuffle options for MCQ levels
+      const options = [...base.options];
+      for (let i = options.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [options[i], options[j]] = [options[j], options[i]];
+      }
+      const correctIndex = options.indexOf(base.answer);
+      const mode: "mcq" | "text" = level < 3 ? "mcq" : "text";
+
+      // Find a free lane
+      const lanes = [100, 200, 300, 400];
+      const occupied = new Set(enemies.map((e) => e.y));
+      const free = lanes.filter((l) => !occupied.has(l));
+      if (free.length === 0) return;
+
+      setEnemies((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2),
+          x: 900,
+          y: free[Math.floor(Math.random() * free.length)],
+          speed: 1 + level * 0.6,
+          question: base.q,
+          options,
+          correctIndex: correctIndex >= 0 ? correctIndex : 0,
+          correctText: base.answer,
+          mode,
+        },
+      ]);
+    }, [enemies, gameState, level]);
+
+    useEffect(() => {
+      if (gameState !== "playing") return;
+      const spawnMs = Math.max(1200, 2500 - level * 500);
+      const s = setInterval(() => {
+        if (enemies.length < 4) spawnEnemy();
+      }, spawnMs);
+      return () => clearInterval(s);
+    }, [spawnEnemy, enemies.length, gameState, level]);
+
+    // Pause on tab hidden
+    useEffect(() => {
+      const onVis = () => {
+        if (document.hidden) setGameState("paused");
+      };
+      document.addEventListener("visibilitychange", onVis);
+      return () => document.removeEventListener("visibilitychange", onVis);
+    }, []);
+
+    // End conditions and summary
+    useEffect(() => {
+      const noEnemies = enemies.length === 0;
+      const timeUp = timer <= 0;
+      const outOfLives = lives <= 0;
+
+      if (outOfLives || (timeUp && noEnemies)) {
+        setGameState("summary");
+        // Award credits once per session
+        if (xp > 0) addCredits({ amount: xp }).catch(() => toast.error("Failed to save XP"));
+      }
+    }, [timer, lives, enemies.length, xp, addCredits]);
+
+    const handleAnswerMcq = (enemyId: string, idx: number) => {
+      const enemy = enemies.find((e) => e.id === enemyId);
+      if (!enemy) return;
+      if (idx === enemy.correctIndex) {
+        setXp((v) => v + 1);
+        setEnemies((prev) => prev.filter((e) => e.id !== enemyId));
+        toast.success("Correct! +1 XP");
+      } else {
+        toast.error("Wrong!");
+      }
+      setActiveEnemy(null);
+    };
+
+    const handleAnswerText = (enemyId: string) => {
+      const enemy = enemies.find((e) => e.id === enemyId);
+      if (!enemy) return;
+      const ok = typingValue.trim().toLowerCase() === enemy.correctText.trim().toLowerCase();
+      if (ok) {
+        setXp((v) => v + 1);
+        setEnemies((prev) => prev.filter((e) => e.id !== enemyId));
+        toast.success("Correct! +1 XP");
+        setTypingValue("");
+        setActiveEnemy(null);
+      } else {
+        toast.error("Wrong!");
+      }
+    };
+
+    const useFreeze = () => {
+      if (freezeActive || freezeCooldown > 0 || powerCounts.freeze <= 0) return;
+      setPowerCounts((c) => ({ ...c, freeze: c.freeze - 1 }));
+      setFreezeActive(true);
+      setFreezeCooldown(100); // cooldown ticks (50ms each)
+      // Turn off after 5s
+      setTimeout(() => setFreezeActive(false), 5000);
+      toast.success("Time Freeze!");
+    };
+
+    const useBomb = () => {
+      if (bombCooldown > 0 || powerCounts.bomb <= 0) return;
+      if (enemies.length > 0) {
+        // Clear enemies with no XP (per spec)
+        setEnemies([]);
+        toast.success("Knowledge Bomb! Cleared anomalies (no XP)");
+      }
+      setPowerCounts((c) => ({ ...c, bomb: c.bomb - 1 }));
+      setBombCooldown(160);
+    };
+
+    const nextLevel = () => {
+      if (level >= 3) return;
+      const next = level + 1;
+      setLevel(next);
+      setTimer(levelDurations[next]);
+      setEnemies([]);
+      setActiveEnemy(null);
+      setTypingValue("");
+      setGameState("playing");
+      toast.success(`Level ${next} started!`);
+    };
+
+    const badgeForLevel = (lvl: number) => {
+      if (lvl >= 3) return "World Historian";
+      if (lvl === 2) return "Freedom Fighter";
+      return "Ancient Explorer";
+    };
+
+    // Summary screen
+    if (gameState === "summary") {
+      return (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+          <PixelCard variant="orange" className="p-6 max-w-md">
+            <h2 className="text-2xl font-bold text-center mb-2">Timeline Summary</h2>
+            <div className="space-y-1 text-center">
+              <div>XP Earned: {xp}</div>
+              <div>Level Reached: {level}</div>
+              <div>Badge: {badgeForLevel(level)}</div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <PixelButton onClick={() => window.location.reload()} className="flex-1">Play Again</PixelButton>
+              <PixelButton onClick={onClose} variant="secondary" className="flex-1">Exit</PixelButton>
+            </div>
+          </PixelCard>
+        </div>
+      );
+    }
+
+    return (
+      <div className="fixed inset-0 z-50 bg-black/20 flex flex-col">
+        {/* Top bar */}
+        <div className="bg-black/80 text-white p-3 flex items-center justify-between">
+          <div className="flex gap-4">
+            <span>XP: {xp}</span>
+            <span>Lives: {"❤️".repeat(Math.max(0, lives)) || "💔"}</span>
+            <span>Level: {level}</span>
+            <span>Time: {timer}s</span>
+          </div>
+          <div className="flex gap-2">
+            <PixelButton size="sm" onClick={useFreeze} disabled={freezeActive || freezeCooldown > 0 || powerCounts.freeze <= 0}>
+              ⏸️ Freeze {powerCounts.freeze > 0 ? `(${powerCounts.freeze})` : ""}{freezeCooldown > 0 ? ` [CD]` : ""}
+            </PixelButton>
+            <PixelButton size="sm" onClick={useBomb} disabled={bombCooldown > 0 || powerCounts.bomb <= 0}>
+              💣 Bomb {powerCounts.bomb > 0 ? `(${powerCounts.bomb})` : ""}{bombCooldown > 0 ? ` [CD]` : ""}
+            </PixelButton>
+            <PixelButton size="sm" onClick={() => setGameState(gameState === "paused" ? "playing" : "paused")}>
+              {gameState === "paused" ? "▶️ Resume" : "⏸️ Pause"}
+            </PixelButton>
+            <PixelButton size="sm" variant="danger" onClick={onClose}>❌</PixelButton>
+          </div>
+        </div>
+
+        {/* Game area */}
+        <div className="relative flex-1 overflow-hidden">
+          {/* Time traveler (left) */}
+          <div className="absolute left-6 top-1/2 -translate-y-1/2 text-6xl">🧭</div>
+
+          {/* Enemies */}
+          {enemies.map((e) => (
+            <div key={e.id} className="absolute transition-all" style={{ left: `${e.x}px`, top: `${e.y}px` }}>
+              <div className="text-4xl">👾</div>
+              <div className="bg-black/80 text-white p-2 rounded mt-2 w-[280px] max-w-[80vw]">
+                <p className="text-xs mb-2">{e.question}</p>
+
+                {e.mode === "mcq" ? (
+                  activeEnemy === e.id ? (
+                    <div className="grid grid-cols-1 gap-1">
+                      {e.options.map((opt, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => handleAnswerMcq(e.id, idx)}
+                          className="text-xs bg-yellow-400 text-black px-2 py-1 rounded hover:bg-yellow-300"
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <PixelButton size="sm" onClick={() => setActiveEnemy(e.id)}>Answer</PixelButton>
+                  )
+                ) : (
+                  activeEnemy === e.id ? (
+                    <div className="flex gap-1">
+                      <input
+                        value={typingValue}
+                        onChange={(ev) => setTypingValue(ev.target.value)}
+                        onKeyDown={(ev) => {
+                          if (ev.key === "Enter") handleAnswerText(e.id);
+                        }}
+                        className="flex-1 text-black text-xs px-2 py-1 rounded"
+                        placeholder="Type answer..."
+                      />
+                      <PixelButton size="sm" onClick={() => handleAnswerText(e.id)}>Submit</PixelButton>
+                    </div>
+                  ) : (
+                    <PixelButton size="sm" onClick={() => setActiveEnemy(e.id)}>Answer</PixelButton>
+                  )
+                )}
+              </div>
+            </div>
+          ))}
+
+          {/* Level complete overlay */}
+          {timer <= 0 && enemies.length === 0 && lives > 0 && level < 3 && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+              <PixelCard variant="orange" className="p-4">
+                <h3 className="text-xl font-bold mb-2">Level {level} Complete!</h3>
+                <PixelButton onClick={nextLevel}>Next Level</PixelButton>
+              </PixelCard>
+            </div>
+          )}
+
+          {/* Paused overlay */}
+          {gameState === "paused" && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+              <PixelCard variant="orange" className="p-4">
+                <h3 className="text-xl font-bold">Game Paused</h3>
+              </PixelCard>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Add: URL params handling for history game
+  const [historyActive, setHistoryActive] = useState(false);
+  const [historyInfo, setHistoryInfo] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("game") === "history") setHistoryInfo(true);
+  }, []);
+
+  // Pre-game popup (place near the root of JSX so it can overlay)
+  {historyInfo && (
+    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+      <PixelCard variant="orange" className="p-6 max-w-md">
+        <h2 className="text-2xl font-bold mb-3 text-center">History Timeline Defender</h2>
+        <p className="mb-4 text-center">Fix the timeline! Answer quickly to dispel anomalies.</p>
+        <div className="flex gap-2">
+          <PixelButton
+            className="flex-1"
+            onClick={() => {
+              setHistoryInfo(false);
+              setHistoryActive(true);
+            }}
+          >
+            Play
+          </PixelButton>
+          <PixelButton
+            variant="secondary"
+            className="flex-1"
+            onClick={() => {
+              setHistoryInfo(false);
+              const p = new URLSearchParams(window.location.search);
+              p.delete("game");
+              const newUrl = window.location.pathname + (p.toString() ? `?${p}` : "");
+              window.history.replaceState({}, "", newUrl);
+            }}
+          >
+            Exit
+          </PixelButton>
+        </div>
+      </PixelCard>
+    </div>
+  )}
+
+  // Render the game overlay when active
+  {historyActive && (
+    <HistoryGame
+      onClose={() => {
+        setHistoryActive(false);
+        const p = new URLSearchParams(window.location.search);
+        if (p.get("game") === "history") {
+          p.delete("game");
+          const newUrl = window.location.pathname + (p.toString() ? `?${p}` : "");
+          window.history.replaceState({}, "", newUrl);
+        }
+      }}
+    />
+  )}
+
+  // (Optional) Add a tile to launch History inside any existing grid of game tiles:
+  // <PixelCard variant="orange" className="p-6 text-center">
+  //   <div className="text-4xl mb-4">⏳</div>
+  //   <h3 className="text-xl font-bold mb-2">History Timeline</h3>
+  //   <p className="text-sm mb-4">Defeat anomalies by answering history questions!</p>
+  //   <PixelButton
+  //     className="w-full"
+  //     onClick={() => {
+  //       const p = new URLSearchParams(window.location.search);
+  //       p.set("game", "history");
+  //       const newUrl = window.location.pathname + `?${p}`;
+  //       window.history.replaceState({}, "", newUrl);
+  //       // Show pre-game
+  //       setHistoryInfo(true);
+  //     }}
+  //   >
+  //     Enter Timeline
+  //   </PixelButton>
+  // </PixelCard>
+
   return (
     <div className="min-h-screen bg-transparent">
       <GlobalHeader />
@@ -1660,11 +1772,11 @@ export default function Tests() {
           </p>
         </motion.div>
 
-        {/* Add: Game launchers */}
+        {/* Add: Math Game launcher */}
         <div className="mb-4 flex gap-3">
           <PixelButton size="sm" onClick={() => setShowMathIntro(true)}>Enter</PixelButton>
           <PixelButton size="sm" onClick={startElementMixerGame}>Play Chemistry Game</PixelButton>
-          <PixelButton size="sm" onClick={() => setShowHistoryIntro(true)}>History Timeline</PixelButton>
+          
         </div>
 
         {!tests ? (
@@ -1964,181 +2076,6 @@ export default function Tests() {
             </div>
           </DialogContent>
         </Dialog>
-
-        {/* History Game Intro Dialog */}
-        <Dialog open={showHistoryIntro} onOpenChange={setShowHistoryIntro}>
-          <DialogContent className="sm:max-w-md rounded-none border-4 border-yellow-600">
-            <DialogHeader>
-              <DialogTitle className="text-black" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
-                History — Timeline Defender
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <PixelCard variant="orange" className="p-4">
-                <p className="text-black font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
-                  Fix the timeline! Answer quickly to dispel anomalies before they corrupt history.
-                </p>
-              </PixelCard>
-              <div className="flex justify-end gap-2">
-                <PixelButton
-                  variant="secondary"
-                  onClick={() => setShowHistoryIntro(false)}
-                >
-                  Exit
-                </PixelButton>
-                <PixelButton
-                  onClick={() => {
-                    setShowHistoryIntro(false);
-                    startHistoryGame();
-                  }}
-                >
-                  Play
-                </PixelButton>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* History Game Overlay */}
-        {historyOpen && (
-          <div className="fixed inset-0 z-50 bg-neutral-950/95 backdrop-blur-sm border-4 border-yellow-600">
-            <div className="relative h-full w-full flex flex-col">
-              {/* Top bar */}
-              <div className="flex items-center justify-between px-4 py-2 bg-black/60 border-b-4 border-yellow-700">
-                <div className="flex items-center gap-3">
-                  <img src="/assets/edufun.png" alt="Logo" className="h-8" style={{ imageRendering: "pixelated" }} />
-                  <span className="text-yellow-300 font-bold" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000,-1px 0 #000,0 1px #000,0 -1px #000" }}>
-                    History — Timeline Defender
-                  </span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-yellow-300 font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
-                    ⏱ {historyTimer}s
-                  </span>
-                  <span className="text-yellow-300 font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
-                    XP: {historyScore}
-                  </span>
-                  <span className="text-yellow-300 font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
-                    ❤ {historyLives}
-                  </span>
-                  <span className="text-yellow-300 font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
-                    Lv {historyLevel}
-                  </span>
-                  <PixelButton 
-                    size="sm" 
-                    onClick={useTimeFreeze}
-                    disabled={historyPowerups.freeze <= 0 || historyFreezeActive}
-                  >
-                    ❄ Freeze ({historyPowerups.freeze})
-                  </PixelButton>
-                  <PixelButton 
-                    size="sm" 
-                    onClick={useKnowledgeBomb}
-                    disabled={historyPowerups.bomb <= 0}
-                  >
-                    💣 Bomb ({historyPowerups.bomb})
-                  </PixelButton>
-                  <PixelButton size="sm" variant="secondary" onClick={() => { setHistoryOpen(false); setHistoryOver(false); }}>
-                    Exit
-                  </PixelButton>
-                </div>
-              </div>
-
-              {/* Game field */}
-              <div className="relative flex-1 overflow-hidden">
-                {/* Time traveler (left) */}
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="absolute left-6 top-1/2 -translate-y-1/2"
-                  style={{ width: 48, height: 48 }}
-                  title="Time Traveler"
-                >
-                  <div className="w-full h-full bg-blue-400 border-4 border-blue-700 flex items-center justify-center text-2xl">
-                    🧭
-                  </div>
-                </motion.div>
-
-                {/* Anomalies */}
-                {historyAnomalies.map((anomaly) => (
-                  <motion.div
-                    key={anomaly.id}
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="absolute"
-                    style={{ left: `${anomaly.x}%`, top: `${anomaly.y}%` }}
-                  >
-                    <div className="flex flex-col items-center">
-                      <div
-                        className="text-xs px-2 py-1 bg-red-300 border-2 border-red-700 text-black font-bold mb-1 max-w-48 text-center"
-                        style={{ fontFamily: "'Pixelify Sans', monospace" }}
-                      >
-                        {anomaly.question}
-                      </div>
-                      <div className="w-12 h-12 bg-red-400 border-4 border-red-700 flex items-center justify-center text-xl">
-                        👹
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-
-                {/* Game Over */}
-                {historyOver && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="bg-black/80 border-4 border-yellow-700 p-6 text-center">
-                      <div className="text-3xl font-bold text-yellow-300 mb-2" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
-                        Timeline {historyLevel >= 3 ? 'Restored' : 'Corrupted'}!
-                      </div>
-                      <div className="text-yellow-200 mb-4" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
-                        You earned {historyScore} XP and reached Level {historyLevel}.
-                      </div>
-                      <PixelButton onClick={() => { startHistoryGame(); }}>Play Again</PixelButton>
-                      <PixelButton variant="secondary" className="ml-2" onClick={() => { setHistoryOpen(false); setHistoryOver(false); }}>
-                        Close
-                      </PixelButton>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Bottom answer panel */}
-              <div className="px-4 py-3 bg-black/60 border-t-4 border-yellow-700">
-                {historyAnswerMode === 'mcq' ? (
-                  <div className="flex items-center justify-center gap-3">
-                    {historyAnomalies.find(a => a.type === 'mcq')?.options?.map((option, idx) => (
-                      <PixelButton
-                        key={idx}
-                        size="sm"
-                        onClick={() => handleHistoryMCQ(idx)}
-                        className="min-w-24"
-                      >
-                        {String.fromCharCode(65 + idx)}: {option}
-                      </PixelButton>
-                    )) || (
-                      <span className="text-yellow-300" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
-                        Waiting for anomaly...
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center gap-3">
-                    <span className="text-yellow-300 font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
-                      Type answer:
-                    </span>
-                    <Input
-                      value={historyTextAnswer}
-                      onChange={(e) => setHistoryTextAnswer(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === "Enter") handleHistoryTextSubmit(); }}
-                      className="rounded-none border-2 border-yellow-600 bg-yellow-100 text-black max-w-xs"
-                      placeholder="Your answer"
-                    />
-                    <PixelButton size="sm" onClick={handleHistoryTextSubmit}>Submit</PixelButton>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Chemistry Game Overlay */}
         {chemOpen && (

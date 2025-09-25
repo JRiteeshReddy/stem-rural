@@ -1,7 +1,6 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { PixelCard } from "@/components/PixelCard";
 import { PixelButton } from "@/components/PixelButton";
@@ -84,6 +83,7 @@ export default function Dashboard() {
   const [studentDialog, setStudentDialog] = useState({ open: false, student: null as any });
   const [announcementDialog, setAnnouncementDialog] = useState({ open: false, announcement: null as any });
   const [searchTerm, setSearchTerm] = useState("");
+  // Initialize with non-empty sentinel values to avoid empty Select value paths
   const [classFilter, setClassFilter] = useState("ALL_CLASSES");
   const [difficultyFilter, setDifficultyFilter] = useState("ALL_LEVELS");
 
@@ -106,15 +106,15 @@ export default function Dashboard() {
         body: file,
       });
       const { storageId } = await result.json();
-      await setProfileImage({ fileId: storageId as Id<"_storage"> });
+      await setProfileImage({ fileId: storageId as any });
       toast.success("Profile image updated!");
     } catch (error) {
       toast.error("Failed to upload image");
     }
   };
 
-  const handleOpenCourse = async (courseId: string, courseTitle: string) => {
-    await markCourseAccessed({ courseId: courseId as Id<"courses"> });
+  const handleOpenCourse = async (courseId: any, courseTitle: string) => {
+    await markCourseAccessed({ courseId: courseId as any });
     if (courseTitle === "Mathematics") {
       navigate("/tests?game=math");
     } else {
@@ -136,9 +136,9 @@ export default function Dashboard() {
     }
   };
 
-  const handleUpdateCourse = async (courseId: string, data: any) => {
+  const handleUpdateCourse = async (courseId: any, data: any) => {
     try {
-      await updateCourse({ courseId, ...data });
+      await updateCourse({ courseId: courseId as any, ...data });
       toast.success("Course updated successfully!");
       setCourseDialog({ open: false, course: null });
     } catch (error) {
@@ -146,10 +146,10 @@ export default function Dashboard() {
     }
   };
 
-  const handleDeleteCourse = async (courseId: string) => {
+  const handleDeleteCourse = async (courseId: any) => {
     if (confirm("Are you sure you want to delete this course?")) {
       try {
-        await deleteCourse({ courseId: courseId as Id<"courses"> });
+        await deleteCourse({ courseId: courseId as any });
         toast.success("Course deleted successfully!");
       } catch (error) {
         toast.error("Failed to delete course");
@@ -157,9 +157,9 @@ export default function Dashboard() {
     }
   };
 
-  const handleUpdateTest = async (testId: string, data: any) => {
+  const handleUpdateTest = async (testId: any, data: any) => {
     try {
-      await updateTestMeta({ testId, ...data });
+      await updateTestMeta({ testId: testId as any, ...data });
       toast.success("Test updated successfully!");
       setTestDialog({ open: false, test: null });
     } catch (error) {
@@ -167,10 +167,10 @@ export default function Dashboard() {
     }
   };
 
-  const handleDeleteTest = async (testId: string) => {
+  const handleDeleteTest = async (testId: any) => {
     if (confirm("Are you sure you want to delete this test?")) {
       try {
-        await deleteTest({ testId: testId as Id<"tests"> });
+        await deleteTest({ testId: testId as any });
         toast.success("Test deleted successfully!");
       } catch (error) {
         toast.error("Failed to delete test");
@@ -178,9 +178,9 @@ export default function Dashboard() {
     }
   };
 
-  const handleUpdateStudent = async (studentId: string, data: any) => {
+  const handleUpdateStudent = async (studentId: any, data: any) => {
     try {
-      await updateStudentProfile({ studentId, ...data });
+      await updateStudentProfile({ studentId: studentId as any, ...data });
       toast.success("Student updated successfully!");
       setStudentDialog({ open: false, student: null });
     } catch (error) {
@@ -188,10 +188,10 @@ export default function Dashboard() {
     }
   };
 
-  const handleDeleteStudent = async (studentId: string) => {
+  const handleDeleteStudent = async (studentId: any) => {
     if (confirm("Are you sure you want to delete this student account?")) {
       try {
-        await deleteStudentAccount({ targetUserId: studentId as Id<"users"> });
+        await deleteStudentAccount({ targetUserId: studentId as any });
         toast.success("Student account deleted successfully!");
       } catch (error) {
         toast.error("Failed to delete student account");
@@ -550,7 +550,7 @@ export default function Dashboard() {
                         <CourseForm
                           course={courseDialog.course}
                           onSubmit={courseDialog.course ? 
-                            (data: any) => handleUpdateCourse(courseDialog.course._id, data) :
+                            (data) => handleUpdateCourse(courseDialog.course._id, data) :
                             handleCreateCourse
                           }
                           onCancel={() => setCourseDialog({ open: false, course: null })}
@@ -913,7 +913,7 @@ export default function Dashboard() {
             </DialogHeader>
             <StudentForm
               student={studentDialog.student}
-              onSubmit={(data: any) => handleUpdateStudent(studentDialog.student._id, data)}
+              onSubmit={(data) => handleUpdateStudent(studentDialog.student._id, data)}
               onCancel={() => setStudentDialog({ open: false, student: null })}
             />
           </DialogContent>
@@ -959,7 +959,7 @@ function CourseForm({ course, onSubmit, onCancel }: any) {
       </div>
       <div>
         <label className="text-sm font-medium">Target Class</label>
-        <Select value={formData.targetClass || undefined} onValueChange={(value) => setFormData({ ...formData, targetClass: value })}>
+        <Select value={formData.targetClass} onValueChange={(value) => setFormData({ ...formData, targetClass: value })}>
           <SelectTrigger>
             <SelectValue placeholder="Select class" />
           </SelectTrigger>
@@ -1020,7 +1020,7 @@ function StudentForm({ student, onSubmit, onCancel }: any) {
       </div>
       <div>
         <label className="text-sm font-medium">Class</label>
-        <Select value={formData.userClass || undefined} onValueChange={(value) => setFormData({ ...formData, userClass: value })}>
+        <Select value={formData.userClass} onValueChange={(value) => setFormData({ ...formData, userClass: value })}>
           <SelectTrigger>
             <SelectValue placeholder="Select class" />
           </SelectTrigger>

@@ -25,6 +25,21 @@ export default function Courses() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [studentSearch, setStudentSearch] = useState("");
+  const [teacherSearch, setTeacherSearch] = useState("");
+
+  // Derived filtered lists
+  const filteredStudentCourses = (studentCourses || []).filter((c: any) => {
+    const q = studentSearch.trim().toLowerCase();
+    if (!q) return true;
+    return (c.title || "").toLowerCase().includes(q) || (c.description || "").toLowerCase().includes(q);
+  });
+
+  const filteredTeacherCourses = (teacherCourses || []).filter((c: any) => {
+    const q = teacherSearch.trim().toLowerCase();
+    if (!q) return true;
+    return (c.title || "").toLowerCase().includes(q) || (c.description || "").toLowerCase().includes(q);
+  });
 
   const handleCreate = async () => {
     try {
@@ -98,8 +113,18 @@ export default function Courses() {
               </PixelButton>
             </div>
 
+            <div className="flex justify-end">
+              <input
+                className="w-full md:w-72 px-3 py-2 bg-neutral-900/70 border-2 border-yellow-700 text-yellow-200 outline-none"
+                placeholder="Search courses..."
+                value={studentSearch}
+                onChange={(e) => setStudentSearch(e.target.value)}
+                style={{ fontFamily: "'Pixelify Sans', monospace" }}
+              />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {(studentCourses || []).map((c: any) => (
+              {filteredStudentCourses.map((c: any) => (
                 <div
                   key={c._id}
                   className="relative p-4 bg-neutral-900/60 border-2 border-yellow-700"
@@ -142,8 +167,10 @@ export default function Courses() {
                   </div>
                 </div>
               ))}
-              {(!studentCourses || studentCourses.length === 0) && (
-                <div className="text-yellow-200">No courses yet for your class.</div>
+              {filteredStudentCourses.length === 0 && (
+                <div className="text-yellow-200">
+                  {studentSearch ? "No matching courses." : "No courses yet for your class."}
+                </div>
               )}
             </div>
           </section>
@@ -191,8 +218,19 @@ export default function Courses() {
               >
                 Your Courses
               </h2>
+
+              <div className="flex justify-end">
+                <input
+                  className="w-full md:w-72 px-3 py-2 bg-neutral-900/70 border-2 border-yellow-700 text-yellow-200 outline-none"
+                  placeholder="Search your courses..."
+                  value={teacherSearch}
+                  onChange={(e) => setTeacherSearch(e.target.value)}
+                  style={{ fontFamily: "'Pixelify Sans', monospace" }}
+                />
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {(teacherCourses || []).map((c: any) => (
+                {filteredTeacherCourses.map((c: any) => (
                   <div key={c._id} className="p-4 bg-neutral-900/60 border-2 border-yellow-700" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2 text-yellow-100 font-bold">
@@ -214,8 +252,10 @@ export default function Courses() {
                     <div className="text-yellow-200 text-xs opacity-90">{c.description}</div>
                   </div>
                 ))}
-                {(!teacherCourses || teacherCourses.length === 0) && (
-                  <div className="text-yellow-200">No courses yet. Create your first course!</div>
+                {filteredTeacherCourses.length === 0 && (
+                  <div className="text-yellow-200">
+                    {teacherSearch ? "No matching courses." : "No courses yet. Create your first course!"}
+                  </div>
                 )}
               </div>
             </section>
