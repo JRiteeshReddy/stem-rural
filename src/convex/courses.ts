@@ -298,14 +298,14 @@ export const listAllCoursesForTeacher = query({
       throw new Error("Unauthorized");
     }
 
-    const baseQuery = ctx.db.query("courses");
-    const finalQuery = args.targetClass
-      ? baseQuery.withIndex("by_class_and_published", (q) =>
-          q.eq("targetClass", args.targetClass!)
-        )
-      : baseQuery;
-
-    const courses = await finalQuery.collect();
+    const courses = args.targetClass
+      ? await ctx.db
+          .query("courses")
+          .withIndex("by_class_and_published", (q) =>
+            q.eq("targetClass", args.targetClass!)
+          )
+          .collect()
+      : await ctx.db.query("courses").collect();
 
     const coursesWithDetails = await Promise.all(
       courses.map(async (course) => {

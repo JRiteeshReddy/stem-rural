@@ -53,7 +53,7 @@ export default function Dashboard() {
   const studentCourses = useQuery(api.courses.getAllCoursesForStudent);
 
   // Teacher admin queries
-  const allCourses = useQuery(api.courses.getCoursesByTeacher, user?.role === "teacher" ? {} : "skip");
+  const allCourses = useQuery(api.courses.listAllCoursesForTeacher, user?.role === "teacher" ? {} : "skip");
   const allTests = useQuery(api.tests.listAllTestsForTeacher, user?.role === "teacher" ? {} : "skip");
   const allStudents = useQuery(api.users.listStudents, user?.role === "teacher" ? {} : "skip");
   const allAnnouncements = useQuery(api.announcements.listAllAnnouncements, user?.role === "teacher" ? {} : "skip");
@@ -89,7 +89,7 @@ export default function Dashboard() {
   // ... keep existing useEffect for student defaults
 
   useEffect(() => {
-    if (user?.role === "student" && user?.userClass) {
+    if (user?.role === "student" && user.userClass) {
       ensureDefaults();
     }
   }, [user?.role, user?.userClass, ensureDefaults]);
@@ -105,7 +105,8 @@ export default function Dashboard() {
         body: file,
       });
       const { storageId } = await result.json();
-      await setProfileImage({ storageId });
+      // Fix: setProfileImage expects { fileId }
+      await setProfileImage({ fileId: storageId as any });
       toast.success("Profile image updated!");
     } catch (error) {
       toast.error("Failed to upload image");
@@ -113,7 +114,7 @@ export default function Dashboard() {
   };
 
   const handleOpenCourse = async (courseId: string, courseTitle: string) => {
-    await markCourseAccessed({ courseId });
+    await markCourseAccessed({ courseId: courseId as any });
     if (courseTitle === "Mathematics") {
       navigate("/tests?game=math");
     } else {
@@ -148,7 +149,7 @@ export default function Dashboard() {
   const handleDeleteCourse = async (courseId: string) => {
     if (confirm("Are you sure you want to delete this course?")) {
       try {
-        await deleteCourse({ courseId });
+        await deleteCourse({ courseId: courseId as any });
         toast.success("Course deleted successfully!");
       } catch (error) {
         toast.error("Failed to delete course");
@@ -169,7 +170,7 @@ export default function Dashboard() {
   const handleDeleteTest = async (testId: string) => {
     if (confirm("Are you sure you want to delete this test?")) {
       try {
-        await deleteTest({ testId });
+        await deleteTest({ testId: testId as any });
         toast.success("Test deleted successfully!");
       } catch (error) {
         toast.error("Failed to delete test");
@@ -190,7 +191,7 @@ export default function Dashboard() {
   const handleDeleteStudent = async (studentId: string) => {
     if (confirm("Are you sure you want to delete this student account?")) {
       try {
-        await deleteStudentAccount({ targetUserId: studentId });
+        await deleteStudentAccount({ targetUserId: studentId as any });
         toast.success("Student account deleted successfully!");
       } catch (error) {
         toast.error("Failed to delete student account");
@@ -428,23 +429,23 @@ export default function Dashboard() {
   if (isTeacher) {
     // Teacher Control Center
     const filteredCourses = allCourses?.filter(course => 
-      (!classFilter || course.targetClass === classFilter) &&
+      (!classFilter || classFilter === "all" || course.targetClass === classFilter) &&
       (!searchTerm || course.title.toLowerCase().includes(searchTerm.toLowerCase()))
     ) || [];
 
     const filteredTests = allTests?.filter(test => 
-      (!classFilter || test.targetClass === classFilter) &&
-      (!difficultyFilter || test.difficulty === difficultyFilter) &&
+      (!classFilter || classFilter === "all" || test.targetClass === classFilter) &&
+      (!difficultyFilter || difficultyFilter === "all" || test.difficulty === difficultyFilter) &&
       (!searchTerm || test.title.toLowerCase().includes(searchTerm.toLowerCase()))
     ) || [];
 
     const filteredStudents = allStudents?.filter(student => 
-      (!classFilter || student.userClass === classFilter) &&
+      (!classFilter || classFilter === "all" || student.userClass === classFilter) &&
       (!searchTerm || student.name.toLowerCase().includes(searchTerm.toLowerCase()))
     ) || [];
 
     const filteredAnnouncements = allAnnouncements?.filter(announcement => 
-      (!classFilter || announcement.targetClass === classFilter) &&
+      (!classFilter || classFilter === "all" || announcement.targetClass === classFilter) &&
       (!searchTerm || announcement.title.toLowerCase().includes(searchTerm.toLowerCase()))
     ) || [];
 
@@ -520,12 +521,12 @@ export default function Dashboard() {
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-48"
                     />
-                    <Select value={classFilter || undefined} onValueChange={(v) => setClassFilter(v === "ALL_CLASSES" ? "" : v)}>
+                    <Select value={classFilter} onValueChange={setClassFilter}>
                       <SelectTrigger className="w-32">
                         <SelectValue placeholder="Class" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="ALL_CLASSES">All Classes</SelectItem>
+                        <SelectItem value="all">All Classes</SelectItem>
                         <SelectItem value="Class 6">Class 6</SelectItem>
                         <SelectItem value="Class 7">Class 7</SelectItem>
                         <SelectItem value="Class 8">Class 8</SelectItem>
@@ -549,7 +550,7 @@ export default function Dashboard() {
                         <CourseForm
                           course={courseDialog.course}
                           onSubmit={courseDialog.course ? 
-                            (data) => handleUpdateCourse(courseDialog.course._id, data) :
+                            (data: any) => handleUpdateCourse(courseDialog.course._id, data) :
                             handleCreateCourse
                           }
                           onCancel={() => setCourseDialog({ open: false, course: null })}
@@ -582,7 +583,7 @@ export default function Dashboard() {
                               {course.subjectType || "custom"}
                             </Badge>
                           </TableCell>
-                          <TableCell>{(course as any).chaptersCount ?? "-"}</TableCell>
+                          <TableCell>{course.chaptersCount}</TableCell>
                           <TableCell>
                             <Badge variant={course.isPublished ? "default" : "secondary"}>
                               {course.isPublished ? "Published" : "Draft"}
@@ -627,12 +628,12 @@ export default function Dashboard() {
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-48"
                     />
-                    <Select value={difficultyFilter || undefined} onValueChange={(v) => setDifficultyFilter(v === "ALL_LEVELS" ? "" : v)}>
+                    <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
                       <SelectTrigger className="w-32">
                         <SelectValue placeholder="Difficulty" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="ALL_LEVELS">All Levels</SelectItem>
+                        <SelectItem value="all">All Levels</SelectItem>
                         <SelectItem value="easy">Easy</SelectItem>
                         <SelectItem value="medium">Medium</SelectItem>
                         <SelectItem value="hard">Hard</SelectItem>
@@ -714,12 +715,12 @@ export default function Dashboard() {
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-48"
                     />
-                    <Select value={classFilter || undefined} onValueChange={(v) => setClassFilter(v === "ALL_CLASSES" ? "" : v)}>
+                    <Select value={classFilter} onValueChange={setClassFilter}>
                       <SelectTrigger className="w-32">
                         <SelectValue placeholder="Class" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="ALL_CLASSES">All Classes</SelectItem>
+                        <SelectItem value="all">All Classes</SelectItem>
                         <SelectItem value="Class 6">Class 6</SelectItem>
                         <SelectItem value="Class 7">Class 7</SelectItem>
                         <SelectItem value="Class 8">Class 8</SelectItem>
@@ -912,7 +913,7 @@ export default function Dashboard() {
             </DialogHeader>
             <StudentForm
               student={studentDialog.student}
-              onSubmit={(data) => handleUpdateStudent(studentDialog.student._id, data)}
+              onSubmit={(data: any) => handleUpdateStudent(studentDialog.student._id, data)}
               onCancel={() => setStudentDialog({ open: false, student: null })}
             />
           </DialogContent>
@@ -958,7 +959,7 @@ function CourseForm({ course, onSubmit, onCancel }: any) {
       </div>
       <div>
         <label className="text-sm font-medium">Target Class</label>
-        <Select value={formData.targetClass || undefined} onValueChange={(value) => setFormData({ ...formData, targetClass: value })}>
+        <Select value={formData.targetClass} onValueChange={(value) => setFormData({ ...formData, targetClass: value })}>
           <SelectTrigger>
             <SelectValue placeholder="Select class" />
           </SelectTrigger>
@@ -1019,7 +1020,7 @@ function StudentForm({ student, onSubmit, onCancel }: any) {
       </div>
       <div>
         <label className="text-sm font-medium">Class</label>
-        <Select value={formData.userClass || undefined} onValueChange={(value) => setFormData({ ...formData, userClass: value })}>
+        <Select value={formData.userClass} onValueChange={(value) => setFormData({ ...formData, userClass: value })}>
           <SelectTrigger>
             <SelectValue placeholder="Select class" />
           </SelectTrigger>

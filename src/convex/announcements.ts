@@ -52,14 +52,14 @@ export const listAllAnnouncements = query({
       throw new Error("Unauthorized");
     }
 
-    const baseQuery = ctx.db.query("announcements");
-    const finalQuery = args.targetClass
-      ? baseQuery.withIndex("by_targetClass", (q) =>
-          q.eq("targetClass", args.targetClass!)
-        )
-      : baseQuery;
-
-    const announcements = await finalQuery.collect();
+    const announcements = args.targetClass
+      ? await ctx.db
+          .query("announcements")
+          .withIndex("by_targetClass", (q) =>
+            q.eq("targetClass", args.targetClass!)
+          )
+          .collect()
+      : await ctx.db.query("announcements").collect();
 
     // Filter by scheduled status if specified
     let filteredAnnouncements = announcements;
