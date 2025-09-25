@@ -237,6 +237,7 @@ export default function Tests() {
     C: "https://harmless-tapir-303.convex.cloud/api/storage/5626b986-4793-4bd1-ae35-56e50c57d437",
     N: "https://harmless-tapir-303.convex.cloud/api/storage/f4ade3bd-4a72-440a-adb3-9cf4c0c49112",
     Mg: "https://harmless-tapir-303.convex.cloud/api/storage/79ccb450-a77a-4526-88ba-24c949386bd5",
+    S: "https://harmless-tapir-303.convex.cloud/api/storage/ede767a5-a99e-43c0-819a-f8ee21ffa426",
   };
 
   // Return sprite URL if available
@@ -2073,8 +2074,8 @@ export default function Tests() {
                     style={{ left: `${f.x}%`, top: `${f.y}%` }}
                   >
                     <div
-                      className="w-12 h-12 flex items-center justify-center bg-transparent border-0 shadow-none"
-                      style={{ imageRendering: "pixelated" }}
+                      className="w-12 h-12 flex items-center justify-center"
+                      style={{ imageRendering: "pixelated", fontFamily: "'Pixelify Sans', monospace" }}
                     >
                       {renderElementContent(f.symbol)}
                     </div>
@@ -2198,8 +2199,8 @@ export default function Tests() {
                           key={sym}
                           draggable
                           onDragStart={(e) => onDragStartTile(e, sym)}
-                          className="w-16 h-16 flex items-center justify-center bg-transparent border-0 shadow-none cursor-grab active:cursor-grabbing select-none"
-                          style={{ imageRendering: "pixelated" }}
+                          className="w-14 h-14 flex items-center justify-center cursor-grab active:cursor-grabbing select-none"
+                          style={{ imageRendering: "pixelated", fontFamily: "'Pixelify Sans', monospace" }}
                           title={`Drag ${sym}`}
                         >
                           {renderElementContent(sym)}
