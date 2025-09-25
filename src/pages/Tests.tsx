@@ -2121,7 +2121,7 @@ export default function Tests() {
                     style={{ imageRendering: "pixelated" }}
                     title="Mixer"
                   >
-                    MIX
+                    <img src="https://harmless-tapir-303.convex.cloud/api/storage/3acb5efd-f6c5-4652-961a-5a28583dc16f" alt="Mixer" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
                   </div>
                 </motion.div>
 
@@ -2248,7 +2248,7 @@ export default function Tests() {
                       style={{ imageRendering: "pixelated" }}
                       title="Mixing Chamber"
                     >
-                      MIX
+                      <img src="https://harmless-tapir-303.convex.cloud/api/storage/3acb5efd-f6c5-4652-961a-5a28583dc16f" alt="Mixer" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
                     </div>
                     {/* Success / Game Over overlay */}
                     {mixerOver && (
