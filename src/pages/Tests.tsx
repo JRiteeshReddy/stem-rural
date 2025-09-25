@@ -238,6 +238,7 @@ export default function Tests() {
     N: "https://harmless-tapir-303.convex.cloud/api/storage/f4ade3bd-4a72-440a-adb3-9cf4c0c49112",
     Mg: "https://harmless-tapir-303.convex.cloud/api/storage/79ccb450-a77a-4526-88ba-24c949386bd5",
     S: "https://harmless-tapir-303.convex.cloud/api/storage/ede767a5-a99e-43c0-819a-f8ee21ffa426",
+    Ca: "https://harmless-tapir-303.convex.cloud/api/storage/0788f08d-a5ae-4990-bf8c-0c23dff53879",
   };
 
   // Return sprite URL if available
