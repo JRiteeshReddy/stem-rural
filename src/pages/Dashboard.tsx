@@ -39,8 +39,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
 export default function Dashboard() {
   const { user, isLoading } = useAuth();
@@ -831,31 +829,9 @@ export default function Dashboard() {
                       <CardTitle>Student Activity</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ChartContainer
-                        config={{
-                          active: { label: "Active", color: "#22c55e" },
-                          inactive: { label: "Inactive", color: "#ef4444" },
-                        }}
-                        className="h-[200px]"
-                      >
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={chartData}
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={60}
-                              outerRadius={80}
-                              dataKey="value"
-                            >
-                              {chartData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.fill} />
-                              ))}
-                            </Pie>
-                            <ChartTooltip content={<ChartTooltipContent />} />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </ChartContainer>
+                      <div className="h-[200px] w-full flex items-center justify-center text-sm text-muted-foreground">
+                        Activity chart unavailable. Data summary: {analyticsData.activeStudents} active / {analyticsData.totalStudents - analyticsData.activeStudents} inactive.
+                      </div>
                     </CardContent>
                   </Card>
 
