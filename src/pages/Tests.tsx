@@ -1345,7 +1345,7 @@ export default function Tests() {
 
         {/* Add: Math Game launcher */}
         <div className="mb-4 flex gap-3">
-          <PixelButton size="sm" onClick={() => setShowMathIntro(true)}>Play Math Game</PixelButton>
+          <PixelButton size="sm" onClick={() => setShowMathIntro(true)}>Enter</PixelButton>
           <PixelButton size="sm" onClick={startElementMixerGame}>Play Chemistry Game</PixelButton>
           
         </div>
