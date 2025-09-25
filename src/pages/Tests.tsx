@@ -16,20 +16,11 @@ import { useNavigate } from "react-router";
 import { useLocation } from "react-router";
 import { toast } from "sonner";
 import { useRef } from "react";
+import { useCallback } from "react";
 
 type TestDoc = ReturnType<typeof useQuery<typeof api.tests.getPublishedTests>> extends (infer T)[] | undefined ? T : any;
 
 const ENABLE_PHYSICS = false; // Disable Gravity Dash entirely
-
-// Temporary compile guards for previously added History pre-game block.
-// These stubs prevent top-level calls from breaking compilation and are shadowed by in-component variables.
-const __historyNavigateStub = (..._args: any[]) => {};
-// Note: navigate inside components will shadow this stub.
-const navigate = __historyNavigateStub as any;
-// Note: setShowHistoryInfo in components will shadow this stub.
-const setShowHistoryInfo: any = (..._args: any[]) => {};
-// gameParam stub (top-level reference was added earlier)
-const gameParam: any = undefined;
 
 export default function Tests() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -1339,6 +1330,435 @@ export default function Tests() {
     setBiocellBuffActive(false);
     setBiocellDefeated(0);
   };
+
+  // Add: History Timeline Defender mini-game component
+  function HistoryGame({ onClose }: { onClose: () => void }) {
+    // Local game state
+    const [gameState, setGameState] = useState<"playing" | "paused" | "summary">("playing");
+    const [level, setLevel] = useState(1);
+    const [lives, setLives] = useState(3);
+    const [xp, setXp] = useState(0);
+    const [timer, setTimer] = useState(45); // Level 1 default
+    const [enemies, setEnemies] = useState<Array<{
+      id: string;
+      x: number;
+      y: number;
+      speed: number;
+      question: string;
+      options: string[];
+      correctIndex: number;
+      correctText: string;
+      mode: "mcq" | "text";
+    }>>([]);
+    const [activeEnemy, setActiveEnemy] = useState<string | null>(null);
+    const [typingValue, setTypingValue] = useState("");
+
+    // Power-ups: counts and states
+    const [freezeActive, setFreezeActive] = useState(false);
+    const [freezeCooldown, setFreezeCooldown] = useState(0);
+    const [bombCooldown, setBombCooldown] = useState(0);
+    const [powerCounts, setPowerCounts] = useState({ freeze: 1, bomb: 0 });
+
+    const addCredits = useMutation(api.users.addCredits);
+
+    const levelDurations: Record<number, number> = { 1: 45, 2: 60, 3: 75 };
+
+    // Questions pool
+    const historyPools: Record<number, Array<{ q: string; options: string[]; correct: number; answer: string }>> = {
+      1: [
+        { q: "Who was the first Emperor of Rome?", options: ["Julius Caesar", "Augustus", "Nero", "Trajan"], correct: 1, answer: "Augustus" },
+        { q: "Which civilization built the pyramids?", options: ["Greeks", "Romans", "Egyptians", "Babylonians"], correct: 2, answer: "Egyptians" },
+        { q: "What year did Alexander the Great die?", options: ["336 BC", "323 BC", "356 BC", "300 BC"], correct: 1, answer: "323 BC" },
+        { q: "Which river was crucial to ancient Egypt?", options: ["Euphrates", "Nile", "Tigris", "Indus"], correct: 1, answer: "Nile" },
+        { q: "Who wrote the Iliad and the Odyssey?", options: ["Sophocles", "Aristotle", "Homer", "Plato"], correct: 2, answer: "Homer" },
+      ],
+      2: [
+        { q: "When was the Battle of Hastings?", options: ["1066", "1086", "1056", "1076"], correct: 0, answer: "1066" },
+        { q: "First Holy Roman Emperor?", options: ["Otto I", "Charlemagne", "Frederick I", "Henry IV"], correct: 1, answer: "Charlemagne" },
+        { q: "Which plague hit Europe in the 14th century?", options: ["Cholera", "Black Death", "Smallpox", "Typhus"], correct: 1, answer: "Black Death" },
+        { q: "The Crusades were primarily:", options: ["Trade routes", "Religious wars", "Territorial expansion", "Cultural exchange"], correct: 1, answer: "Religious wars" },
+        { q: "Who wrote the Divine Comedy?", options: ["Chaucer", "Dante", "Petrarch", "Boccaccio"], correct: 1, answer: "Dante" },
+      ],
+      3: [
+        { q: "When did World War I begin?", options: ["1912", "1914", "1916", "1918"], correct: 1, answer: "1914" },
+        { q: "First US President?", options: ["Jefferson", "John Adams", "George Washington", "Franklin"], correct: 2, answer: "George Washington" },
+        { q: "Year Berlin Wall fell?", options: ["1987", "1989", "1991", "1993"], correct: 1, answer: "1989" },
+        { q: "First on the moon?", options: ["Soviet Union", "United States", "China", "UK"], correct: 1, answer: "United States" },
+        { q: "India gained independence in:", options: ["1945", "1947", "1949", "1950"], correct: 1, answer: "1947" },
+      ],
+    };
+
+    // Set power-up counts by level
+    useEffect(() => {
+      if (level === 1) setPowerCounts({ freeze: 1, bomb: 0 });
+      if (level === 2) setPowerCounts({ freeze: 2, bomb: 0 });
+      if (level === 3) setPowerCounts({ freeze: 2, bomb: 1 });
+    }, [level]);
+
+    // Timer tick (1s)
+    useEffect(() => {
+      if (gameState !== "playing") return;
+      const t = setInterval(() => {
+        setTimer((prev) => Math.max(0, prev - 1));
+      }, 1000);
+      return () => clearInterval(t);
+    }, [gameState]);
+
+    // Movement + cooldowns (50ms)
+    useEffect(() => {
+      if (gameState !== "playing") return;
+      const loop = setInterval(() => {
+        setEnemies((prev) =>
+          prev
+            .map((e) => ({
+              ...e,
+              x: e.x - (freezeActive ? e.speed * 0.3 : e.speed),
+            }))
+            .filter((e) => {
+              if (e.x <= 50) {
+                setLives((l) => Math.max(0, l - 1));
+                return false;
+              }
+              return true;
+            })
+        );
+
+        setFreezeCooldown((c) => Math.max(0, c - 1));
+        setBombCooldown((c) => Math.max(0, c - 1));
+      }, 50);
+      return () => clearInterval(loop);
+    }, [gameState, freezeActive]);
+
+    // Enemy spawn (2.5s base minus 0.5s per level)
+    const spawnEnemy = useCallback(() => {
+      if (gameState !== "playing") return;
+
+      const pool = historyPools[level] || historyPools[1];
+      const base = pool[Math.floor(Math.random() * pool.length)];
+
+      // Shuffle options for MCQ levels
+      const options = [...base.options];
+      for (let i = options.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [options[i], options[j]] = [options[j], options[i]];
+      }
+      const correctIndex = options.indexOf(base.answer);
+      const mode: "mcq" | "text" = level < 3 ? "mcq" : "text";
+
+      // Find a free lane
+      const lanes = [100, 200, 300, 400];
+      const occupied = new Set(enemies.map((e) => e.y));
+      const free = lanes.filter((l) => !occupied.has(l));
+      if (free.length === 0) return;
+
+      setEnemies((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2),
+          x: 900,
+          y: free[Math.floor(Math.random() * free.length)],
+          speed: 1 + level * 0.6,
+          question: base.q,
+          options,
+          correctIndex: correctIndex >= 0 ? correctIndex : 0,
+          correctText: base.answer,
+          mode,
+        },
+      ]);
+    }, [enemies, gameState, level]);
+
+    useEffect(() => {
+      if (gameState !== "playing") return;
+      const spawnMs = Math.max(1200, 2500 - level * 500);
+      const s = setInterval(() => {
+        if (enemies.length < 4) spawnEnemy();
+      }, spawnMs);
+      return () => clearInterval(s);
+    }, [spawnEnemy, enemies.length, gameState, level]);
+
+    // Pause on tab hidden
+    useEffect(() => {
+      const onVis = () => {
+        if (document.hidden) setGameState("paused");
+      };
+      document.addEventListener("visibilitychange", onVis);
+      return () => document.removeEventListener("visibilitychange", onVis);
+    }, []);
+
+    // End conditions and summary
+    useEffect(() => {
+      const noEnemies = enemies.length === 0;
+      const timeUp = timer <= 0;
+      const outOfLives = lives <= 0;
+
+      if (outOfLives || (timeUp && noEnemies)) {
+        setGameState("summary");
+        // Award credits once per session
+        if (xp > 0) addCredits({ amount: xp }).catch(() => toast.error("Failed to save XP"));
+      }
+    }, [timer, lives, enemies.length, xp, addCredits]);
+
+    const handleAnswerMcq = (enemyId: string, idx: number) => {
+      const enemy = enemies.find((e) => e.id === enemyId);
+      if (!enemy) return;
+      if (idx === enemy.correctIndex) {
+        setXp((v) => v + 1);
+        setEnemies((prev) => prev.filter((e) => e.id !== enemyId));
+        toast.success("Correct! +1 XP");
+      } else {
+        toast.error("Wrong!");
+      }
+      setActiveEnemy(null);
+    };
+
+    const handleAnswerText = (enemyId: string) => {
+      const enemy = enemies.find((e) => e.id === enemyId);
+      if (!enemy) return;
+      const ok = typingValue.trim().toLowerCase() === enemy.correctText.trim().toLowerCase();
+      if (ok) {
+        setXp((v) => v + 1);
+        setEnemies((prev) => prev.filter((e) => e.id !== enemyId));
+        toast.success("Correct! +1 XP");
+        setTypingValue("");
+        setActiveEnemy(null);
+      } else {
+        toast.error("Wrong!");
+      }
+    };
+
+    const useFreeze = () => {
+      if (freezeActive || freezeCooldown > 0 || powerCounts.freeze <= 0) return;
+      setPowerCounts((c) => ({ ...c, freeze: c.freeze - 1 }));
+      setFreezeActive(true);
+      setFreezeCooldown(100); // cooldown ticks (50ms each)
+      // Turn off after 5s
+      setTimeout(() => setFreezeActive(false), 5000);
+      toast.success("Time Freeze!");
+    };
+
+    const useBomb = () => {
+      if (bombCooldown > 0 || powerCounts.bomb <= 0) return;
+      if (enemies.length > 0) {
+        // Clear enemies with no XP (per spec)
+        setEnemies([]);
+        toast.success("Knowledge Bomb! Cleared anomalies (no XP)");
+      }
+      setPowerCounts((c) => ({ ...c, bomb: c.bomb - 1 }));
+      setBombCooldown(160);
+    };
+
+    const nextLevel = () => {
+      if (level >= 3) return;
+      const next = level + 1;
+      setLevel(next);
+      setTimer(levelDurations[next]);
+      setEnemies([]);
+      setActiveEnemy(null);
+      setTypingValue("");
+      setGameState("playing");
+      toast.success(`Level ${next} started!`);
+    };
+
+    const badgeForLevel = (lvl: number) => {
+      if (lvl >= 3) return "World Historian";
+      if (lvl === 2) return "Freedom Fighter";
+      return "Ancient Explorer";
+    };
+
+    // Summary screen
+    if (gameState === "summary") {
+      return (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+          <PixelCard variant="orange" className="p-6 max-w-md">
+            <h2 className="text-2xl font-bold text-center mb-2">Timeline Summary</h2>
+            <div className="space-y-1 text-center">
+              <div>XP Earned: {xp}</div>
+              <div>Level Reached: {level}</div>
+              <div>Badge: {badgeForLevel(level)}</div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <PixelButton onClick={() => window.location.reload()} className="flex-1">Play Again</PixelButton>
+              <PixelButton onClick={onClose} variant="secondary" className="flex-1">Exit</PixelButton>
+            </div>
+          </PixelCard>
+        </div>
+      );
+    }
+
+    return (
+      <div className="fixed inset-0 z-50 bg-black/20 flex flex-col">
+        {/* Top bar */}
+        <div className="bg-black/80 text-white p-3 flex items-center justify-between">
+          <div className="flex gap-4">
+            <span>XP: {xp}</span>
+            <span>Lives: {"❤️".repeat(Math.max(0, lives)) || "💔"}</span>
+            <span>Level: {level}</span>
+            <span>Time: {timer}s</span>
+          </div>
+          <div className="flex gap-2">
+            <PixelButton size="sm" onClick={useFreeze} disabled={freezeActive || freezeCooldown > 0 || powerCounts.freeze <= 0}>
+              ⏸️ Freeze {powerCounts.freeze > 0 ? `(${powerCounts.freeze})` : ""}{freezeCooldown > 0 ? ` [CD]` : ""}
+            </PixelButton>
+            <PixelButton size="sm" onClick={useBomb} disabled={bombCooldown > 0 || powerCounts.bomb <= 0}>
+              💣 Bomb {powerCounts.bomb > 0 ? `(${powerCounts.bomb})` : ""}{bombCooldown > 0 ? ` [CD]` : ""}
+            </PixelButton>
+            <PixelButton size="sm" onClick={() => setGameState(gameState === "paused" ? "playing" : "paused")}>
+              {gameState === "paused" ? "▶️ Resume" : "⏸️ Pause"}
+            </PixelButton>
+            <PixelButton size="sm" variant="danger" onClick={onClose}>❌</PixelButton>
+          </div>
+        </div>
+
+        {/* Game area */}
+        <div className="relative flex-1 overflow-hidden">
+          {/* Time traveler (left) */}
+          <div className="absolute left-6 top-1/2 -translate-y-1/2 text-6xl">🧭</div>
+
+          {/* Enemies */}
+          {enemies.map((e) => (
+            <div key={e.id} className="absolute transition-all" style={{ left: `${e.x}px`, top: `${e.y}px` }}>
+              <div className="text-4xl">👾</div>
+              <div className="bg-black/80 text-white p-2 rounded mt-2 w-[280px] max-w-[80vw]">
+                <p className="text-xs mb-2">{e.question}</p>
+
+                {e.mode === "mcq" ? (
+                  activeEnemy === e.id ? (
+                    <div className="grid grid-cols-1 gap-1">
+                      {e.options.map((opt, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => handleAnswerMcq(e.id, idx)}
+                          className="text-xs bg-yellow-400 text-black px-2 py-1 rounded hover:bg-yellow-300"
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <PixelButton size="sm" onClick={() => setActiveEnemy(e.id)}>Answer</PixelButton>
+                  )
+                ) : (
+                  activeEnemy === e.id ? (
+                    <div className="flex gap-1">
+                      <input
+                        value={typingValue}
+                        onChange={(ev) => setTypingValue(ev.target.value)}
+                        onKeyDown={(ev) => {
+                          if (ev.key === "Enter") handleAnswerText(e.id);
+                        }}
+                        className="flex-1 text-black text-xs px-2 py-1 rounded"
+                        placeholder="Type answer..."
+                      />
+                      <PixelButton size="sm" onClick={() => handleAnswerText(e.id)}>Submit</PixelButton>
+                    </div>
+                  ) : (
+                    <PixelButton size="sm" onClick={() => setActiveEnemy(e.id)}>Answer</PixelButton>
+                  )
+                )}
+              </div>
+            </div>
+          ))}
+
+          {/* Level complete overlay */}
+          {timer <= 0 && enemies.length === 0 && lives > 0 && level < 3 && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+              <PixelCard variant="orange" className="p-4">
+                <h3 className="text-xl font-bold mb-2">Level {level} Complete!</h3>
+                <PixelButton onClick={nextLevel}>Next Level</PixelButton>
+              </PixelCard>
+            </div>
+          )}
+
+          {/* Paused overlay */}
+          {gameState === "paused" && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+              <PixelCard variant="orange" className="p-4">
+                <h3 className="text-xl font-bold">Game Paused</h3>
+              </PixelCard>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Add: URL params handling for history game
+  const [historyActive, setHistoryActive] = useState(false);
+  const [historyInfo, setHistoryInfo] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("game") === "history") setHistoryInfo(true);
+  }, []);
+
+  // Pre-game popup (place near the root of JSX so it can overlay)
+  {historyInfo && (
+    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+      <PixelCard variant="orange" className="p-6 max-w-md">
+        <h2 className="text-2xl font-bold mb-3 text-center">History Timeline Defender</h2>
+        <p className="mb-4 text-center">Fix the timeline! Answer quickly to dispel anomalies.</p>
+        <div className="flex gap-2">
+          <PixelButton
+            className="flex-1"
+            onClick={() => {
+              setHistoryInfo(false);
+              setHistoryActive(true);
+            }}
+          >
+            Play
+          </PixelButton>
+          <PixelButton
+            variant="secondary"
+            className="flex-1"
+            onClick={() => {
+              setHistoryInfo(false);
+              const p = new URLSearchParams(window.location.search);
+              p.delete("game");
+              const newUrl = window.location.pathname + (p.toString() ? `?${p}` : "");
+              window.history.replaceState({}, "", newUrl);
+            }}
+          >
+            Exit
+          </PixelButton>
+        </div>
+      </PixelCard>
+    </div>
+  )}
+
+  // Render the game overlay when active
+  {historyActive && (
+    <HistoryGame
+      onClose={() => {
+        setHistoryActive(false);
+        const p = new URLSearchParams(window.location.search);
+        if (p.get("game") === "history") {
+          p.delete("game");
+          const newUrl = window.location.pathname + (p.toString() ? `?${p}` : "");
+          window.history.replaceState({}, "", newUrl);
+        }
+      }}
+    />
+  )}
+
+  // (Optional) Add a tile to launch History inside any existing grid of game tiles:
+  // <PixelCard variant="orange" className="p-6 text-center">
+  //   <div className="text-4xl mb-4">⏳</div>
+  //   <h3 className="text-xl font-bold mb-2">History Timeline</h3>
+  //   <p className="text-sm mb-4">Defeat anomalies by answering history questions!</p>
+  //   <PixelButton
+  //     className="w-full"
+  //     onClick={() => {
+  //       const p = new URLSearchParams(window.location.search);
+  //       p.set("game", "history");
+  //       const newUrl = window.location.pathname + `?${p}`;
+  //       window.history.replaceState({}, "", newUrl);
+  //       // Show pre-game
+  //       setHistoryInfo(true);
+  //     }}
+  //   >
+  //     Enter Timeline
+  //   </PixelButton>
+  // </PixelCard>
 
   return (
     <div className="min-h-screen bg-transparent">
