@@ -29,7 +29,7 @@ export default function RoleSelection() {
     setIsLoading(true);
     try {
       await setupUserRole({ role: selectedRole, name: name.trim() });
-      toast.success("Welcome to SmartBanana! 🍌");
+      toast.success("Welcome to Edufun! 🎮");
       navigate("/dashboard");
     } catch (error) {
       toast.error("Failed to set up your account");
@@ -60,7 +60,7 @@ export default function RoleSelection() {
             📘
           </motion.div>
           <h1 className="text-4xl font-bold text-black mb-2" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
-            Welcome to STEM!
+            Welcome to Edufun!
           </h1>
           <p className="text-lg text-gray-700" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
             Choose your role to get started

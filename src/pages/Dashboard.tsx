@@ -52,10 +52,10 @@ export default function Dashboard() {
   const studentCourses = useQuery(api.courses.getAllCoursesForStudent);
 
   // Teacher admin queries
-  const allCourses = useQuery(api.courses.listAllCoursesForTeacher, user?.role === "teacher" ? {} : "skip");
-  const allTests = useQuery(api.tests.listAllTestsForTeacher, user?.role === "teacher" ? {} : "skip");
-  const allStudents = useQuery(api.users.listStudents, user?.role === "teacher" ? {} : "skip");
-  const allAnnouncements = useQuery(api.announcements.listAllAnnouncements, user?.role === "teacher" ? {} : "skip");
+  const allCourses = useQuery(api.courses.listAllCoursesForTeacher, user?.role === "teacher" ? {} : undefined);
+  const allTests = useQuery(api.tests.listAllTestsForTeacher, user?.role === "teacher" ? {} : undefined);
+  const allStudents = useQuery(api.users.listStudents, user?.role === "teacher" ? {} : undefined);
+  const allAnnouncements = useQuery(api.announcements.listAllAnnouncements, user?.role === "teacher" ? {} : undefined);
 
   // Mutations
   const generateUploadUrl = useAction(api.profile.generateUploadUrl);
@@ -830,23 +830,25 @@ export default function Dashboard() {
                       <CardTitle>Student Activity</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={chartData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={80}
-                            dataKey="value"
-                          >
-                            {chartData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.fill} />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
+                      <div className="h-[200px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={chartData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={60}
+                              outerRadius={80}
+                              dataKey="value"
+                            >
+                              {chartData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                              ))}
+                            </Pie>
+                            <Tooltip />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
                     </CardContent>
                   </Card>
 
