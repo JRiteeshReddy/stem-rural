@@ -352,51 +352,47 @@ export default function Tests() {
         return next;
       });
       {
-  // Animate beaker (bounce) on wrong/over drop
-  const el = document.getElementById("mixer-beaker") as HTMLImageElement | null;
-  if (el) {
-    el.style.transformOrigin = "50% 0%";
-    el.animate(
-      [
-        { transform: "translateY(0)" },
-        { transform: "translateY(-16px)" },
-        { transform: "translateY(0)" },
-        { transform: "translateY(-10px)" },
-        { transform: "translateY(0)" },
-      ],
-      { duration: 550, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }
-    );
-  }
-}
-toast.error("Wrong element! -1 life");
+        // Animate beaker (bounce) on wrong/over drop
+        const el = document.getElementById("mixer-beaker") as HTMLImageElement | null;
+        if (el) {
+          el.style.transformOrigin = "50% 0%";
+          el.animate(
+            [
+              { transform: "translateY(0)" },
+              { transform: "translateY(-16px)" },
+              { transform: "translateY(0)" },
+              { transform: "translateY(-10px)" },
+              { transform: "translateY(0)" },
+            ],
+            { duration: 550, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }
+          );
+        }
+      }
+      toast.error("Wrong element! -1 life");
       return;
     }
 
-    // When the dropped element is accepted/correct, trigger beaker shake + toast
-    // NOTE: This block is added inside the branch where the element is determined to be correct.
-    {
-      // Accept
-      const nextCollected = { ...mixerCollected, [symbol]: have + 1 };
-      setMixerCollected(nextCollected);
+    // Accept: update collection first so it's available for success check
+    const nextCollected = { ...mixerCollected, [symbol]: have + 1 };
+    setMixerCollected(nextCollected);
 
-      // Add this animation + toast for correct drops
-      const beakerEl = document.getElementById("mixer-beaker");
-      if (beakerEl) {
-        beakerEl.animate(
-          [
-            { transform: "rotate(-6deg)" },
-            { transform: "rotate(6deg)" },
-            { transform: "rotate(-4deg)" },
-            { transform: "rotate(4deg)" },
-            { transform: "rotate(0deg)" },
-          ],
-          { duration: 1000, easing: "ease-in-out" }
-        );
-      }
-      toast("Right One!");
+    // Pendulum swing on correct drop + pop notification
+    const beakerEl = document.getElementById("mixer-beaker");
+    if (beakerEl) {
+      beakerEl.animate(
+        [
+          { transform: "rotate(-6deg)" },
+          { transform: "rotate(6deg)" },
+          { transform: "rotate(-4deg)" },
+          { transform: "rotate(4deg)" },
+          { transform: "rotate(0deg)" },
+        ],
+        { duration: 1000, easing: "ease-in-out" }
+      );
     }
+    toast("Right One!");
 
-    // Check success
+    // Check success using nextCollected now in scope
     const success = Object.keys(mixerTargetCounts).every(
       (k) => (nextCollected[k] || 0) === mixerTargetCounts[k]
     );
