@@ -29,7 +29,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import CourseFormComponent from "@/components/dashboard/CourseForm";
+import CourseForm from "@/components/dashboard/CourseForm";
 import StudentForm from "@/components/dashboard/StudentForm";
 
 export default function Dashboard() {
@@ -37,13 +37,12 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   // Data queries
-  const studentCourses = useQuery(api.courses.getAllCoursesForStudent);
+  const studentCourses = useQuery(api.courses.getAllCoursesForStudent, {});
 
   // Teacher admin queries
   const allCourses = useQuery(api.courses.listAllCoursesForTeacher, user?.role === "teacher" ? {} : "skip");
   const allTests = useQuery(api.tests.listAllTestsForTeacher, user?.role === "teacher" ? {} : "skip");
   const allStudents = useQuery(api.users.listStudents, user?.role === "teacher" ? {} : "skip");
-  const allAnnouncements = useQuery(api.announcements.listAllAnnouncements, user?.role === "teacher" ? {} : "skip");
 
   // Mutations
   const ensureDefaults = useMutation(api.courses.ensureDefaultCoursesForUserClass);
@@ -55,9 +54,6 @@ export default function Dashboard() {
   const deleteCourse = useMutation(api.courses.deleteCourse);
   const updateTestMeta = useMutation(api.tests.updateTestMeta);
   const deleteTest = useMutation(api.tests.deleteTest);
-  const createAnnouncement = useMutation(api.announcements.createAnnouncementWithSchedule);
-  const updateAnnouncement = useMutation(api.announcements.updateAnnouncement);
-  const deleteAnnouncement = useMutation(api.announcements.deleteAnnouncement);
   const updateStudentProfile = useMutation(api.users.updateStudentProfileSubset);
   const deleteStudentAccount = useMutation(api.users.deleteStudentAccount);
 
@@ -66,7 +62,6 @@ export default function Dashboard() {
   const [courseDialog, setCourseDialog] = useState({ open: false, course: null as any });
   const [testDialog, setTestDialog] = useState({ open: false, test: null as any });
   const [studentDialog, setStudentDialog] = useState({ open: false, student: null as any });
-  const [announcementDialog, setAnnouncementDialog] = useState({ open: false, announcement: null as any });
   const [searchTerm, setSearchTerm] = useState("");
   const [classFilter, setClassFilter] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("");
@@ -75,7 +70,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user?.role === "student" && user?.userClass) {
-      ensureDefaults();
+      ensureDefaults({});
     }
   }, [user?.role, user?.userClass, ensureDefaults]);
 
@@ -220,44 +215,65 @@ export default function Dashboard() {
       <div className="min-h-screen bg-transparent">
         <GlobalHeader />
         <div className="container mx-auto px-4 py-8 space-y-8">
-          {/* Student Portal Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center space-y-4"
+          {/* Student Portal Header - Translucent black card like old UI */}
+          <PixelCard
+            variant="orange"
+            className="p-6 bg-black/70 border-yellow-600 shadow-[0_0_16px_rgba(255,204,0,0.25)]"
           >
-            <h1 className="text-4xl font-bold text-white pixel-text-shadow">
-              👾 Welcome back, {user.name || "Explorer"}!
-            </h1>
-            <div className="text-2xl font-bold text-yellow-400 pixel-text-shadow">
-              XP: {user.credits || 0}
-            </div>
-            <PixelButton
-              onClick={() => navigate("/tests")}
-              className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 text-lg"
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col lg:flex-row items-center justify-between gap-4"
             >
-              🎮 Continue Your Quest
-            </PixelButton>
-          </motion.div>
+              <div className="text-center lg:text-left space-y-2">
+                <h1 className="text-4xl font-bold text-yellow-300">
+                  👾 Welcome back, {user.name || "Explorer"}!
+                </h1>
+                <div className="text-yellow-200">
+                  Ready to continue your learning quest?
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="bg-black/70 border-2 border-yellow-600 px-4 py-2 text-yellow-300 font-bold">
+                  🪙 XP: {user.credits || 0}
+                </div>
+                <PixelButton
+                  onClick={() => navigate("/tests")}
+                  className="bg-yellow-400 hover:bg-yellow-300 text-black px-6 py-3"
+                >
+                  🎮 Continue Your Quest
+                </PixelButton>
+              </div>
+            </motion.div>
+          </PixelCard>
 
           {/* Student Performance Dashboard */}
-          <PixelCard variant="orange" className="p-6">
-            <h2 className="text-2xl font-bold mb-6 text-center">📊 Your Progress Dashboard</h2>
+          <PixelCard
+            variant="orange"
+            className="p-6 bg-black/70 border-yellow-600 shadow-[0_0_16px_rgba(255,204,0,0.25)]"
+          >
+            <h2 className="text-2xl font-bold mb-6 text-center text-yellow-300">
+              📊 Your Progress Dashboard
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {subjects.map((subject) => (
-                <div key={subject.name} className="bg-black/20 p-4 rounded-lg border-2 border-yellow-400">
+                <div
+                  key={subject.name}
+                  className="bg-black/60 p-4 rounded-none border-2 border-yellow-700"
+                >
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-2xl">{subject.icon}</span>
-                    <span className="font-bold text-white">{subject.name}</span>
+                    <span className="font-bold text-yellow-100">{subject.name}</span>
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-300">Level {subject.level}</span>
-                      <span className="text-gray-300">{subject.pct}%</span>
+                      <span className="text-yellow-200/80">Level {subject.level}</span>
+                      <span className="text-yellow-200/80">{subject.pct}%</span>
                     </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div className="w-full bg-neutral-900 border border-yellow-800 h-2">
                       <div
-                        className={`h-2 rounded-full ${subject.color}`}
+                        className={`h-2 ${subject.color}`}
                         style={{ width: `${subject.pct}%` }}
                       />
                     </div>
@@ -268,15 +284,23 @@ export default function Dashboard() {
           </PixelCard>
 
           {/* Today's Goals */}
-          <PixelCard variant="orange" className="p-6">
-            <h2 className="text-2xl font-bold mb-4 text-center">🎯 Today's Goals</h2>
+          <PixelCard
+            variant="orange"
+            className="p-6 bg-black/70 border-yellow-600 shadow-[0_0_16px_rgba(255,204,0,0.25)]"
+          >
+            <h2 className="text-2xl font-bold mb-4 text-center text-yellow-300">🎯 Today's Goals</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {goals.map((goal, index) => (
-                <div key={index} className="flex items-center gap-3 p-3 bg-black/20 rounded-lg">
-                  <span className="text-2xl">
-                    {goal.achieved ? "✔" : "✖"}
-                  </span>
-                  <span className={`font-medium ${goal.achieved ? "text-green-400" : "text-gray-400"}`}>
+                <div
+                  key={index}
+                  className="flex items-center gap-3 p-3 bg-black/60 border-2 border-yellow-700"
+                >
+                  <span className="text-2xl">{goal.achieved ? "✔" : "✖"}</span>
+                  <span
+                    className={`font-medium ${
+                      goal.achieved ? "text-green-400" : "text-yellow-200/80"
+                    }`}
+                  >
                     {goal.text}
                   </span>
                 </div>
@@ -285,37 +309,52 @@ export default function Dashboard() {
           </PixelCard>
 
           {/* Your Courses */}
-          <PixelCard variant="orange" className="p-6">
-            <h2 className="text-2xl font-bold mb-6 text-center">📚 Your Courses</h2>
+          <PixelCard
+            variant="orange"
+            className="p-6 bg-black/70 border-yellow-600 shadow-[0_0_16px_rgba(255,204,0,0.25)]"
+          >
+            <h2 className="text-2xl font-bold mb-6 text-center text-yellow-300">📚 Your Courses</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {studentCourses?.map((course) => (
-                <div key={course._id} className="bg-black/20 p-4 rounded-lg border-2 border-yellow-400">
+                <div
+                  key={course._id}
+                  className="bg-black/60 p-4 rounded-none border-2 border-yellow-700"
+                >
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-2xl">
-                      {course.title === "Mathematics" ? "📐" :
-                       course.title === "Chemistry" ? "🧪" :
-                       course.title === "Biology" ? "🌱" :
-                       course.title === "Computer Science" ? "💻" :
-                       course.title === "Robotics" ? "🤖" :
-                       course.title === "Astronomy" ? "🌟" : "📖"}
+                      {course.title === "Mathematics"
+                        ? "📐"
+                        : course.title === "Chemistry"
+                        ? "🧪"
+                        : course.title === "Biology"
+                        ? "🌱"
+                        : course.title === "Computer Science"
+                        ? "💻"
+                        : course.title === "Robotics"
+                        ? "🤖"
+                        : course.title === "Astronomy"
+                        ? "🌟"
+                        : "📖"}
                     </span>
-                    <span className="font-bold text-white">{course.title}</span>
+                    <span className="font-bold text-yellow-100">{course.title}</span>
                     {course.isNew && (
                       <Badge className="bg-red-500 text-white text-xs">★ NEW ★</Badge>
                     )}
                   </div>
-                  <Badge variant="outline" className="mb-2">
+                  <Badge variant="outline" className="mb-2 border-yellow-700 text-yellow-200">
                     {course.subjectType || "default"}
                   </Badge>
-                  <p className="text-gray-300 text-sm mb-3">{course.description}</p>
+                  <p className="text-yellow-100/80 text-sm mb-3">{course.description}</p>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-300">Progress</span>
-                      <span className="text-gray-300">{Math.round(course.progress)}%</span>
+                      <span className="text-yellow-200/80">Progress</span>
+                      <span className="text-yellow-200/80">
+                        {Math.round(course.progress)}%
+                      </span>
                     </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div className="w-full bg-neutral-900 border border-yellow-800 h-2">
                       <div
-                        className="h-2 rounded-full bg-green-500"
+                        className="h-2 bg-green-500"
                         style={{ width: `${course.progress}%` }}
                       />
                     </div>
@@ -332,38 +371,52 @@ export default function Dashboard() {
           </PixelCard>
 
           {/* Achievements */}
-          <PixelCard variant="orange" className="p-6">
-            <h2 className="text-2xl font-bold mb-6 text-center">🏆 Achievements</h2>
+          <PixelCard
+            variant="orange"
+            className="p-6 bg-black/70 border-yellow-600 shadow-[0_0_16px_rgba(255,204,0,0.25)]"
+          >
+            <h2 className="text-2xl font-bold mb-6 text-center text-yellow-300">🏆 Achievements</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {achievements.map((achievement) => (
                 <div
                   key={achievement.name}
-                  className={`p-4 rounded-lg border-2 text-center ${
+                  className={`p-4 text-center border-2 rounded-none ${
                     achievement.earned
-                      ? "border-yellow-400 bg-yellow-400/20"
-                      : "border-gray-600 bg-gray-600/20 opacity-50"
+                      ? "border-yellow-600 bg-black/60 shadow-[0_0_10px_rgba(255,204,0,0.2)]"
+                      : "border-yellow-900 bg-black/40 opacity-70"
                   }`}
                 >
                   <div className="text-4xl mb-2">{achievement.icon}</div>
-                  <div className="text-sm font-medium text-white">{achievement.name}</div>
+                  <div className="text-sm font-medium text-yellow-100">{achievement.name}</div>
                 </div>
               ))}
             </div>
           </PixelCard>
 
           {/* Course Levels & Games */}
-          <PixelCard variant="orange" className="p-6">
-            <h2 className="text-2xl font-bold mb-6 text-center">🎮 Course Levels & Retro Mini-Games</h2>
+          <PixelCard
+            variant="orange"
+            className="p-6 bg-black/70 border-yellow-600 shadow-[0_0_16px_rgba(255,204,0,0.25)]"
+          >
+            <h2 className="text-2xl font-bold mb-6 text-center text-yellow-300">
+              🎮 Course Levels & Retro Mini-Games
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {gameSubjects.map((subject) => (
-                <div key={subject.name} className="bg-black/20 p-6 rounded-lg border-2 border-yellow-400 text-center">
+                <div
+                  key={subject.name}
+                  className="bg-black/60 p-6 rounded-none border-2 border-yellow-700 text-center"
+                >
                   <div className="text-6xl mb-4">{subject.icon}</div>
-                  <h3 className="text-xl font-bold text-white mb-2">{subject.name}</h3>
-                  <p className="text-gray-300 text-sm mb-3">
-                    {subject.name === "Mathematics" ? "Solve equations to defeat enemies!" :
-                     subject.name === "Chemistry" ? "Mix elements and catch compounds!" :
-                     subject.name === "Biology" ? "Defend cells from pathogens!" :
-                     "Interactive challenges await!"}
+                  <h3 className="text-xl font-bold text-yellow-100 mb-2">{subject.name}</h3>
+                  <p className="text-yellow-100/80 text-sm mb-3">
+                    {subject.name === "Mathematics"
+                      ? "Solve equations to defeat enemies!"
+                      : subject.name === "Chemistry"
+                      ? "Mix elements and catch compounds!"
+                      : subject.name === "Biology"
+                      ? "Defend cells from pathogens!"
+                      : "Interactive challenges await!"}
                   </p>
                   <Badge className="mb-4 bg-blue-500">Level 1</Badge>
                   <PixelButton
@@ -511,7 +564,7 @@ export default function Dashboard() {
                         <DialogHeader>
                           <DialogTitle>{courseDialog.course ? "Edit Course" : "Create New Course"}</DialogTitle>
                         </DialogHeader>
-                        <CourseFormComponent
+                        <CourseForm
                           course={courseDialog.course}
                           onSubmit={courseDialog.course ? 
                             (data: any) => handleUpdateCourse(courseDialog.course._id, data) :
