@@ -239,23 +239,29 @@ export default function Tests() {
     Mg: "https://harmless-tapir-303.convex.cloud/api/storage/a37edbbb-b94b-4da3-9af3-4ed6d80d9ede",
   };
 
+  // Return sprite URL if available
   function getElementSprite(symbol: string): string | undefined {
     return ELEMENT_SPRITES[symbol];
   }
 
+  // Render element content as sprite image if available; else fallback text
   function renderElementContent(symbol: string) {
-    const url = getElementSprite(symbol);
-    if (url) {
+    const sprite = getElementSprite(symbol);
+    if (sprite) {
       return (
         <img
-          src={url}
+          src={sprite}
           alt={`${symbol} sprite`}
           className="w-full h-full object-contain"
           style={{ imageRendering: "pixelated" }}
         />
       );
     }
-    return <>{symbol}</>;
+    return (
+      <span className="text-yellow-50 font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+        {symbol}
+      </span>
+    );
   }
 
   const mixerAvailableSymbols: Array<string> = [
@@ -2063,14 +2069,12 @@ export default function Tests() {
                 {falling.map((f) => (
                   <motion.div
                     key={f.id}
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
                     className="absolute"
                     style={{ left: `${f.x}%`, top: `${f.y}%` }}
                   >
                     <div
-                      className="w-10 h-10 flex items-center justify-center bg-cyan-300 border-4 border-cyan-700 text-black font-bold shadow-[0_0_10px_rgba(0,255,255,0.5)]"
-                      style={{ imageRendering: "pixelated", fontFamily: "'Pixelify Sans', monospace" }}
+                      className="w-12 h-12 flex items-center justify-center bg-transparent border-0 shadow-none"
+                      style={{ imageRendering: "pixelated" }}
                     >
                       {renderElementContent(f.symbol)}
                     </div>
@@ -2194,8 +2198,8 @@ export default function Tests() {
                           key={sym}
                           draggable
                           onDragStart={(e) => onDragStartTile(e, sym)}
-                          className="w-12 h-12 flex items-center justify-center bg-cyan-300 border-4 border-cyan-700 text-black font-bold shadow-[0_0_10px_rgba(0,255,255,0.5)] cursor-grab active:cursor-grabbing select-none"
-                          style={{ imageRendering: "pixelated", fontFamily: "'Pixelify Sans', monospace" }}
+                          className="w-16 h-16 flex items-center justify-center bg-transparent border-0 shadow-none cursor-grab active:cursor-grabbing select-none"
+                          style={{ imageRendering: "pixelated" }}
                           title={`Drag ${sym}`}
                         >
                           {renderElementContent(sym)}
