@@ -129,7 +129,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           {!authLoading && isAuthenticated && (
             <Button
               type="button"
-              className="mb-4 w-full"
+              className="mb-4 w-full rounded-none border-2 border-yellow-700 bg-yellow-300 text-black shadow-[2px_2px_0px_rgba(0,0,0,0.35)] hover:bg-yellow-200"
               onClick={() => {
                 const redirect = redirectAfterAuth || "/";
                 navigate(redirect);
@@ -144,7 +144,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             <Button
               type="button"
               variant={mode === "login" ? "default" : "outline"}
-              className="rounded-none"
+              className="rounded-none border-2 shadow-[2px_2px_0px_rgba(0,0,0,0.3)]"
               onClick={() => {
                 setMode("login");
                 setStep("signIn");
@@ -157,7 +157,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             <Button
               type="button"
               variant={mode === "signup" ? "default" : "outline"}
-              className="rounded-none"
+              className="rounded-none border-2 shadow-[2px_2px_0px_rgba(0,0,0,0.3)]"
               onClick={() => {
                 setMode("signup");
                 setStep("signIn");
@@ -169,7 +169,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             </Button>
           </div>
 
-          <Card className="min-w-[350px] pb-0 border shadow-md">
+          <Card className="min-w-[350px] pb-0 rounded-none border-4 border-yellow-600 shadow-[4px_4px_0px_rgba(0,0,0,0.35)]">
             {step === "signIn" ? (
               <>
                 <CardHeader className="text-center">
@@ -203,7 +203,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                           type="text"
                           value={nameInput}
                           onChange={(e) => setNameInput(e.target.value)}
-                          className="rounded-none"
+                          className="rounded-none border-2"
                           required
                         />
                       </div>
@@ -248,7 +248,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                           name="email"
                           placeholder="name@example.com"
                           type="email"
-                          className="pl-9"
+                          className="pl-9 rounded-none border-2"
                           disabled={isLoading}
                           required
                         />
@@ -258,6 +258,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                         variant="outline"
                         size="icon"
                         disabled={isLoading}
+                        className="rounded-none border-2 shadow-[2px_2px_0px_rgba(0,0,0,0.3)]"
                       >
                         {isLoading ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -327,7 +328,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   <CardFooter className="flex-col gap-2">
                     <Button
                       type="submit"
-                      className="w-full"
+                      className="w-full rounded-none border-2 border-yellow-700 bg-yellow-300 text-black shadow-[2px_2px_0px_rgba(0,0,0,0.35)] hover:bg-yellow-200"
                       disabled={isLoading || otp.length !== 6}
                     >
                       {isLoading ? (
@@ -347,7 +348,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       variant="ghost"
                       onClick={() => setStep("signIn")}
                       disabled={isLoading}
-                      className="w-full"
+                      className="w-full rounded-none border-2 shadow-[2px_2px_0px_rgba(0,0,0,0.3)]"
                     >
                       Use different email
                     </Button>
