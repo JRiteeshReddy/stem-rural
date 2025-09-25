@@ -67,7 +67,7 @@ export default function RoleSelection() {
           </p>
         </div>
 
-        <PixelCard variant="banana" className="p-6">
+        <PixelCard variant="orange" className="p-6">
           <div className="space-y-6">
             <div>
               <Label htmlFor="name" className="text-lg font-bold text-black" style={{ fontFamily: "'Pixelify Sans', monospace" }}>

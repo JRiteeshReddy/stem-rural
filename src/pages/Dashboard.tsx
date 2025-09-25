@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/use-auth";
-import { useQuery, useMutation, useAction } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { PixelCard } from "@/components/PixelCard";
@@ -8,7 +8,18 @@ import { useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { BookOpen, Play, Users, FileText, Megaphone, BarChart3, Settings, Plus, Edit, Trash2 } from "lucide-react";
+import {
+  BookOpen,
+  Play,
+  Users,
+  FileText,
+  Megaphone,
+  BarChart3,
+  Settings,
+  Plus,
+  Edit,
+  Trash2
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -18,6 +29,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+//// Removed custom chart UI wrappers; using Recharts Tooltip directly
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 export default function Dashboard() {
@@ -25,9 +37,6 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   // Data queries
-  const courses = useQuery(api.courses.getPublishedCourses);
-  const tests = useQuery(api.tests.getPublishedTests);
-  const leaderboard = useQuery(api.leaderboard.getLeaderboard);
   const studentCourses = useQuery(api.courses.getAllCoursesForStudent);
 
   // Teacher admin queries
@@ -48,6 +57,9 @@ export default function Dashboard() {
   const deleteCourse = useMutation(api.courses.deleteCourse);
   const updateTestMeta = useMutation(api.tests.updateTestMeta);
   const deleteTest = useMutation(api.tests.deleteTest);
+  const createAnnouncement = useMutation(api.announcements.createAnnouncementWithSchedule);
+  const updateAnnouncement = useMutation(api.announcements.updateAnnouncement);
+  const deleteAnnouncement = useMutation(api.announcements.deleteAnnouncement);
   const updateStudentProfile = useMutation(api.users.updateStudentProfileSubset);
   const deleteStudentAccount = useMutation(api.users.deleteStudentAccount);
 
@@ -56,6 +68,7 @@ export default function Dashboard() {
   const [courseDialog, setCourseDialog] = useState({ open: false, course: null as any });
   const [testDialog, setTestDialog] = useState({ open: false, test: null as any });
   const [studentDialog, setStudentDialog] = useState({ open: false, student: null as any });
+  const [announcementDialog, setAnnouncementDialog] = useState({ open: false, announcement: null as any });
   const [searchTerm, setSearchTerm] = useState("");
   const [classFilter, setClassFilter] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("");
