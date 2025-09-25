@@ -1,6 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { PixelCard } from "@/components/PixelCard";
 import { PixelButton } from "@/components/PixelButton";
@@ -83,13 +84,13 @@ export default function Dashboard() {
   const [studentDialog, setStudentDialog] = useState({ open: false, student: null as any });
   const [announcementDialog, setAnnouncementDialog] = useState({ open: false, announcement: null as any });
   const [searchTerm, setSearchTerm] = useState("");
-  const [classFilter, setClassFilter] = useState("");
-  const [difficultyFilter, setDifficultyFilter] = useState("");
+  const [classFilter, setClassFilter] = useState("ALL_CLASSES");
+  const [difficultyFilter, setDifficultyFilter] = useState("ALL_LEVELS");
 
   // ... keep existing useEffect for student defaults
 
   useEffect(() => {
-    if (user?.role === "student" && user.userClass) {
+    if (user?.role === "student" && user?.userClass) {
       ensureDefaults();
     }
   }, [user?.role, user?.userClass, ensureDefaults]);
@@ -105,8 +106,7 @@ export default function Dashboard() {
         body: file,
       });
       const { storageId } = await result.json();
-      // Fix: setProfileImage expects { fileId }
-      await setProfileImage({ fileId: storageId as any });
+      await setProfileImage({ fileId: storageId as Id<"_storage"> });
       toast.success("Profile image updated!");
     } catch (error) {
       toast.error("Failed to upload image");
@@ -114,7 +114,7 @@ export default function Dashboard() {
   };
 
   const handleOpenCourse = async (courseId: string, courseTitle: string) => {
-    await markCourseAccessed({ courseId: courseId as any });
+    await markCourseAccessed({ courseId: courseId as Id<"courses"> });
     if (courseTitle === "Mathematics") {
       navigate("/tests?game=math");
     } else {
@@ -149,7 +149,7 @@ export default function Dashboard() {
   const handleDeleteCourse = async (courseId: string) => {
     if (confirm("Are you sure you want to delete this course?")) {
       try {
-        await deleteCourse({ courseId: courseId as any });
+        await deleteCourse({ courseId: courseId as Id<"courses"> });
         toast.success("Course deleted successfully!");
       } catch (error) {
         toast.error("Failed to delete course");
@@ -170,7 +170,7 @@ export default function Dashboard() {
   const handleDeleteTest = async (testId: string) => {
     if (confirm("Are you sure you want to delete this test?")) {
       try {
-        await deleteTest({ testId: testId as any });
+        await deleteTest({ testId: testId as Id<"tests"> });
         toast.success("Test deleted successfully!");
       } catch (error) {
         toast.error("Failed to delete test");
@@ -191,7 +191,7 @@ export default function Dashboard() {
   const handleDeleteStudent = async (studentId: string) => {
     if (confirm("Are you sure you want to delete this student account?")) {
       try {
-        await deleteStudentAccount({ targetUserId: studentId as any });
+        await deleteStudentAccount({ targetUserId: studentId as Id<"users"> });
         toast.success("Student account deleted successfully!");
       } catch (error) {
         toast.error("Failed to delete student account");
@@ -429,23 +429,23 @@ export default function Dashboard() {
   if (isTeacher) {
     // Teacher Control Center
     const filteredCourses = allCourses?.filter(course => 
-      (!classFilter || classFilter === "all" || course.targetClass === classFilter) &&
+      (classFilter === "ALL_CLASSES" || course.targetClass === classFilter) &&
       (!searchTerm || course.title.toLowerCase().includes(searchTerm.toLowerCase()))
     ) || [];
 
     const filteredTests = allTests?.filter(test => 
-      (!classFilter || classFilter === "all" || test.targetClass === classFilter) &&
-      (!difficultyFilter || difficultyFilter === "all" || test.difficulty === difficultyFilter) &&
+      (classFilter === "ALL_CLASSES" || test.targetClass === classFilter) &&
+      (difficultyFilter === "ALL_LEVELS" || test.difficulty === difficultyFilter) &&
       (!searchTerm || test.title.toLowerCase().includes(searchTerm.toLowerCase()))
     ) || [];
 
     const filteredStudents = allStudents?.filter(student => 
-      (!classFilter || classFilter === "all" || student.userClass === classFilter) &&
+      (classFilter === "ALL_CLASSES" || student.userClass === classFilter) &&
       (!searchTerm || student.name.toLowerCase().includes(searchTerm.toLowerCase()))
     ) || [];
 
     const filteredAnnouncements = allAnnouncements?.filter(announcement => 
-      (!classFilter || classFilter === "all" || announcement.targetClass === classFilter) &&
+      (classFilter === "ALL_CLASSES" || announcement.targetClass === classFilter) &&
       (!searchTerm || announcement.title.toLowerCase().includes(searchTerm.toLowerCase()))
     ) || [];
 
@@ -526,7 +526,7 @@ export default function Dashboard() {
                         <SelectValue placeholder="Class" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Classes</SelectItem>
+                        <SelectItem value="ALL_CLASSES">All Classes</SelectItem>
                         <SelectItem value="Class 6">Class 6</SelectItem>
                         <SelectItem value="Class 7">Class 7</SelectItem>
                         <SelectItem value="Class 8">Class 8</SelectItem>
@@ -633,7 +633,7 @@ export default function Dashboard() {
                         <SelectValue placeholder="Difficulty" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Levels</SelectItem>
+                        <SelectItem value="ALL_LEVELS">All Levels</SelectItem>
                         <SelectItem value="easy">Easy</SelectItem>
                         <SelectItem value="medium">Medium</SelectItem>
                         <SelectItem value="hard">Hard</SelectItem>
@@ -720,7 +720,7 @@ export default function Dashboard() {
                         <SelectValue placeholder="Class" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Classes</SelectItem>
+                        <SelectItem value="ALL_CLASSES">All Classes</SelectItem>
                         <SelectItem value="Class 6">Class 6</SelectItem>
                         <SelectItem value="Class 7">Class 7</SelectItem>
                         <SelectItem value="Class 8">Class 8</SelectItem>
@@ -959,7 +959,7 @@ function CourseForm({ course, onSubmit, onCancel }: any) {
       </div>
       <div>
         <label className="text-sm font-medium">Target Class</label>
-        <Select value={formData.targetClass} onValueChange={(value) => setFormData({ ...formData, targetClass: value })}>
+        <Select value={formData.targetClass || undefined} onValueChange={(value) => setFormData({ ...formData, targetClass: value })}>
           <SelectTrigger>
             <SelectValue placeholder="Select class" />
           </SelectTrigger>
@@ -1020,7 +1020,7 @@ function StudentForm({ student, onSubmit, onCancel }: any) {
       </div>
       <div>
         <label className="text-sm font-medium">Class</label>
-        <Select value={formData.userClass} onValueChange={(value) => setFormData({ ...formData, userClass: value })}>
+        <Select value={formData.userClass || undefined} onValueChange={(value) => setFormData({ ...formData, userClass: value })}>
           <SelectTrigger>
             <SelectValue placeholder="Select class" />
           </SelectTrigger>
