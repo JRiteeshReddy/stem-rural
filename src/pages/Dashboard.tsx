@@ -31,6 +31,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import CourseForm from "@/components/dashboard/CourseForm";
 import StudentForm from "@/components/dashboard/StudentForm";
+import TeacherHub from "@/components/dashboard/TeacherHub";
 
 export default function Dashboard() {
   const { user, isLoading } = useAuth();
@@ -496,6 +497,21 @@ export default function Dashboard() {
               Managing Class {user.userClass?.split(" ")[1] || "-"}
             </div>
           </motion.div>
+
+          {/* Teacher Portal - Pixel Retro Hub */}
+          {user?.role === "teacher" && (
+            <div className="space-y-6">
+              <TeacherHub
+                teacherName={user?.name ?? null}
+                teacherClass={user?.userClass ?? null}
+                totalCoursesCreated={(user as any)?.totalCoursesCreated ?? null}
+                totalStudentsEnrolled={(user as any)?.totalStudentsEnrolled ?? null}
+                xp={null /* pass xp if tracked for teachers */}
+              />
+
+              {/* ... keep existing code (you may keep prior teacher analytics/lists below to avoid breaking functionality) */}
+            </div>
+          )}
 
           {/* Control Center Tabs */}
           <PixelCard variant="orange" className="p-6">
