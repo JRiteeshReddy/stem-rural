@@ -4,11 +4,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-/* removed duplicate useState import */
+import { useState } from "react";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
-import React, { useMemo, useState } from "react";
 
 export default function Courses() {
   const { user } = useAuth();
@@ -28,30 +25,27 @@ export default function Courses() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [courseSearch, setCourseSearch] = useState("");
 
-  // Simple client-side search over title/description for teacher and student lists
-  const q = (courseSearch || "").trim().toLowerCase();
+  // Add: search state for students and teachers
+  const [studentSearch, setStudentSearch] = useState("");
+  const [teacherSearch, setTeacherSearch] = useState("");
 
-  const filteredStudentCourses = useMemo(() => {
-    if (!Array.isArray(studentCourses)) return [];
-    if (!q) return studentCourses;
-    return studentCourses.filter((c: any) => {
-      const t = String(c?.title || "").toLowerCase();
-      const d = String(c?.description || "").toLowerCase();
-      return t.includes(q) || d.includes(q);
-    });
-  }, [studentCourses, q]);
+  // Add: helper for matching and filtered lists
+  const matchesSearch = (c: any, term: string) => {
+    if (!term) return true;
+    const t = term.toLowerCase();
+    return (
+      (c?.title || "").toLowerCase().includes(t) ||
+      (c?.description || "").toLowerCase().includes(t)
+    );
+  };
 
-  const filteredTeacherCourses = useMemo(() => {
-    if (!Array.isArray(teacherCourses)) return [];
-    if (!q) return teacherCourses;
-    return teacherCourses.filter((c: any) => {
-      const t = String(c?.title || "").toLowerCase();
-      const d = String(c?.description || "").toLowerCase();
-      return t.includes(q) || d.includes(q);
-    });
-  }, [teacherCourses, q]);
+  const filteredStudentCourses = (studentCourses || []).filter((c: any) =>
+    matchesSearch(c, studentSearch)
+  );
+  const filteredTeacherCourses = (teacherCourses || []).filter((c: any) =>
+    matchesSearch(c, teacherSearch)
+  );
 
   const handleCreate = async () => {
     try {
@@ -111,31 +105,27 @@ export default function Courses() {
           </p>
         </div>
 
-        {/* Search Bar */}
-        <div className="mb-4 flex items-center gap-2">
-          <div className="relative w-full max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={courseSearch}
-              onChange={(e) => setCourseSearch(e.target.value)}
-              placeholder="Search courses..."
-              className="pl-9"
-            />
-          </div>
-        </div>
-
         {isStudent && (
           <section className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
               <h2
                 className="text-xl font-bold text-yellow-300"
                 style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}
               >
                 Your Courses
               </h2>
-              <PixelButton size="sm" onClick={handleSeedDefaults}>
-                Ensure Default Courses
-              </PixelButton>
+              <div className="flex items-center gap-2">
+                <input
+                  value={studentSearch}
+                  onChange={(e) => setStudentSearch(e.target.value)}
+                  placeholder="Search courses..."
+                  className="h-9 w-48 bg-neutral-900/70 border-2 border-yellow-700 text-yellow-100 px-3 py-1 outline-none"
+                  style={{ fontFamily: "'Pixelify Sans', monospace" }}
+                />
+                <PixelButton size="sm" onClick={handleSeedDefaults}>
+                  Ensure Default Courses
+                </PixelButton>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -182,6 +172,9 @@ export default function Courses() {
                   </div>
                 </div>
               ))}
+              {(studentCourses && studentCourses.length > 0 && filteredStudentCourses.length === 0) && (
+                <div className="text-yellow-200">No courses match your search.</div>
+              )}
               {(!studentCourses || studentCourses.length === 0) && (
                 <div className="text-yellow-200">No courses yet for your class.</div>
               )}
@@ -225,12 +218,21 @@ export default function Courses() {
             </section>
 
             <section className="space-y-3">
-              <h2
-                className="text-xl font-bold text-yellow-300"
-                style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}
-              >
-                Your Courses
-              </h2>
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <h2
+                  className="text-xl font-bold text-yellow-300"
+                  style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}
+                >
+                  Your Courses
+                </h2>
+                <input
+                  value={teacherSearch}
+                  onChange={(e) => setTeacherSearch(e.target.value)}
+                  placeholder="Search courses..."
+                  className="h-9 w-56 bg-neutral-900/70 border-2 border-yellow-700 text-yellow-100 px-3 py-1 outline-none"
+                  style={{ fontFamily: "'Pixelify Sans', monospace" }}
+                />
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredTeacherCourses.map((c: any) => (
                   <div key={c._id} className="p-4 bg-neutral-900/60 border-2 border-yellow-700" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
@@ -254,6 +256,9 @@ export default function Courses() {
                     <div className="text-yellow-200 text-xs opacity-90">{c.description}</div>
                   </div>
                 ))}
+                {(teacherCourses && teacherCourses.length > 0 && filteredTeacherCourses.length === 0) && (
+                  <div className="text-yellow-200">No courses match your search.</div>
+                )}
                 {(!teacherCourses || teacherCourses.length === 0) && (
                   <div className="text-yellow-200">No courses yet. Create your first course!</div>
                 )}
