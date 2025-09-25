@@ -66,12 +66,20 @@ export function useAuth() {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Login failed");
+      // Robust error parsing
+      const text = await response.text();
+      try {
+        const error = JSON.parse(text);
+        throw new Error(error.error || "Login failed");
+      } catch {
+        throw new Error(text || "Login failed");
+      }
     }
 
-    const data = await response.json();
-    setPasswordUser(data.user);
+    // Safe success parsing
+    const text = await response.text();
+    const data = text ? JSON.parse(text) : {};
+    setPasswordUser(data.user ?? null);
     return data;
   };
 
@@ -90,11 +98,19 @@ export function useAuth() {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Registration failed");
+      // Robust error parsing
+      const text = await response.text();
+      try {
+        const error = JSON.parse(text);
+        throw new Error(error.error || "Registration failed");
+      } catch {
+        throw new Error(text || "Registration failed");
+      }
     }
 
-    return await response.json();
+    // Safe success parsing (support empty body)
+    const text = await response.text();
+    return text ? JSON.parse(text) : { ok: true };
   };
 
   const signOutPassword = async () => {
