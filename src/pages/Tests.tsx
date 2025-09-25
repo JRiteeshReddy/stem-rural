@@ -332,6 +332,43 @@ export default function Tests() {
     return () => clearInterval(id);
   }, [elementMixerOpen, mixerOver, mixerLevel]);
 
+  // Add idle beaker animation when Element Mixer is active
+  useEffect(() => {
+    if (!elementMixerOpen || mixerOver) return;
+
+    const el = document.getElementById("mixer-beaker") as HTMLImageElement | null;
+    if (!el) return;
+
+    let cancelled = false;
+    let timeoutId: number | null = null;
+
+    const runIdle = () => {
+      if (cancelled || !el) return;
+      el.style.transformOrigin = "50% 100%";
+
+      // Gentle bob + micro scale to simulate bubbling
+      el.animate(
+        [
+          { transform: "translateY(0px) scale(1)" },
+          { transform: "translateY(-3px) scale(1.02)" },
+          { transform: "translateY(0px) scale(1)" },
+        ],
+        { duration: 1200, easing: "ease-in-out" }
+      );
+
+      // Loop with a small pause to feel organic
+      timeoutId = window.setTimeout(runIdle, 800);
+    };
+
+    // Slight delay before starting the loop
+    timeoutId = window.setTimeout(runIdle, 300);
+
+    return () => {
+      cancelled = true;
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+  }, [elementMixerOpen, mixerOver]);
+
   // Drag handlers
   const onDragStartTile = (e: React.DragEvent<HTMLDivElement>, symbol: string) => {
     e.dataTransfer.setData("text/plain", symbol);
