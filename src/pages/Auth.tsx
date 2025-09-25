@@ -29,7 +29,7 @@ interface AuthProps {
 }
 
 function Auth({ redirectAfterAuth }: AuthProps = {}) {
-  const { isLoading: authLoading, isAuthenticated, signIn, signInPassword, signUpPassword } = useAuth();
+  const { isLoading: authLoading, isAuthenticated, signIn, signInPassword, signUpPassword, user } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState<"signIn" | { email: string }>("signIn");
   const [otp, setOtp] = useState("");
@@ -56,6 +56,14 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       // This prevents unexpected navigation during OTP flows or when users open /auth intentionally.
     }
   }, [authLoading, isAuthenticated, navigate, redirectAfterAuth]);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && user?.role) {
+      const dest = user.role === "teacher" ? "/teacher-portal" : "/student-portal";
+      // Same-tab redirect after OTP/login, no window.open or setTimeout
+      navigate(dest);
+    }
+  }, [authLoading, isAuthenticated, user?.role, navigate]);
 
   const handleEmailSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -107,8 +115,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         }
       }
 
-      // Navigate to extended setup in the same tab (remove window.open/setTimeout hack)
-      navigate("/extended-setup");
+      setIsLoading(false);
     } catch (error) {
       console.error("OTP verification error:", error);
 
