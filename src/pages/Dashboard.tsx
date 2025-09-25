@@ -8,28 +8,7 @@ import { useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { 
-  BookOpen, 
-  Trophy, 
-  Target, 
-  Star, 
-  Play, 
-  Users, 
-  GraduationCap,
-  FileText,
-  Megaphone,
-  BarChart3,
-  Settings,
-  Plus,
-  Edit,
-  Trash2,
-  Eye,
-  Search,
-  Filter,
-  Download,
-  Calendar,
-  Clock
-} from "lucide-react";
+import { BookOpen, Play, Users, FileText, Megaphone, BarChart3, Settings, Plus, Edit, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -39,7 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 export default function Dashboard() {
   const { user, isLoading } = useAuth();
@@ -52,10 +31,10 @@ export default function Dashboard() {
   const studentCourses = useQuery(api.courses.getAllCoursesForStudent);
 
   // Teacher admin queries
-  const allCourses = useQuery(api.courses.listAllCoursesForTeacher, user?.role === "teacher" ? {} : undefined);
-  const allTests = useQuery(api.tests.listAllTestsForTeacher, user?.role === "teacher" ? {} : undefined);
-  const allStudents = useQuery(api.users.listStudents, user?.role === "teacher" ? {} : undefined);
-  const allAnnouncements = useQuery(api.announcements.listAllAnnouncements, user?.role === "teacher" ? {} : undefined);
+  const allCourses = useQuery(api.courses.listAllCoursesForTeacher, user?.role === "teacher" ? {} : "skip");
+  const allTests = useQuery(api.tests.listAllTestsForTeacher, user?.role === "teacher" ? {} : "skip");
+  const allStudents = useQuery(api.users.listStudents, user?.role === "teacher" ? {} : "skip");
+  const allAnnouncements = useQuery(api.announcements.listAllAnnouncements, user?.role === "teacher" ? {} : "skip");
 
   // Mutations
   const generateUploadUrl = useAction(api.profile.generateUploadUrl);
@@ -69,9 +48,6 @@ export default function Dashboard() {
   const deleteCourse = useMutation(api.courses.deleteCourse);
   const updateTestMeta = useMutation(api.tests.updateTestMeta);
   const deleteTest = useMutation(api.tests.deleteTest);
-  const createAnnouncement = useMutation(api.announcements.createAnnouncementWithSchedule);
-  const updateAnnouncement = useMutation(api.announcements.updateAnnouncement);
-  const deleteAnnouncement = useMutation(api.announcements.deleteAnnouncement);
   const updateStudentProfile = useMutation(api.users.updateStudentProfileSubset);
   const deleteStudentAccount = useMutation(api.users.deleteStudentAccount);
 
@@ -80,7 +56,6 @@ export default function Dashboard() {
   const [courseDialog, setCourseDialog] = useState({ open: false, course: null as any });
   const [testDialog, setTestDialog] = useState({ open: false, test: null as any });
   const [studentDialog, setStudentDialog] = useState({ open: false, student: null as any });
-  const [announcementDialog, setAnnouncementDialog] = useState({ open: false, announcement: null as any });
   const [searchTerm, setSearchTerm] = useState("");
   const [classFilter, setClassFilter] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("");

@@ -101,7 +101,7 @@ ${colorConfig
 }
 
 function ChartTooltip(
-  props: React.ComponentPropsWithoutRef<typeof RechartsPrimitive.Tooltip>
+  props: React.ComponentProps<typeof RechartsPrimitive.Tooltip>
 ) {
   return <RechartsPrimitive.Tooltip {...props} />
 }
@@ -250,11 +250,7 @@ function ChartTooltipContent({
   )
 }
 
-function ChartLegend(
-  props: React.ComponentPropsWithoutRef<typeof RechartsPrimitive.Legend>
-) {
-  return <RechartsPrimitive.Legend {...props} />
-}
+const ChartLegend = RechartsPrimitive.Legend
 
 function ChartLegendContent({
   className,

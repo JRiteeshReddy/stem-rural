@@ -1,5 +1,5 @@
 import { Toaster } from "@/components/ui/sonner";
-import { VlyToolbar } from "../vly-toolbar-readonly.tsx";
+/* VlyToolbar removed (file not present) */
 import { InstrumentationProvider } from "@/instrumentation.tsx";
 import AuthPage from "@/pages/Auth.tsx";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
@@ -11,7 +11,7 @@ import "./index.css";
 import Landing from "./pages/Landing.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import RoleSelection from "./pages/RoleSelection.tsx";
-import SafeDashboard from "@/pages/SafeDashboard.tsx";
+import Dashboard from "./pages/Dashboard.tsx";
 import Tests from "./pages/Tests.tsx";
 import Leaderboard from "./pages/Leaderboard.tsx";
 import Announcements from "./pages/Announcements.tsx";
@@ -47,7 +47,7 @@ function RouteSyncer() {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <VlyToolbar />
+    {/* VlyToolbar removed */}
     <InstrumentationProvider>
       <ConvexAuthProvider client={convex}>
         <BrowserRouter>
@@ -67,9 +67,9 @@ createRoot(document.getElementById("root")!).render(
               <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<AuthPage redirectAfterAuth="/role-selection" />} />
               <Route path="/role-selection" element={<RoleSelection />} />
-              <Route path="/dashboard" element={<SafeDashboard />} />
-              <Route path="/student-portal" element={<SafeDashboard />} />
-              <Route path="/teacher-portal" element={<SafeDashboard />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/student-portal" element={<Dashboard />} />
+              <Route path="/teacher-portal" element={<Dashboard />} />
               <Route path="/announcements" element={<Announcements />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="*" element={<NotFound />} />
