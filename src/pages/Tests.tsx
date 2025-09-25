@@ -312,7 +312,7 @@ export default function Tests() {
             if (nextLives === 0) {
               setMixerOver(true);
             } else {
-              toast.message("Time’s up! You lost a life.");
+              toast.message("Time's up! You lost a life.");
               // Advance level on timeout (mark failed) and reset timer
               const nextLevel = Math.min(3, (mixerLevel || 1) + 1);
               setMixerLevel(nextLevel);
@@ -540,7 +540,7 @@ toast.error("Wrong element! -1 life");
             if (nextLives === 0) {
               setChemOver(true);
             } else {
-              toast.message("Time’s up! You lost a life.");
+              toast.message("Time's up! You lost a life.");
               // Advance level on timeout (failed) and reset timer
               const nextLevel = Math.min(4, (chemLevel || 1) + 1);
               setChemLevel(nextLevel);

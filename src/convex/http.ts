@@ -1,7 +1,7 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { auth } from "./auth";
-import { PASSWORD_AUTH_ENABLED } from "@/lib/authFlags";
+const PASSWORD_AUTH_ENABLED = false as const;
 import { internal } from "./_generated/api";
 
 const http = httpRouter();
