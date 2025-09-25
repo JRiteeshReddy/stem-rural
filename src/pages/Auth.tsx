@@ -60,8 +60,13 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   useEffect(() => {
     if (!authLoading && isAuthenticated && user?.role) {
       const dest = user.role === "teacher" ? "/teacher-portal" : "/student-portal";
-      // Same-tab redirect after OTP/login, no window.open or setTimeout
-      navigate(dest);
+      // Use a microtask to avoid a rare concurrent rendering hiccup while preserving same-tab navigation.
+      Promise.resolve().then(() => {
+        // Only navigate if we actually have a destination
+        if (dest) {
+          navigate(dest);
+        }
+      });
     }
   }, [authLoading, isAuthenticated, user?.role, navigate]);
 
