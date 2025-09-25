@@ -19,7 +19,7 @@ import { api } from "@/convex/_generated/api";
 
 import { useAuth } from "@/hooks/use-auth";
 import { ArrowRight, Loader2, Mail } from "lucide-react";
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
 interface AuthProps {
@@ -386,15 +386,5 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 }
 
 export default function AuthPage(props: AuthProps) {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          Loading authentication...
-        </div>
-      }
-    >
-      <Auth {...props} />
-    </Suspense>
-  );
+  return <Auth {...props} />;
 }
