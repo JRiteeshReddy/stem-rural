@@ -1,647 +1,1061 @@
-import { GlobalHeader } from "@/components/GlobalHeader";
-import { PixelButton } from "@/components/PixelButton";
-import { PixelCard } from "@/components/PixelCard";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAction, useMutation } from "convex/react";
-import { toast } from "sonner";
-import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/hooks/use-auth";
-import { motion } from "framer-motion";
-import { BookOpen, FileText, Trophy, Users, Plus, TrendingUp } from "lucide-react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { GlobalHeader } from "@/components/GlobalHeader";
+import { PixelCard } from "@/components/PixelCard";
+import { PixelButton } from "@/components/PixelButton";
 import { useNavigate } from "react-router";
-import { useState } from "react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { motion } from "framer-motion";
+import { 
+  BookOpen, 
+  Trophy, 
+  Target, 
+  Star, 
+  Play, 
+  Users, 
+  GraduationCap,
+  FileText,
+  Megaphone,
+  BarChart3,
+  Settings,
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  Search,
+  Filter,
+  Download,
+  Calendar,
+  Clock
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
-  
+
+  // Data queries
   const courses = useQuery(api.courses.getPublishedCourses);
   const tests = useQuery(api.tests.getPublishedTests);
   const leaderboard = useQuery(api.leaderboard.getLeaderboard);
   const studentCourses = useQuery(api.courses.getAllCoursesForStudent);
 
+  // Teacher admin queries
+  const allCourses = useQuery(api.courses.listAllCoursesForTeacher, user?.role === "teacher" ? {} : "skip");
+  const allTests = useQuery(api.tests.listAllTestsForTeacher, user?.role === "teacher" ? {} : "skip");
+  const allStudents = useQuery(api.users.listStudents, user?.role === "teacher" ? {} : "skip");
+  const allAnnouncements = useQuery(api.announcements.listAllAnnouncements, user?.role === "teacher" ? {} : "skip");
+
+  // Mutations
   const generateUploadUrl = useAction(api.profile.generateUploadUrl);
   const setProfileImage = useMutation(api.profileMutations.setProfileImage);
   const ensureDefaults = useMutation(api.courses.ensureDefaultCoursesForUserClass);
   const markCourseAccessed = useMutation(api.courses.markCourseAccessed);
+  
+  // Teacher admin mutations
+  const createCourse = useMutation(api.courses.createCourse);
+  const updateCourse = useMutation(api.courses.updateCourse);
+  const deleteCourse = useMutation(api.courses.deleteCourse);
+  const updateTestMeta = useMutation(api.tests.updateTestMeta);
+  const deleteTest = useMutation(api.tests.deleteTest);
+  const createAnnouncement = useMutation(api.announcements.createAnnouncementWithSchedule);
+  const updateAnnouncement = useMutation(api.announcements.updateAnnouncement);
+  const deleteAnnouncement = useMutation(api.announcements.deleteAnnouncement);
+  const updateStudentProfile = useMutation(api.users.updateStudentProfileSubset);
+  const deleteStudentAccount = useMutation(api.users.deleteStudentAccount);
+
+  // State for dialogs and forms
+  const [activeTab, setActiveTab] = useState("courses");
+  const [courseDialog, setCourseDialog] = useState({ open: false, course: null as any });
+  const [testDialog, setTestDialog] = useState({ open: false, test: null as any });
+  const [studentDialog, setStudentDialog] = useState({ open: false, student: null as any });
+  const [announcementDialog, setAnnouncementDialog] = useState({ open: false, announcement: null as any });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [classFilter, setClassFilter] = useState("ALL_CLASSES");
+  const [difficultyFilter, setDifficultyFilter] = useState("ALL_LEVELS");
+
+  // ... keep existing useEffect for student defaults
+
+  useEffect(() => {
+    if (user?.role === "student" && user?.userClass) {
+      ensureDefaults();
+    }
+  }, [user?.role, user?.userClass, ensureDefaults]);
+
+  // ... keep existing handlers
 
   const handleProfileImageUpload = async (file: File) => {
     try {
-      const uploadUrl = await generateUploadUrl({});
-      const res = await fetch(uploadUrl, {
+      const uploadUrl = await generateUploadUrl();
+      const result = await fetch(uploadUrl, {
         method: "POST",
         headers: { "Content-Type": file.type },
         body: file,
       });
-      const { storageId } = await res.json();
-      await setProfileImage({ fileId: storageId });
-      toast.success("Profile picture updated!");
-    } catch (e) {
-      console.error(e);
-      toast.error("Failed to update profile picture");
+      const { storageId } = await result.json();
+      await setProfileImage({ storageId });
+      toast.success("Profile image updated!");
+    } catch (error) {
+      toast.error("Failed to upload image");
     }
   };
+
+  const handleOpenCourse = async (courseId: string, courseTitle: string) => {
+    await markCourseAccessed({ courseId });
+    if (courseTitle === "Mathematics") {
+      navigate("/tests?game=math");
+    } else {
+      navigate("/tests");
+    }
+  };
+
+  // Teacher admin handlers
+  const handleCreateCourse = async (data: { title: string; description: string; targetClass?: string }) => {
+    try {
+      await createCourse({
+        title: data.title,
+        description: data.description,
+      });
+      toast.success("Course created successfully!");
+      setCourseDialog({ open: false, course: null });
+    } catch (error) {
+      toast.error("Failed to create course");
+    }
+  };
+
+  const handleUpdateCourse = async (courseId: string, data: any) => {
+    try {
+      await updateCourse({ courseId, ...data });
+      toast.success("Course updated successfully!");
+      setCourseDialog({ open: false, course: null });
+    } catch (error) {
+      toast.error("Failed to update course");
+    }
+  };
+
+  const handleDeleteCourse = async (courseId: string) => {
+    if (confirm("Are you sure you want to delete this course?")) {
+      try {
+        await deleteCourse({ courseId });
+        toast.success("Course deleted successfully!");
+      } catch (error) {
+        toast.error("Failed to delete course");
+      }
+    }
+  };
+
+  const handleUpdateTest = async (testId: string, data: any) => {
+    try {
+      await updateTestMeta({ testId, ...data });
+      toast.success("Test updated successfully!");
+      setTestDialog({ open: false, test: null });
+    } catch (error) {
+      toast.error("Failed to update test");
+    }
+  };
+
+  const handleDeleteTest = async (testId: string) => {
+    if (confirm("Are you sure you want to delete this test?")) {
+      try {
+        await deleteTest({ testId });
+        toast.success("Test deleted successfully!");
+      } catch (error) {
+        toast.error("Failed to delete test");
+      }
+    }
+  };
+
+  const handleUpdateStudent = async (studentId: string, data: any) => {
+    try {
+      await updateStudentProfile({ studentId, ...data });
+      toast.success("Student updated successfully!");
+      setStudentDialog({ open: false, student: null });
+    } catch (error) {
+      toast.error("Failed to update student");
+    }
+  };
+
+  const handleDeleteStudent = async (studentId: string) => {
+    if (confirm("Are you sure you want to delete this student account?")) {
+      try {
+        await deleteStudentAccount({ targetUserId: studentId });
+        toast.success("Student account deleted successfully!");
+      } catch (error) {
+        toast.error("Failed to delete student account");
+      }
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-xl font-pixel">Loading...</div>
+      </div>
+    );
+  }
 
   if (!user) {
     navigate("/auth");
     return null;
   }
 
-  if (!user.role) {
-    navigate("/role-selection");
-    return null;
-  }
-
-  const isTeacher = user.role === "teacher";
   const isStudent = user.role === "student";
+  const isTeacher = user.role === "teacher";
 
-  // Add: student portal UI state and derived data
-  // Today's Goals (quest-style)
-  const goals = [
-    { text: "Complete any 1 Test", done: (user.totalTestsCompleted || 0) >= 1 },
-    { text: "Earn 10 XP", done: (user.credits || 0) >= 10 },
-    { text: "Set Display Name", done: Boolean(user.name && user.name.trim().length > 0) },
-    { text: "Upload Profile Picture", done: Boolean(user.image && user.image.length > 0) },
-  ];
+  if (isStudent) {
+    // ... keep existing student view code
+    const baseCredits = user.credits || 0;
+    const baseTests = user.totalTestsCompleted || 0;
 
-  // Subjects + dynamic progress derived from student activity
-  const subjectList: Array<{
-    key: string;
-    label: string;
-    icon: string;
-    tagline: string;
-    theme: {
-      border: string; // full class string for border color
-      bg: string; // full class string for soft tinted background
-      glow: string; // css shadow glow
-      badge: string; // small badge background/border
-      playGlow: string; // play button glow
-    };
-  }> = [
-    {
-      key: "mathematics",
-      label: "Mathematics",
-      icon: "📐",
-      tagline: "Number Ninja — slice equations, master numbers",
-      theme: {
-        border: "border-yellow-700",
-        bg: "bg-yellow-900/20",
-        glow: "shadow-[0_0_16px_rgba(255,255,0,0.35)]",
-        badge: "bg-yellow-300 border-yellow-600 text-black",
-        playGlow: "shadow-[0_0_10px_rgba(255,230,0,0.7)]",
-      },
-    },
-    {
-      key: "physics",
-      label: "Physics",
-      icon: "⚛️",
-      tagline: "Gravity Dash — bend gravity, beat the level",
-      theme: {
-        border: "border-violet-700",
-        bg: "bg-violet-900/20",
-        glow: "shadow-[0_0_16px_rgba(150,120,255,0.35)]",
-        badge: "bg-violet-300 border-violet-600 text-black",
-        playGlow: "shadow-[0_0_10px_rgba(150,120,255,0.7)]",
-      },
-    },
-    {
-      key: "chemistry",
-      label: "Chemistry",
-      icon: "🧪",
-      tagline: "Element Mixer — craft the right compounds",
-      theme: {
-        border: "border-green-700",
-        bg: "bg-green-900/20",
-        glow: "shadow-[0_0_16px_rgba(0,200,120,0.35)]",
-        badge: "bg-green-300 border-green-600 text-black",
-        playGlow: "shadow-[0_0_10px_rgba(0,200,120,0.7)]",
-      },
-    },
-    {
-      key: "biology",
-      label: "Biology",
-      icon: "🌱",
-      tagline: "Cell Defender — hold the line against viruses",
-      theme: {
-        border: "border-emerald-700",
-        bg: "bg-emerald-900/20",
-        glow: "shadow-[0_0_16px_rgba(20,220,160,0.35)]",
-        badge: "bg-emerald-300 border-emerald-600 text-black",
-        playGlow: "shadow-[0_0_10px_rgba(20,220,160,0.7)]",
-      },
-    },
-    {
-      key: "computer_science",
-      label: "Computer Science",
-      icon: "💻",
-      tagline: "Code Runner — debug, escape, and deploy",
-      theme: {
-        border: "border-cyan-700",
-        bg: "bg-cyan-900/20",
-        glow: "shadow-[0_0_16px_rgba(0,200,255,0.35)]",
-        badge: "bg-cyan-300 border-cyan-600 text-black",
-        playGlow: "shadow-[0_0_10px_rgba(0,200,255,0.7)]",
-      },
-    },
-    {
-      key: "robotics",
-      label: "Robotics",
-      icon: "🤖",
-      tagline: "Bot Builder — assemble logic, complete missions",
-      theme: {
-        border: "border-rose-700",
-        bg: "bg-rose-900/20",
-        glow: "shadow-[0_0_16px_rgba(255,90,120,0.35)]",
-        badge: "bg-rose-300 border-rose-600 text-black",
-        playGlow: "shadow-[0_0_10px_rgba(255,90,120,0.7)]",
-      },
-    },
-    {
-      key: "astronomy",
-      label: "Astronomy",
-      icon: "🌌",
-      tagline: "Star Voyager — answer to fuel your voyage",
-      theme: {
-        border: "border-indigo-700",
-        bg: "bg-indigo-900/20",
-        glow: "shadow-[0_0_16px_rgba(120,140,255,0.35)]",
-        badge: "bg-indigo-300 border-indigo-600 text-black",
-        playGlow: "shadow-[0_0_10px_rgba(120,140,255,0.7)]",
-      },
-    },
-  ];
+    const subjects = [
+      { name: "Mathematics", icon: "📐", pct: 0, level: 1, color: "bg-yellow-500" },
+      { name: "Chemistry", icon: "🧪", pct: 0, level: 1, color: "bg-green-500" },
+      { name: "Biology", icon: "🌱", pct: 0, level: 1, color: "bg-blue-500" },
+      { name: "Computer Science", icon: "💻", pct: 0, level: 1, color: "bg-purple-500" },
+      { name: "Robotics", icon: "🤖", pct: 0, level: 1, color: "bg-red-500" },
+      { name: "Astronomy", icon: "🌟", pct: 0, level: 1, color: "bg-indigo-500" },
+    ];
 
-  // Derive pseudo-dynamic progress from available user stats
-  const baseTests = (user.totalTestsCompleted || 0);
-  const baseCredits = (user.credits || 0);
-  // Force all subject progress to 0% and Level 1 (progress now tied to course completion, not games)
-  const subjectsWithProgress = subjectList.map((s) => {
-    return { ...s, pct: 0, level: 1 };
-  });
+    const goals = [
+      { text: "Complete any 1 Test", achieved: baseTests >= 1 },
+      { text: "Earn 10 XP", achieved: baseCredits >= 10 },
+      { text: "Set Display Name", achieved: !!user.name },
+      { text: "Upload Profile Picture", achieved: !!user.image },
+    ];
 
-  // Simple achievement rules using credits/tests
-  const achievements = [
-    { key: "math_wizard", label: "Math Wizard", icon: "🧙", earned: baseCredits >= 10 },
-    { key: "coding_hero", label: "Coding Hero", icon: "💾", earned: baseCredits >= 20 },
-    { key: "science_explorer", label: "Science Explorer", icon: "🌌", earned: baseTests >= 3 },
-    { key: "problem_solver", label: "Problem Solver", icon: "🏆", earned: baseTests >= 5 },
-    { key: "robot_master", label: "Robot Master", icon: "🤖", earned: baseCredits >= 30 },
-  ];
+    const achievements = [
+      { name: "Math Wizard", icon: "🧙‍♂️", earned: baseCredits >= 10 },
+      { name: "Coding Hero", icon: "👨‍💻", earned: baseCredits >= 20 },
+      { name: "Science Explorer", icon: "🔬", earned: baseTests >= 3 },
+      { name: "Problem Solver", icon: "🧩", earned: baseTests >= 5 },
+      { name: "Robot Master", icon: "🤖", earned: baseCredits >= 30 },
+    ];
 
-  // Ensure default STEM courses exist for this user's class (once for students)
-  useEffect(() => {
-    if (isStudent) {
-      ensureDefaults({}).catch(() => {});
-    }
-  }, [isStudent, ensureDefaults]);
+    const gameSubjects = subjects.filter(s => s.name !== "Physics");
 
-  const handleOpenCourse = async (courseId: string, title: string) => {
-    try {
-      await markCourseAccessed({ courseId: courseId as any });
-      // Simple launch routing: Math -> math game, others -> tests hub
-      if (title === "Mathematics") {
-        navigate("/tests?game=math");
-      } else {
-        navigate("/tests");
-      }
-    } catch (e) {
-      toast.error("Failed to open course");
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-transparent">
-      <GlobalHeader />
-      
-      <main className="max-w-7xl mx-auto p-6">
-        {/* Student Portal Header (retro, neon) */}
-        {isStudent && (
+    return (
+      <div className="min-h-screen bg-transparent">
+        <GlobalHeader />
+        <div className="container mx-auto px-4 py-8 space-y-8">
+          {/* Student Portal Header */}
           <motion.div
-            initial={{ opacity: 0, y: 18 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
+            className="text-center space-y-4"
           >
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <h1
-                className="text-3xl md:text-4xl font-bold text-yellow-300"
-                style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1.5px 0 #000, -1.5px 0 #000, 0 1.5px #000, 0 -1.5px #000" }}
-              >
-                👾 Welcome back, {user.name || "Explorer"}!
-              </h1>
-              <div
-                className="flex items-center gap-3 bg-black/70 border-4 border-yellow-600 px-4 py-2 shadow-[0_0_12px_rgba(255,255,0,0.6)]"
-                style={{ fontFamily: "'Pixelify Sans', monospace" }}
-              >
-                <span className="text-yellow-300 text-xl">🪙</span>
-                <span className="text-yellow-300 font-bold">
-                  XP: {user.credits || 0}
-                </span>
-              </div>
+            <h1 className="text-4xl font-bold text-white pixel-text-shadow">
+              👾 Welcome back, {user.name || "Explorer"}!
+            </h1>
+            <div className="text-2xl font-bold text-yellow-400 pixel-text-shadow">
+              XP: {user.credits || 0}
             </div>
+            <PixelButton
+              onClick={() => navigate("/tests")}
+              className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 text-lg"
+            >
+              🎮 Continue Your Quest
+            </PixelButton>
           </motion.div>
-        )}
 
-        {/* Teacher Class Panel */}
-        {isTeacher && (
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-4"
-          >
-            <div className="bg-black/70 border-4 border-yellow-600 p-4 flex items-center justify-between shadow-[0_0_12px_rgba(255,255,0,0.5)]"
-                 style={{ fontFamily: "'Pixelify Sans', monospace" }}>
-              <div className="text-yellow-300 font-bold">
-                Managing content for: <span className="px-2 py-1 bg-yellow-700/40 border-2 border-yellow-800 ml-1">Class {user.userClass?.split(" ")[1] || "-"}</span>
-              </div>
-              <div className="text-yellow-200 text-sm">
-                Only students in your class will see your announcements, courses, and tests.
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Quick Play (Student) */}
-        {isStudent && (
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6"
-          >
-            <div className="bg-black/70 border-4 border-yellow-600 p-6 shadow-[0_0_16px_rgba(255,255,0,0.5)]">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div
-                  className="text-yellow-300 font-bold"
-                  style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}
-                >
-                  Ready to continue your learning quest?
-                </div>
-                <PixelButton
-                  size="lg"
-                  className="text-xl px-8 py-4"
-                  onClick={() => navigate("/tests")}
-                >
-                  🎮 Continue Your Quest
-                </PixelButton>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Student Performance + Goals */}
-        {isStudent && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            {/* Performance Dashboard */}
-            <div className="lg:col-span-2">
-              <div className="bg-black/70 border-4 border-yellow-600 p-6 shadow-[0_0_16px_rgba(255,255,0,0.4)]">
-                <h2
-                  className="text-2xl font-bold text-yellow-300 mb-4"
-                  style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}
-                >
-                  Student Performance Dashboard
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {subjectsWithProgress.map((s) => (
-                    <div
-                      key={s.key}
-                      className="bg-neutral-900/60 border-2 border-yellow-700 p-4"
-                      style={{ fontFamily: "'Pixelify Sans', monospace" }}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2 text-yellow-200 font-bold">
-                          <span>{s.icon}</span>
-                          <span>{s.label}</span>
-                        </div>
-                        <span className="text-yellow-300 font-bold">{s.pct}%</span>
-                      </div>
-                      <div className="w-full h-4 bg-neutral-800 border-2 border-yellow-800 relative">
-                        <div
-                          className="h-full bg-gradient-to-r from-yellow-400 to-orange-400 shadow-[0_0_10px_rgba(255,200,0,0.8)]"
-                          style={{ width: `${s.pct}%` }}
-                        />
-                      </div>
+          {/* Student Performance Dashboard */}
+          <PixelCard variant="orange" className="p-6">
+            <h2 className="text-2xl font-bold mb-6 text-center">📊 Your Progress Dashboard</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {subjects.map((subject) => (
+                <div key={subject.name} className="bg-black/20 p-4 rounded-lg border-2 border-yellow-400">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">{subject.icon}</span>
+                    <span className="font-bold text-white">{subject.name}</span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-300">Level {subject.level}</span>
+                      <span className="text-gray-300">{subject.pct}%</span>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Today's Goals */}
-            <div className="">
-              <div className="bg-black/70 border-4 border-yellow-600 p-6 shadow-[0_0_16px_rgba(255,255,0,0.4)]">
-                <h3
-                  className="text-xl font-bold text-yellow-300 mb-4"
-                  style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}
-                >
-                  Today's Goals
-                </h3>
-                <div className="space-y-3" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
-                  {goals.map((g, idx) => (
-                    <div
-                      key={idx}
-                      className={`w-full text-left flex items-center gap-3 px-3 py-2 border-2 ${
-                        g.done
-                          ? "bg-green-600/40 border-green-700"
-                          : "bg-neutral-900/50 border-yellow-700"
-                      }`}
-                      style={{ pointerEvents: "none" }}
-                    >
-                      <span className="text-xl">{g.done ? "✔" : "✖"}</span>
-                      <span className={`text-yellow-100 ${g.done ? "opacity-90" : ""}`}>
-                        {g.text}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Student Courses Grid */}
-        {isStudent && (
-          <div className="mb-8">
-            <div className="bg-black/70 border-4 border-yellow-600 p-6 shadow-[0_0_16px_rgba(255,255,0,0.4)]">
-              <h3
-                className="text-2xl font-bold text-yellow-300 mb-4"
-                style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}
-              >
-                Your Courses
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {(studentCourses || []).map((c: any) => (
-                  <div
-                    key={c._id}
-                    className="relative p-4 bg-neutral-900/60 border-2 border-yellow-700"
-                    style={{ fontFamily: "'Pixelify Sans', monospace" }}
-                  >
-                    {c.isNew && (
-                      <span className="absolute -top-3 -right-3 text-xs px-2 py-1 bg-yellow-300 border-2 border-yellow-700 text-black font-bold shadow-[0_0_10px_rgba(255,220,0,0.8)]">
-                        ★ NEW ★
-                      </span>
-                    )}
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2 text-yellow-100 font-bold">
-                        <span className="text-xl">
-                          {c.title === "Mathematics" ? "📐" :
-                           c.title === "Physics" ? "⚛️" :
-                           c.title === "Chemistry" ? "🧪" :
-                           c.title === "Biology" ? "🌱" :
-                           c.title === "Computer Science" ? "💻" :
-                           c.title === "Robotics" ? "🤖" :
-                           c.title === "Astronomy" ? "🌌" : "📘"}
-                        </span>
-                        <span>{c.title}</span>
-                      </div>
-                      <div className="text-xs bg-yellow-300 text-black border border-yellow-700 px-2 py-0.5">
-                        {c.subjectType || "custom"}
-                      </div>
-                    </div>
-                    <div className="mb-3 text-yellow-200 text-xs opacity-90">{c.description}</div>
-                    <div className="w-full h-3 bg-neutral-800 border-2 border-yellow-800 mb-3">
+                    <div className="w-full bg-gray-700 rounded-full h-2">
                       <div
-                        className="h-full bg-gradient-to-r from-yellow-400 to-orange-400 shadow-[0_0_10px_rgba(255,200,0,0.8)]"
-                        style={{ width: `${Math.max(0, Math.min(100, c.progress || 0))}%` }}
+                        className={`h-2 rounded-full ${subject.color}`}
+                        style={{ width: `${subject.pct}%` }}
                       />
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-yellow-300 text-xs font-bold">{Math.round(c.progress || 0)}%</span>
-                      <PixelButton size="sm" onClick={() => handleOpenCourse(c._id, c.title)}>
-                        {c.progress > 0 ? "Continue" : "Play"}
-                      </PixelButton>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </PixelCard>
+
+          {/* Today's Goals */}
+          <PixelCard variant="orange" className="p-6">
+            <h2 className="text-2xl font-bold mb-4 text-center">🎯 Today's Goals</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {goals.map((goal, index) => (
+                <div key={index} className="flex items-center gap-3 p-3 bg-black/20 rounded-lg">
+                  <span className="text-2xl">
+                    {goal.achieved ? "✔" : "✖"}
+                  </span>
+                  <span className={`font-medium ${goal.achieved ? "text-green-400" : "text-gray-400"}`}>
+                    {goal.text}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </PixelCard>
+
+          {/* Your Courses */}
+          <PixelCard variant="orange" className="p-6">
+            <h2 className="text-2xl font-bold mb-6 text-center">📚 Your Courses</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {studentCourses?.map((course) => (
+                <div key={course._id} className="bg-black/20 p-4 rounded-lg border-2 border-yellow-400">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">
+                      {course.title === "Mathematics" ? "📐" :
+                       course.title === "Chemistry" ? "🧪" :
+                       course.title === "Biology" ? "🌱" :
+                       course.title === "Computer Science" ? "💻" :
+                       course.title === "Robotics" ? "🤖" :
+                       course.title === "Astronomy" ? "🌟" : "📖"}
+                    </span>
+                    <span className="font-bold text-white">{course.title}</span>
+                    {course.isNew && (
+                      <Badge className="bg-red-500 text-white text-xs">★ NEW ★</Badge>
+                    )}
+                  </div>
+                  <Badge variant="outline" className="mb-2">
+                    {course.subjectType || "default"}
+                  </Badge>
+                  <p className="text-gray-300 text-sm mb-3">{course.description}</p>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-300">Progress</span>
+                      <span className="text-gray-300">{Math.round(course.progress)}%</span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div
+                        className="h-2 rounded-full bg-green-500"
+                        style={{ width: `${course.progress}%` }}
+                      />
                     </div>
                   </div>
-                ))}
-                {(!studentCourses || studentCourses.length === 0) && (
-                  <div className="text-yellow-200">No courses yet for your class.</div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Achievements + Levels & Games */}
-        {isStudent && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* Achievements */}
-            <div className="bg-black/70 border-4 border-yellow-600 p-6 shadow-[0_0_16px_rgba(255,255,0,0.4)]">
-              <h3
-                className="text-2xl font-bold text-yellow-300 mb-4"
-                style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}
-              >
-                Achievements
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {achievements.map((a) => (
-                  <div
-                    key={a.key}
-                    className={`p-4 border-2 ${
-                      a.earned
-                        ? "bg-neutral-900/60 border-yellow-700 shadow-[0_0_14px_rgba(255,220,0,0.6)]"
-                        : "bg-neutral-800/60 border-neutral-700 grayscale opacity-80"
-                    }`}
-                    style={{ fontFamily: "'Pixelify Sans', monospace" }}
+                  <PixelButton
+                    onClick={() => handleOpenCourse(course._id, course.title)}
+                    className="w-full mt-3 bg-blue-500 hover:bg-blue-600"
                   >
-                    <div className="text-3xl mb-2">{a.icon}</div>
-                    <div className="text-yellow-100 font-bold">{a.label}</div>
-                  </div>
-                ))}
-              </div>
+                    {course.progress > 0 ? "Continue" : "Play"}
+                  </PixelButton>
+                </div>
+              ))}
             </div>
+          </PixelCard>
 
-            {/* Levels & Games — per-subject retro arcade tiles with unique looks */}
-            <div className="bg-black/70 border-4 border-yellow-600 p-6 shadow-[0_0_16px_rgba(255,255,0,0.4)]">
-              <h3
-                className="text-2xl font-bold text-yellow-300 mb-4"
-                style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}
-              >
-                Course Levels & Games
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {subjectsWithProgress
-                  .filter((s) => s.key !== "physics")
-                  .map((s) => (
-                    <div
-                      key={s.key}
-                      className={`p-4 border-2 ${s.theme.border} ${s.theme.bg} ${s.theme.glow}`}
-                      style={{ fontFamily: "'Pixelify Sans', monospace" }}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2 font-bold text-yellow-100">
-                          <span className="text-xl">{s.icon}</span>
-                          <span>{s.label}</span>
-                        </div>
-                        <div className={`text-xs px-2 py-0.5 border ${s.theme.badge} font-bold`}>
-                          Level {s.level}
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-yellow-200 text-xs md:text-sm opacity-90">{s.tagline}</span>
-                        <PixelButton
-                          size="sm"
-                          onClick={() =>
-                            navigate(
-                              s.key === "mathematics"
-                                ? "/tests?game=math"
-                                : s.key === "biology"
-                                ? "/tests?game=biocell"
-                                : "/tests"
-                            )
-                          }
-                          className={`px-3 py-1 ${s.theme.playGlow}`}
-                        >
-                          Play
-                        </PixelButton>
-                      </div>
-                    </div>
-                  ))}
-              </div>
+          {/* Achievements */}
+          <PixelCard variant="orange" className="p-6">
+            <h2 className="text-2xl font-bold mb-6 text-center">🏆 Achievements</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {achievements.map((achievement) => (
+                <div
+                  key={achievement.name}
+                  className={`p-4 rounded-lg border-2 text-center ${
+                    achievement.earned
+                      ? "border-yellow-400 bg-yellow-400/20"
+                      : "border-gray-600 bg-gray-600/20 opacity-50"
+                  }`}
+                >
+                  <div className="text-4xl mb-2">{achievement.icon}</div>
+                  <div className="text-sm font-medium text-white">{achievement.name}</div>
+                </div>
+              ))}
             </div>
-          </div>
-        )}
+          </PixelCard>
 
-        {/* Footer / Navigation (Student) */}
-        {isStudent && (
-          <div className="flex justify-center mb-4">
-            <PixelButton size="md" onClick={() => navigate("/")}>
+          {/* Course Levels & Games */}
+          <PixelCard variant="orange" className="p-6">
+            <h2 className="text-2xl font-bold mb-6 text-center">🎮 Course Levels & Retro Mini-Games</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {gameSubjects.map((subject) => (
+                <div key={subject.name} className="bg-black/20 p-6 rounded-lg border-2 border-yellow-400 text-center">
+                  <div className="text-6xl mb-4">{subject.icon}</div>
+                  <h3 className="text-xl font-bold text-white mb-2">{subject.name}</h3>
+                  <p className="text-gray-300 text-sm mb-3">
+                    {subject.name === "Mathematics" ? "Solve equations to defeat enemies!" :
+                     subject.name === "Chemistry" ? "Mix elements and catch compounds!" :
+                     subject.name === "Biology" ? "Defend cells from pathogens!" :
+                     "Interactive challenges await!"}
+                  </p>
+                  <Badge className="mb-4 bg-blue-500">Level 1</Badge>
+                  <PixelButton
+                    onClick={() => {
+                      if (subject.name === "Mathematics") navigate("/tests?game=math");
+                      else if (subject.name === "Biology") navigate("/tests?game=biocell");
+                      else navigate("/tests");
+                    }}
+                    className="w-full bg-green-500 hover:bg-green-600"
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    PLAY
+                  </PixelButton>
+                </div>
+              ))}
+            </div>
+          </PixelCard>
+
+          {/* Footer */}
+          <div className="text-center">
+            <PixelButton
+              onClick={() => navigate("/")}
+              className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2"
+            >
               🕹 Back to Arcade Lobby
             </PixelButton>
           </div>
-        )}
+        </div>
+      </div>
+    );
+  }
 
-        {/* Teacher View (unchanged) */}
-        {isTeacher && (
-          <>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-8"
-            >
-              <h1 className="text-4xl font-bold text-black mb-2" style={{ fontFamily: "monospace" }}>
-                Welcome back, {user.name}!
-              </h1>
-              <p className="text-lg text-gray-700" style={{ fontFamily: "monospace" }}>
-                Manage your courses and track student progress
-              </p>
-            </motion.div>
+  if (isTeacher) {
+    // Teacher Control Center
+    const filteredCourses = allCourses?.filter(course =>
+      (classFilter === "ALL_CLASSES" || course.targetClass === classFilter) &&
+      (!searchTerm || course.title.toLowerCase().includes(searchTerm.toLowerCase()))
+    ) || [];
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              <PixelCard variant="banana">
-                <div className="p-6 text-center">
-                  <div className="text-4xl mb-2">📚</div>
-                  <h3 className="text-2xl font-bold text-black" style={{ fontFamily: "monospace" }}>
-                    {user.totalCoursesCreated || 0}
-                  </h3>
-                  <p className="text-gray-700" style={{ fontFamily: "monospace" }}>Courses Created</p>
-                </div>
-              </PixelCard>
+    const filteredTests = allTests?.filter(test =>
+      (classFilter === "ALL_CLASSES" || test.targetClass === classFilter) &&
+      (difficultyFilter === "ALL_LEVELS" || test.difficulty === difficultyFilter) &&
+      (!searchTerm || test.title.toLowerCase().includes(searchTerm.toLowerCase()))
+    ) || [];
 
-              <PixelCard variant="orange">
-                <div className="p-6 text-center">
-                  <div className="text-4xl mb-2">👥</div>
-                  <h3 className="text-2xl font-bold text-black" style={{ fontFamily: "monospace" }}>
-                    {user.totalStudentsEnrolled || 0}
-                  </h3>
-                  <p className="text-gray-700" style={{ fontFamily: "monospace" }}>Students Enrolled</p>
-                </div>
-              </PixelCard>
+    const filteredStudents = allStudents?.filter(student =>
+      (classFilter === "ALL_CLASSES" || student.userClass === classFilter) &&
+      (!searchTerm || student.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    ) || [];
 
-              <PixelCard variant="default">
-                <div className="p-6 text-center">
-                  <Plus size={48} className="mx-auto mb-2 text-black" />
-                  <PixelButton onClick={() => navigate("/courses")} size="sm">
-                    Create Course
-                  </PixelButton>
-                </div>
-              </PixelCard>
+    const filteredAnnouncements = allAnnouncements?.filter(announcement =>
+      (classFilter === "ALL_CLASSES" || announcement.targetClass === classFilter) &&
+      (!searchTerm || announcement.title.toLowerCase().includes(searchTerm.toLowerCase()))
+    ) || [];
+
+    // Analytics data
+    const analyticsData = {
+      activeStudents: filteredStudents.filter(s => s.lastLoginAt && (Date.now() - s.lastLoginAt) < 7 * 24 * 60 * 60 * 1000).length,
+      totalStudents: filteredStudents.length,
+      avgScore: filteredStudents.reduce((sum, s) => sum + (s.credits || 0), 0) / (filteredStudents.length || 1),
+      testParticipation: Math.round((filteredStudents.filter(s => (s.totalTestsCompleted || 0) > 0).length / (filteredStudents.length || 1)) * 100),
+    };
+
+    const chartData = [
+      { name: "Active", value: analyticsData.activeStudents, fill: "#22c55e" },
+      { name: "Inactive", value: analyticsData.totalStudents - analyticsData.activeStudents, fill: "#ef4444" },
+    ];
+
+    return (
+      <div className="min-h-screen bg-transparent">
+        <GlobalHeader />
+        <div className="container mx-auto px-4 py-8">
+          {/* Teacher Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-8"
+          >
+            <h1 className="text-4xl font-bold text-white pixel-text-shadow mb-4">
+              🎛️ Teacher Control Center
+            </h1>
+            <div className="text-lg text-yellow-400">
+              Managing Class {user.userClass?.split(" ")[1] || "-"}
             </div>
+          </motion.div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <PixelCard variant="banana">
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-black flex items-center gap-2" style={{ fontFamily: "monospace" }}>
-                      <BookOpen size={24} />
-                      Recent Courses
-                    </h2>
-                    <PixelButton onClick={() => navigate("/courses")} size="sm">
-                      View All
-                    </PixelButton>
-                  </div>
-                  <div className="space-y-3">
-                    {courses?.slice(0, 3).map((course) => (
-                      <motion.div
-                        key={course._id}
-                        whileHover={{ scale: 1.02 }}
-                        className="bg-yellow-300 border-2 border-yellow-500 p-3 cursor-pointer"
-                        onClick={() => navigate(`/courses/${course._id}`)}
-                      >
-                        <h3 className="font-bold text-black" style={{ fontFamily: "monospace" }}>
-                          {course.title}
-                        </h3>
-                        <p className="text-sm text-gray-700" style={{ fontFamily: "monospace" }}>
-                          by {course.teacherName}
-                        </p>
-                      </motion.div>
-                    )) || (
-                      <p className="text-gray-700" style={{ fontFamily: "monospace" }}>
-                        No courses available yet
-                      </p>
-                    )}
+          {/* Control Center Tabs */}
+          <PixelCard variant="orange" className="p-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-6 mb-6">
+                <TabsTrigger value="courses" className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4" />
+                  <span className="hidden sm:inline">Courses</span>
+                </TabsTrigger>
+                <TabsTrigger value="tests" className="flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  <span className="hidden sm:inline">Tests</span>
+                </TabsTrigger>
+                <TabsTrigger value="students" className="flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  <span className="hidden sm:inline">Students</span>
+                </TabsTrigger>
+                <TabsTrigger value="announcements" className="flex items-center gap-2">
+                  <Megaphone className="w-4 h-4" />
+                  <span className="hidden sm:inline">News</span>
+                </TabsTrigger>
+                <TabsTrigger value="analytics" className="flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Analytics</span>
+                </TabsTrigger>
+                <TabsTrigger value="settings" className="flex items-center gap-2">
+                  <Settings className="w-4 h-4" />
+                  <span className="hidden sm:inline">Settings</span>
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Courses Tab */}
+              <TabsContent value="courses" className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                  <h2 className="text-2xl font-bold">📘 Course Management</h2>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Search courses..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-48"
+                    />
+                    <Select value={classFilter} onValueChange={(v) => setClassFilter(v)}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Class" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL_CLASSES">All Classes</SelectItem>
+                        <SelectItem value="Class 6">Class 6</SelectItem>
+                        <SelectItem value="Class 7">Class 7</SelectItem>
+                        <SelectItem value="Class 8">Class 8</SelectItem>
+                        <SelectItem value="Class 9">Class 9</SelectItem>
+                        <SelectItem value="Class 10">Class 10</SelectItem>
+                        <SelectItem value="Class 11">Class 11</SelectItem>
+                        <SelectItem value="Class 12">Class 12</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Dialog open={courseDialog.open} onOpenChange={(open) => setCourseDialog({ open, course: null })}>
+                      <DialogTrigger asChild>
+                        <Button className="bg-green-500 hover:bg-green-600">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Course
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>{courseDialog.course ? "Edit Course" : "Create New Course"}</DialogTitle>
+                        </DialogHeader>
+                        <CourseForm
+                          course={courseDialog.course}
+                          onSubmit={courseDialog.course ? 
+                            (data) => handleUpdateCourse(courseDialog.course._id, data) :
+                            handleCreateCourse
+                          }
+                          onCancel={() => setCourseDialog({ open: false, course: null })}
+                        />
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 </div>
-              </PixelCard>
 
-              <PixelCard variant="orange">
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-black flex items-center gap-2" style={{ fontFamily: "monospace" }}>
-                      <Trophy size={24} />
-                      Top Students
-                    </h2>
-                    <PixelButton onClick={() => navigate("/leaderboard")} size="sm">
-                      View All
-                    </PixelButton>
+                <div className="bg-black/20 rounded-lg border-2 border-yellow-400 overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Class</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Chapters</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Updated</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredCourses.map((course) => (
+                        <TableRow key={course._id}>
+                          <TableCell className="font-medium">{course.title}</TableCell>
+                          <TableCell>{course.targetClass}</TableCell>
+                          <TableCell>
+                            <Badge variant={course.subjectType === "default" ? "secondary" : "default"}>
+                              {course.subjectType || "custom"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{course.chaptersCount}</TableCell>
+                          <TableCell>
+                            <Badge variant={course.isPublished ? "default" : "secondary"}>
+                              {course.isPublished ? "Published" : "Draft"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {course.updatedAt ? new Date(course.updatedAt).toLocaleDateString() : "N/A"}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setCourseDialog({ open: true, course })}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDeleteCourse(course._id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+
+              {/* Tests Tab */}
+              <TabsContent value="tests" className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                  <h2 className="text-2xl font-bold">📝 Test Management</h2>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Search tests..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-48"
+                    />
+                    <Select value={difficultyFilter} onValueChange={(v) => setDifficultyFilter(v)}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Difficulty" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL_LEVELS">All Levels</SelectItem>
+                        <SelectItem value="easy">Easy</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="hard">Hard</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button className="bg-green-500 hover:bg-green-600">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Test
+                    </Button>
                   </div>
-                  <div className="space-y-2">
-                    {leaderboard?.slice(0, 5).map((student, index) => (
-                      <div key={index} className="flex items-center justify-between bg-orange-200 border-2 border-orange-400 p-2">
-                        <div className="flex items-center gap-3">
-                          <span className="text-lg">
-                            {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : "🏅"}
-                          </span>
-                          <Avatar className="h-8 w-8 border border-orange-600 rounded-none">
-                            <AvatarImage src={(student as any).image || undefined} alt={student.name} />
-                            <AvatarFallback className="rounded-none bg-orange-300 text-black">
-                              {student.name?.[0]?.toUpperCase() || "?"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="font-bold text-black" style={{ fontFamily: "monospace" }}>
-                            {student.name}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="font-bold text-black" style={{ fontFamily: "monospace" }}>
-                            {student.credits} 💰
-                          </span>
-                          <span className="text-xs bg-orange-300 border border-orange-500 px-2 py-0.5 text-black">
-                            {(student as any).badge || "Banana Sprout"}
-                          </span>
+                </div>
+
+                <div className="bg-black/20 rounded-lg border-2 border-yellow-400 overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Course</TableHead>
+                        <TableHead>Class</TableHead>
+                        <TableHead>Difficulty</TableHead>
+                        <TableHead>Questions</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredTests.map((test) => (
+                        <TableRow key={test._id}>
+                          <TableCell className="font-medium">{test.title}</TableCell>
+                          <TableCell>{test.courseName}</TableCell>
+                          <TableCell>{test.targetClass}</TableCell>
+                          <TableCell>
+                            <Badge variant={
+                              test.difficulty === "easy" ? "secondary" :
+                              test.difficulty === "medium" ? "default" : "destructive"
+                            }>
+                              {test.difficulty || "N/A"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{test.questions.length}/10</TableCell>
+                          <TableCell>
+                            <Badge variant={test.isPublished ? "default" : "secondary"}>
+                              {test.isPublished ? "Published" : "Draft"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setTestDialog({ open: true, test })}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDeleteTest(test._id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+
+              {/* Students Tab */}
+              <TabsContent value="students" className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                  <h2 className="text-2xl font-bold">🎓 Student Management</h2>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Search students..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-48"
+                    />
+                    <Select value={classFilter} onValueChange={(v) => setClassFilter(v)}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Class" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL_CLASSES">All Classes</SelectItem>
+                        <SelectItem value="Class 6">Class 6</SelectItem>
+                        <SelectItem value="Class 7">Class 7</SelectItem>
+                        <SelectItem value="Class 8">Class 8</SelectItem>
+                        <SelectItem value="Class 9">Class 9</SelectItem>
+                        <SelectItem value="Class 10">Class 10</SelectItem>
+                        <SelectItem value="Class 11">Class 11</SelectItem>
+                        <SelectItem value="Class 12">Class 12</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="bg-black/20 rounded-lg border-2 border-yellow-400 overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Class</TableHead>
+                        <TableHead>Credits</TableHead>
+                        <TableHead>Tests</TableHead>
+                        <TableHead>Rank</TableHead>
+                        <TableHead>Last Login</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredStudents.map((student) => (
+                        <TableRow key={student._id}>
+                          <TableCell className="font-medium">{student.name}</TableCell>
+                          <TableCell>{student.userClass}</TableCell>
+                          <TableCell>{student.credits}</TableCell>
+                          <TableCell>{student.totalTestsCompleted}</TableCell>
+                          <TableCell>
+                            <Badge>{student.rank}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {student.lastLoginAt ? 
+                              new Date(student.lastLoginAt).toLocaleDateString() : 
+                              "Never"
+                            }
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setStudentDialog({ open: true, student })}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDeleteStudent(student._id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+
+              {/* Analytics Tab */}
+              <TabsContent value="analytics" className="space-y-6">
+                <h2 className="text-2xl font-bold">📊 Analytics Dashboard</h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{analyticsData.totalStudents}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Active Students</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-green-600">{analyticsData.activeStudents}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Avg Credits</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{Math.round(analyticsData.avgScore)}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Test Participation</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{analyticsData.testParticipation}%</div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Student Activity</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ChartContainer
+                        config={{
+                          active: { label: "Active", color: "#22c55e" },
+                          inactive: { label: "Inactive", color: "#ef4444" },
+                        }}
+                        className="h-[200px]"
+                      >
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={chartData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={60}
+                              outerRadius={80}
+                              dataKey="value"
+                            >
+                              {chartData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                              ))}
+                            </Pie>
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </ChartContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Class Performance</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="text-center text-gray-500">
+                          Performance metrics will be displayed here based on test results and course completion rates.
                         </div>
                       </div>
-                    )) || (
-                      <p className="text-gray-700" style={{ fontFamily: "monospace" }}>
-                        No students on leaderboard yet
-                      </p>
-                    )}
-                  </div>
+                    </CardContent>
+                  </Card>
                 </div>
-              </PixelCard>
-            </div>
-          </>
-        )}
-      </main>
-    </div>
+              </TabsContent>
+
+              {/* Settings Tab */}
+              <TabsContent value="settings" className="space-y-4">
+                <h2 className="text-2xl font-bold">⚙️ Settings</h2>
+                <div className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Teacher Profile</CardTitle>
+                      <CardDescription>Manage your teacher account settings</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium">Name</label>
+                        <Input value={user.name || ""} readOnly />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Email</label>
+                        <Input value={user.email || ""} readOnly />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Class</label>
+                        <Input value={user.userClass || ""} readOnly />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </PixelCard>
+        </div>
+
+        {/* Dialogs */}
+        <Dialog open={studentDialog.open} onOpenChange={(open) => setStudentDialog({ open, student: null })}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Student</DialogTitle>
+            </DialogHeader>
+            <StudentForm
+              student={studentDialog.student}
+              onSubmit={(data) => handleUpdateStudent(studentDialog.student._id, data)}
+              onCancel={() => setStudentDialog({ open: false, student: null })}
+            />
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+// Form Components
+function CourseForm({ course, onSubmit, onCancel }: any) {
+  const [formData, setFormData] = useState({
+    title: course?.title || "",
+    description: course?.description || "",
+    targetClass: course?.targetClass || "",
+    isPublished: course?.isPublished || false,
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="text-sm font-medium">Title</label>
+        <Input
+          value={formData.title}
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          required
+        />
+      </div>
+      <div>
+        <label className="text-sm font-medium">Description</label>
+        <Textarea
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          required
+        />
+      </div>
+      <div>
+        <label className="text-sm font-medium">Target Class</label>
+        <Select value={formData.targetClass} onValueChange={(value) => setFormData({ ...formData, targetClass: value })}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select class" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Class 6">Class 6</SelectItem>
+            <SelectItem value="Class 7">Class 7</SelectItem>
+            <SelectItem value="Class 8">Class 8</SelectItem>
+            <SelectItem value="Class 9">Class 9</SelectItem>
+            <SelectItem value="Class 10">Class 10</SelectItem>
+            <SelectItem value="Class 11">Class 11</SelectItem>
+            <SelectItem value="Class 12">Class 12</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex items-center space-x-2">
+        <input
+          type="checkbox"
+          id="published"
+          checked={formData.isPublished}
+          onChange={(e) => setFormData({ ...formData, isPublished: e.target.checked })}
+        />
+        <label htmlFor="published" className="text-sm font-medium">Published</label>
+      </div>
+      <div className="flex gap-2">
+        <Button type="submit" className="bg-green-500 hover:bg-green-600">
+          {course ? "Update" : "Create"}
+        </Button>
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function StudentForm({ student, onSubmit, onCancel }: any) {
+  const [formData, setFormData] = useState({
+    name: student?.name || "",
+    userClass: student?.userClass || "",
+    phoneNumber: student?.phoneNumber || "",
+    address: student?.address || "",
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="text-sm font-medium">Name</label>
+        <Input
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          required
+        />
+      </div>
+      <div>
+        <label className="text-sm font-medium">Class</label>
+        <Select value={formData.userClass} onValueChange={(value) => setFormData({ ...formData, userClass: value })}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select class" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Class 6">Class 6</SelectItem>
+            <SelectItem value="Class 7">Class 7</SelectItem>
+            <SelectItem value="Class 8">Class 8</SelectItem>
+            <SelectItem value="Class 9">Class 9</SelectItem>
+            <SelectItem value="Class 10">Class 10</SelectItem>
+            <SelectItem value="Class 11">Class 11</SelectItem>
+            <SelectItem value="Class 12">Class 12</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <label className="text-sm font-medium">Phone Number</label>
+        <Input
+          value={formData.phoneNumber}
+          onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+        />
+      </div>
+      <div>
+        <label className="text-sm font-medium">Address</label>
+        <Textarea
+          value={formData.address}
+          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+        />
+      </div>
+      <div className="flex gap-2">
+        <Button type="submit" className="bg-green-500 hover:bg-green-600">
+          Update
+        </Button>
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+    </form>
   );
 }

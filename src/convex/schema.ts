@@ -149,6 +149,9 @@ const schema = defineSchema(
         v.literal("Class 11"),
         v.literal("Class 12"),
       ),
+      // Add: difficulty and updatedAt
+      difficulty: v.optional(v.union(v.literal("easy"), v.literal("medium"), v.literal("hard"))),
+      updatedAt: v.optional(v.number()),
     }).index("by_teacher", ["teacherId"])
       .index("by_course", ["courseId"])
       .index("by_published", ["isPublished"])
@@ -185,11 +188,14 @@ const schema = defineSchema(
         v.literal("Class 11"),
         v.literal("Class 12"),
       ),
+      // Add: scheduled announcements
+      scheduleAt: v.optional(v.number()),
     }).index("by_author", ["authorId"])
       .index("by_course", ["courseId"])
       .index("by_global", ["isGlobal"])
       // Add: index to query by class
-      .index("by_targetClass", ["targetClass"]),
+      .index("by_targetClass", ["targetClass"])
+      .index("by_scheduleAt", ["scheduleAt"]),
 
     // Course Enrollments table
     enrollments: defineTable({

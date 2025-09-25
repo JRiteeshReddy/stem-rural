@@ -278,3 +278,117 @@ export const markCourseAccessed = mutation({
     return { ok: true };
   },
 });
+
+// List all courses for teacher admin view
+export const listAllCoursesForTeacher = query({
+  args: {
+    targetClass: v.optional(v.union(
+      v.literal("Class 6"),
+      v.literal("Class 7"),
+      v.literal("Class 8"),
+      v.literal("Class 9"),
+      v.literal("Class 10"),
+      v.literal("Class 11"),
+      v.literal("Class 12"),
+    )),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "teacher") {
+      throw new Error("Unauthorized");
+    }
+
+    const baseQuery = ctx.db.query("courses");
+    const finalQuery = args.targetClass
+      ? baseQuery.withIndex("by_class_and_published", (q) =>
+          q.eq("targetClass", args.targetClass!)
+        )
+      : baseQuery;
+
+    const courses = await finalQuery.collect();
+
+    const coursesWithDetails = await Promise.all(
+      courses.map(async (course) => {
+        const teacher = await ctx.db.get(course.teacherId);
+        const chaptersCount = await ctx.db
+          .query("chapters")
+          .withIndex("by_course", (q) => q.eq("courseId", course._id))
+          .collect()
+          .then(chapters => chapters.length);
+        
+        return {
+          ...course,
+          teacherName: teacher?.name || "Unknown Teacher",
+          chaptersCount,
+        };
+      })
+    );
+
+    return coursesWithDetails.sort((a, b) => (b.updatedAt || b._creationTime) - (a.updatedAt || a._creationTime));
+  },
+});
+
+// Update course (admin level)
+export const updateCourse = mutation({
+  args: {
+    courseId: v.id("courses"),
+    title: v.optional(v.string()),
+    description: v.optional(v.string()),
+    targetClass: v.optional(v.union(
+      v.literal("Class 6"),
+      v.literal("Class 7"),
+      v.literal("Class 8"),
+      v.literal("Class 9"),
+      v.literal("Class 10"),
+      v.literal("Class 11"),
+      v.literal("Class 12"),
+    )),
+    isPublished: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "teacher") {
+      throw new Error("Unauthorized");
+    }
+
+    const course = await ctx.db.get(args.courseId);
+    if (!course) throw new Error("Course not found");
+
+    const patch: Record<string, unknown> = { updatedAt: Date.now() };
+    if (args.title !== undefined) patch.title = args.title;
+    if (args.description !== undefined) patch.description = args.description;
+    if (args.targetClass !== undefined) patch.targetClass = args.targetClass;
+    if (args.isPublished !== undefined) patch.isPublished = args.isPublished;
+
+    await ctx.db.patch(args.courseId, patch);
+    return "Course updated";
+  },
+});
+
+// Delete course (admin level)
+export const deleteCourse = mutation({
+  args: { courseId: v.id("courses") },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "teacher") {
+      throw new Error("Unauthorized");
+    }
+
+    const course = await ctx.db.get(args.courseId);
+    if (!course) throw new Error("Course not found");
+
+    // Delete related chapters
+    const chapters = await ctx.db
+      .query("chapters")
+      .withIndex("by_course", (q) => q.eq("courseId", args.courseId))
+      .collect();
+    
+    for (const chapter of chapters) {
+      await ctx.db.delete(chapter._id);
+    }
+
+    // Delete the course
+    await ctx.db.delete(args.courseId);
+    return "Course deleted";
+  },
+});

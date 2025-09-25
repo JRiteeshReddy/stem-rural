@@ -48,6 +48,130 @@ export const getTestsByTeacher = query({
   },
 });
 
+// Get all tests for teacher admin view
+export const listAllTestsForTeacher = query({
+  args: {
+    courseId: v.optional(v.id("courses")),
+    difficulty: v.optional(v.union(v.literal("easy"), v.literal("medium"), v.literal("hard"))),
+    targetClass: v.optional(v.union(
+      v.literal("Class 6"),
+      v.literal("Class 7"),
+      v.literal("Class 8"),
+      v.literal("Class 9"),
+      v.literal("Class 10"),
+      v.literal("Class 11"),
+      v.literal("Class 12"),
+    )),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "teacher") {
+      throw new Error("Unauthorized");
+    }
+
+    const baseQuery = ctx.db.query("tests");
+    const finalQuery = args.targetClass
+      ? baseQuery.withIndex("by_class_and_published", (q) =>
+          q.eq("targetClass", args.targetClass!)
+        )
+      : baseQuery;
+
+    const tests = await finalQuery.collect();
+    
+    // Apply additional filters
+    let filteredTests = tests;
+    if (args.courseId) {
+      filteredTests = filteredTests.filter(t => t.courseId === args.courseId);
+    }
+    if (args.difficulty) {
+      filteredTests = filteredTests.filter(t => t.difficulty === args.difficulty);
+    }
+
+    // Add course and teacher names
+    const testsWithDetails = await Promise.all(
+      filteredTests.map(async (test) => {
+        const course = test.courseId ? await ctx.db.get(test.courseId) : null;
+        const teacher = await ctx.db.get(test.teacherId);
+        return {
+          ...test,
+          courseName: course?.title || "No Course",
+          teacherName: teacher?.name || "Unknown Teacher",
+        };
+      })
+    );
+
+    return testsWithDetails.sort((a, b) => (b.updatedAt || b._creationTime) - (a.updatedAt || a._creationTime));
+  },
+});
+
+// Update test metadata (admin level)
+export const updateTestMeta = mutation({
+  args: {
+    testId: v.id("tests"),
+    title: v.optional(v.string()),
+    description: v.optional(v.string()),
+    difficulty: v.optional(v.union(v.literal("easy"), v.literal("medium"), v.literal("hard"))),
+    targetClass: v.optional(v.union(
+      v.literal("Class 6"),
+      v.literal("Class 7"),
+      v.literal("Class 8"),
+      v.literal("Class 9"),
+      v.literal("Class 10"),
+      v.literal("Class 11"),
+      v.literal("Class 12"),
+    )),
+    isPublished: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "teacher") {
+      throw new Error("Unauthorized");
+    }
+
+    const test = await ctx.db.get(args.testId);
+    if (!test) throw new Error("Test not found");
+
+    const patch: Record<string, unknown> = { updatedAt: Date.now() };
+    if (args.title !== undefined) patch.title = args.title;
+    if (args.description !== undefined) patch.description = args.description;
+    if (args.difficulty !== undefined) patch.difficulty = args.difficulty;
+    if (args.targetClass !== undefined) patch.targetClass = args.targetClass;
+    if (args.isPublished !== undefined) patch.isPublished = args.isPublished;
+
+    await ctx.db.patch(args.testId, patch);
+    return "Test updated";
+  },
+});
+
+// Get test results for a specific test
+export const getTestResultsForTest = query({
+  args: { testId: v.id("tests") },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "teacher") {
+      throw new Error("Unauthorized");
+    }
+
+    const results = await ctx.db
+      .query("testResults")
+      .withIndex("by_test", (q) => q.eq("testId", args.testId))
+      .collect();
+
+    const resultsWithStudents = await Promise.all(
+      results.map(async (result) => {
+        const student = await ctx.db.get(result.studentId);
+        return {
+          ...result,
+          studentName: student?.name || "Unknown Student",
+          studentClass: student?.userClass || "Unknown Class",
+        };
+      })
+    );
+
+    return resultsWithStudents.sort((a, b) => b.score - a.score);
+  },
+});
+
 function validateQuestions(questions: Array<{
   question: string;
   options: string[];

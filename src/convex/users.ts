@@ -85,3 +85,97 @@ export const addCredits = mutation({
     return { credits: newCredits, totalTestsCompleted: newTotalTests, rank };
   },
 });
+
+// List students for teacher admin view
+export const listStudents = query({
+  args: {
+    targetClass: v.optional(v.union(
+      v.literal("Class 6"),
+      v.literal("Class 7"),
+      v.literal("Class 8"),
+      v.literal("Class 9"),
+      v.literal("Class 10"),
+      v.literal("Class 11"),
+      v.literal("Class 12"),
+    )),
+    searchName: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "teacher") {
+      throw new Error("Unauthorized");
+    }
+
+    const students = await ctx.db
+      .query("users")
+      .withIndex("by_role", (q) => q.eq("role", "student"))
+      .collect();
+
+    let filteredStudents = students;
+    
+    // Filter by class
+    if (args.targetClass) {
+      filteredStudents = filteredStudents.filter(s => s.userClass === args.targetClass);
+    }
+    
+    // Filter by name search
+    if (args.searchName) {
+      const searchLower = args.searchName.toLowerCase();
+      filteredStudents = filteredStudents.filter(s => 
+        (s.name || "").toLowerCase().includes(searchLower)
+      );
+    }
+
+    return filteredStudents.map(student => ({
+      _id: student._id,
+      name: student.name || "Unknown",
+      email: student.email || "",
+      userClass: student.userClass || "Unknown",
+      credits: student.credits || 0,
+      rank: student.rank || "Bronze",
+      totalTestsCompleted: student.totalTestsCompleted || 0,
+      phoneNumber: student.phoneNumber || "",
+      address: student.address || "",
+      lastLoginAt: student.lastLoginAt || null,
+    }));
+  },
+});
+
+// Update student profile subset (admin level)
+export const updateStudentProfileSubset = mutation({
+  args: {
+    studentId: v.id("users"),
+    name: v.optional(v.string()),
+    userClass: v.optional(v.union(
+      v.literal("Class 6"),
+      v.literal("Class 7"),
+      v.literal("Class 8"),
+      v.literal("Class 9"),
+      v.literal("Class 10"),
+      v.literal("Class 11"),
+      v.literal("Class 12"),
+    )),
+    phoneNumber: v.optional(v.string()),
+    address: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "teacher") {
+      throw new Error("Unauthorized");
+    }
+
+    const student = await ctx.db.get(args.studentId);
+    if (!student || student.role !== "student") {
+      throw new Error("Student not found");
+    }
+
+    const patch: Record<string, unknown> = {};
+    if (args.name !== undefined) patch.name = args.name;
+    if (args.userClass !== undefined) patch.userClass = args.userClass;
+    if (args.phoneNumber !== undefined) patch.phoneNumber = args.phoneNumber;
+    if (args.address !== undefined) patch.address = args.address;
+
+    await ctx.db.patch(args.studentId, patch);
+    return "Student profile updated";
+  },
+});

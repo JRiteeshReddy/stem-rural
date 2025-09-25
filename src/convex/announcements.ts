@@ -32,6 +32,60 @@ export const getAnnouncements = query({
   },
 });
 
+// List all announcements for teacher admin view
+export const listAllAnnouncements = query({
+  args: {
+    targetClass: v.optional(v.union(
+      v.literal("Class 6"),
+      v.literal("Class 7"),
+      v.literal("Class 8"),
+      v.literal("Class 9"),
+      v.literal("Class 10"),
+      v.literal("Class 11"),
+      v.literal("Class 12"),
+    )),
+    showScheduled: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "teacher") {
+      throw new Error("Unauthorized");
+    }
+
+    const baseQuery = ctx.db.query("announcements");
+    const finalQuery = args.targetClass
+      ? baseQuery.withIndex("by_targetClass", (q) =>
+          q.eq("targetClass", args.targetClass!)
+        )
+      : baseQuery;
+
+    const announcements = await finalQuery.collect();
+
+    // Filter by scheduled status if specified
+    let filteredAnnouncements = announcements;
+    if (args.showScheduled !== undefined) {
+      const now = Date.now();
+      if (args.showScheduled) {
+        filteredAnnouncements = announcements.filter(a => a.scheduleAt && a.scheduleAt > now);
+      } else {
+        filteredAnnouncements = announcements.filter(a => !a.scheduleAt || a.scheduleAt <= now);
+      }
+    }
+
+    const announcementsWithAuthor = await Promise.all(
+      filteredAnnouncements.map(async (announcement) => {
+        const author = await ctx.db.get(announcement.authorId);
+        return {
+          ...announcement,
+          authorName: author?.name || "Unknown",
+        };
+      })
+    );
+
+    return announcementsWithAuthor.sort((a, b) => b._creationTime - a._creationTime);
+  },
+});
+
 // Create announcement
 export const createAnnouncement = mutation({
   args: {
@@ -93,6 +147,49 @@ export const updateAnnouncement = mutation({
     if (args.courseId !== undefined) patch.courseId = args.courseId ?? undefined;
     await ctx.db.patch(args.announcementId, patch);
     return "Announcement updated";
+  },
+});
+
+// Update create announcement to support scheduling
+export const createAnnouncementWithSchedule = mutation({
+  args: {
+    title: v.string(),
+    content: v.string(),
+    isGlobal: v.boolean(),
+    courseId: v.optional(v.id("courses")),
+    priority: v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
+    targetClass: v.optional(v.union(
+      v.literal("Class 6"),
+      v.literal("Class 7"),
+      v.literal("Class 8"),
+      v.literal("Class 9"),
+      v.literal("Class 10"),
+      v.literal("Class 11"),
+      v.literal("Class 12"),
+    )),
+    scheduleAt: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "teacher") {
+      throw new Error("Unauthorized");
+    }
+
+    const finalTargetClass = args.targetClass || user.userClass;
+    if (!finalTargetClass) {
+      throw new Error("Teacher must have a registered class or specify target class");
+    }
+
+    return await ctx.db.insert("announcements", {
+      title: args.title,
+      content: args.content,
+      authorId: user._id,
+      isGlobal: false, // enforce class-scoped announcements
+      courseId: args.courseId,
+      priority: args.priority,
+      targetClass: finalTargetClass,
+      scheduleAt: args.scheduleAt,
+    });
   },
 });
 
