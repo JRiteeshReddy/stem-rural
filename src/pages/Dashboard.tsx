@@ -68,7 +68,6 @@ export default function Dashboard() {
   const [courseDialog, setCourseDialog] = useState({ open: false, course: null as any });
   const [testDialog, setTestDialog] = useState({ open: false, test: null as any });
   const [studentDialog, setStudentDialog] = useState({ open: false, student: null as any });
-  const [announcementDialog, setAnnouncementDialog] = useState({ open: false, announcement: null as any });
   const [searchTerm, setSearchTerm] = useState("");
   const [classFilter, setClassFilter] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("");
@@ -82,22 +81,6 @@ export default function Dashboard() {
   }, [user?.role, user?.userClass, ensureDefaults]);
 
   // ... keep existing handlers
-
-  const handleProfileImageUpload = async (file: File) => {
-    try {
-      const uploadUrl = await generateUploadUrl();
-      const result = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": file.type },
-        body: file,
-      });
-      const { storageId } = await result.json();
-      await setProfileImage({ fileId: storageId as any });
-      toast.success("Profile image updated!");
-    } catch (error) {
-      toast.error("Failed to upload image");
-    }
-  };
 
   const handleOpenCourse = async (courseId: string, courseTitle: string) => {
     await markCourseAccessed({ courseId: courseId as any });
@@ -766,6 +749,57 @@ export default function Dashboard() {
                               </Button>
                             </div>
                           </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+
+              {/* Announcements Tab */}
+              <TabsContent value="announcements" className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                  <h2 className="text-2xl font-bold">📢 Announcements</h2>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Search announcements..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-48"
+                    />
+                    <Select value={classFilter || undefined} onValueChange={(v) => setClassFilter(v === "ALL_CLASSES" ? "" : v)}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Class" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL_CLASSES">All Classes</SelectItem>
+                        <SelectItem value="Class 6">Class 6</SelectItem>
+                        <SelectItem value="Class 7">Class 7</SelectItem>
+                        <SelectItem value="Class 8">Class 8</SelectItem>
+                        <SelectItem value="Class 9">Class 9</SelectItem>
+                        <SelectItem value="Class 10">Class 10</SelectItem>
+                        <SelectItem value="Class 11">Class 11</SelectItem>
+                        <SelectItem value="Class 12">Class 12</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="bg-black/20 rounded-lg border-2 border-yellow-400 overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Class</TableHead>
+                        <TableHead>Created</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredAnnouncements?.map((a) => (
+                        <TableRow key={a._id}>
+                          <TableCell className="font-medium">{a.title}</TableCell>
+                          <TableCell>{a.targetClass || "—"}</TableCell>
+                          <TableCell>{a._creationTime ? new Date(a._creationTime).toLocaleDateString() : "N/A"}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
