@@ -4,8 +4,11 @@ import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useState } from "react";
+/* removed duplicate useState import */
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
+import React, { useMemo, useState } from "react";
 
 export default function Courses() {
   const { user } = useAuth();
@@ -25,21 +28,30 @@ export default function Courses() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [studentSearch, setStudentSearch] = useState("");
-  const [teacherSearch, setTeacherSearch] = useState("");
+  const [courseSearch, setCourseSearch] = useState("");
 
-  // Derived filtered lists
-  const filteredStudentCourses = (studentCourses || []).filter((c: any) => {
-    const q = studentSearch.trim().toLowerCase();
-    if (!q) return true;
-    return (c.title || "").toLowerCase().includes(q) || (c.description || "").toLowerCase().includes(q);
-  });
+  // Simple client-side search over title/description for teacher and student lists
+  const q = (courseSearch || "").trim().toLowerCase();
 
-  const filteredTeacherCourses = (teacherCourses || []).filter((c: any) => {
-    const q = teacherSearch.trim().toLowerCase();
-    if (!q) return true;
-    return (c.title || "").toLowerCase().includes(q) || (c.description || "").toLowerCase().includes(q);
-  });
+  const filteredStudentCourses = useMemo(() => {
+    if (!Array.isArray(studentCourses)) return [];
+    if (!q) return studentCourses;
+    return studentCourses.filter((c: any) => {
+      const t = String(c?.title || "").toLowerCase();
+      const d = String(c?.description || "").toLowerCase();
+      return t.includes(q) || d.includes(q);
+    });
+  }, [studentCourses, q]);
+
+  const filteredTeacherCourses = useMemo(() => {
+    if (!Array.isArray(teacherCourses)) return [];
+    if (!q) return teacherCourses;
+    return teacherCourses.filter((c: any) => {
+      const t = String(c?.title || "").toLowerCase();
+      const d = String(c?.description || "").toLowerCase();
+      return t.includes(q) || d.includes(q);
+    });
+  }, [teacherCourses, q]);
 
   const handleCreate = async () => {
     try {
@@ -99,6 +111,19 @@ export default function Courses() {
           </p>
         </div>
 
+        {/* Search Bar */}
+        <div className="mb-4 flex items-center gap-2">
+          <div className="relative w-full max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={courseSearch}
+              onChange={(e) => setCourseSearch(e.target.value)}
+              placeholder="Search courses..."
+              className="pl-9"
+            />
+          </div>
+        </div>
+
         {isStudent && (
           <section className="space-y-4">
             <div className="flex items-center justify-between">
@@ -111,16 +136,6 @@ export default function Courses() {
               <PixelButton size="sm" onClick={handleSeedDefaults}>
                 Ensure Default Courses
               </PixelButton>
-            </div>
-
-            <div className="flex justify-end">
-              <input
-                className="w-full md:w-72 px-3 py-2 bg-neutral-900/70 border-2 border-yellow-700 text-yellow-200 outline-none"
-                placeholder="Search courses..."
-                value={studentSearch}
-                onChange={(e) => setStudentSearch(e.target.value)}
-                style={{ fontFamily: "'Pixelify Sans', monospace" }}
-              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -167,10 +182,8 @@ export default function Courses() {
                   </div>
                 </div>
               ))}
-              {filteredStudentCourses.length === 0 && (
-                <div className="text-yellow-200">
-                  {studentSearch ? "No matching courses." : "No courses yet for your class."}
-                </div>
+              {(!studentCourses || studentCourses.length === 0) && (
+                <div className="text-yellow-200">No courses yet for your class.</div>
               )}
             </div>
           </section>
@@ -218,17 +231,6 @@ export default function Courses() {
               >
                 Your Courses
               </h2>
-
-              <div className="flex justify-end">
-                <input
-                  className="w-full md:w-72 px-3 py-2 bg-neutral-900/70 border-2 border-yellow-700 text-yellow-200 outline-none"
-                  placeholder="Search your courses..."
-                  value={teacherSearch}
-                  onChange={(e) => setTeacherSearch(e.target.value)}
-                  style={{ fontFamily: "'Pixelify Sans', monospace" }}
-                />
-              </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredTeacherCourses.map((c: any) => (
                   <div key={c._id} className="p-4 bg-neutral-900/60 border-2 border-yellow-700" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
@@ -252,10 +254,8 @@ export default function Courses() {
                     <div className="text-yellow-200 text-xs opacity-90">{c.description}</div>
                   </div>
                 ))}
-                {filteredTeacherCourses.length === 0 && (
-                  <div className="text-yellow-200">
-                    {teacherSearch ? "No matching courses." : "No courses yet. Create your first course!"}
-                  </div>
+                {(!teacherCourses || teacherCourses.length === 0) && (
+                  <div className="text-yellow-200">No courses yet. Create your first course!</div>
                 )}
               </div>
             </section>

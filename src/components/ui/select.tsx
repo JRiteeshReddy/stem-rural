@@ -96,24 +96,27 @@ function SelectLabel({
   )
 }
 
-const SelectItem = React.forwardRef<
-  React.ElementRef<typeof SelectPrimitive.Item>,
-  Omit<React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>, "value" | "className"> & {
-    value: string;
-    className?: string;
-  }
->(({ className, value, children, ...itemProps }, ref) => {
-  const safeValue = value === "" ? "__empty_option__" : value;
+function SelectItem({
+  className,
+  children,
+  value: rawValue,
+  ...rest
+}: React.ComponentProps<typeof SelectPrimitive.Item>) {
+  // Ensure a non-empty value is always passed to Radix
+  const safeValue =
+    typeof rawValue === "string" && rawValue.length > 0
+      ? rawValue
+      : "__EMPTY_SENTINEL__";
 
   return (
     <SelectPrimitive.Item
-      ref={ref}
-      value={safeValue}
+      data-slot="select-item"
       className={cn(
         "focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className
       )}
-      {...itemProps}
+      value={safeValue}
+      {...rest}
     >
       <span className="absolute right-2 flex size-3.5 items-center justify-center">
         <SelectPrimitive.ItemIndicator>
@@ -122,9 +125,8 @@ const SelectItem = React.forwardRef<
       </span>
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
     </SelectPrimitive.Item>
-  );
-});
-SelectItem.displayName = "SelectItem";
+  )
+}
 
 function SelectSeparator({
   className,
