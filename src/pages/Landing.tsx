@@ -83,7 +83,7 @@ export default function Landing() {
           >
             <div className="text-4xl">📘</div>
             <h1 className="text-2xl font-bold text-white" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
-              STEM
+              Edufun
             </h1>
           </motion.div>
 
@@ -132,7 +132,7 @@ export default function Landing() {
             </motion.div>
             
             <h1 className="text-6xl md:text-8xl font-bold text-yellow-300 mb-6" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1.5px 0 #000, -1.5px 0 #000, 0 1.5px #000, 0 -1.5px #000" }}>
-              STEM
+              Edufun
             </h1>
             
             <p className="text-2xl md:text-3xl text-black mb-8 max-w-4xl mx-auto" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
@@ -307,7 +307,7 @@ export default function Landing() {
             className="text-center mb-12"
           >
             <h2 className="text-4xl md:text-5xl font-bold text-yellow-300 mb-4" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
-              Why Choose STEM? 🤔
+              Why Choose Edufun? 🤔
             </h2>
             <p className="text-xl text-white" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
               We make STEM feel like an arcade—learn by playing.
@@ -387,7 +387,7 @@ export default function Landing() {
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="text-3xl">📘</div>
             <h3 className="text-xl font-bold text-white" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
-              STEM
+              Edufun
             </h3>
           </div>
           <p className="text-white" style={{ fontFamily: "'Pixelify Sans', monospace", textShadow: "1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000" }}>
