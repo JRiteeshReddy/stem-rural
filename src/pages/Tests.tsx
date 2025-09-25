@@ -299,21 +299,38 @@ export default function Tests() {
     setMixerTimeLeft(30);
   };
 
-  // ADD: countdown for Element Mixer timer
+  // ADD: countdown for Element Mixer timer (30s per level with life loss and advance on timeout)
   useEffect(() => {
     if (!elementMixerOpen || mixerOver) return;
     const id = setInterval(() => {
       setMixerTimeLeft((t) => {
         if (t <= 1) {
           clearInterval(id);
-          setMixerOver(true); // awarding is handled by existing effect on mixerOver
-          return 0;
+          // Time's up: lose a life, advance level (failed), or game over if no lives left
+          setMixerLives((l) => {
+            const nextLives = Math.max(0, l - 1);
+            if (nextLives === 0) {
+              setMixerOver(true);
+            } else {
+              toast.message("Time’s up! You lost a life.");
+              // Advance level on timeout (mark failed) and reset timer
+              const nextLevel = Math.min(3, (mixerLevel || 1) + 1);
+              setMixerLevel(nextLevel);
+              setMixerCollected({});
+              const pool = mixerLevelTargets[nextLevel] || mixerLevelTargets[3];
+              setMixerTargetKey(pool[Math.floor(Math.random() * pool.length)]);
+              setMixerStartAt(Date.now());
+              setMixerTimeLeft(30);
+            }
+            return nextLives;
+          });
+          return 30;
         }
         return t - 1;
       });
     }, 1000);
     return () => clearInterval(id);
-  }, [elementMixerOpen, mixerOver]);
+  }, [elementMixerOpen, mixerOver, mixerLevel]);
 
   // Drag handlers
   const onDragStartTile = (e: React.DragEvent<HTMLDivElement>, symbol: string) => {
@@ -354,13 +371,14 @@ export default function Tests() {
       const gain = 2 * mixerLevel + timeBonus;
       setMixerScore((s) => s + gain);
       toast.success(`Compound crafted! +${gain} XP`);
-      // Next level
+      // Next level and reset timer
       const nextLevel = Math.min(3, mixerLevel + 1);
       setMixerLevel(nextLevel);
       setMixerCollected({});
       const pool = mixerLevelTargets[nextLevel] || mixerLevelTargets[3];
       setMixerTargetKey(pool[Math.floor(Math.random() * pool.length)]);
       setMixerStartAt(Date.now());
+      setMixerTimeLeft(30);
     }
   };
 
@@ -475,29 +493,36 @@ export default function Tests() {
   };
 
   // ADD: countdown for Periodic Pixel Quest timer (also awards on timeout)
+  // 30s timer per level for Chemfall: lose life and advance on timeout; game over only when lives reach 0
   useEffect(() => {
     if (!chemOpen || chemOver) return;
     const id = setInterval(() => {
       setChemTimeLeft((t) => {
         if (t <= 1) {
           clearInterval(id);
-          setChemOver(true);
-          (async () => {
-            try {
-              const res = await addCredits({ amount: chemScore });
-              toast.success(`Time's up! +${chemScore} XP. Rank: ${res.rank}`);
-            } catch (e) {
-              console.error(e);
-              toast.error("Failed to save score");
+          setChemLives((l) => {
+            const nextLives = Math.max(0, l - 1);
+            if (nextLives === 0) {
+              setChemOver(true);
+            } else {
+              toast.message("Time’s up! You lost a life.");
+              // Advance level on timeout (failed) and reset timer
+              const nextLevel = Math.min(4, (chemLevel || 1) + 1);
+              setChemLevel(nextLevel);
+              setCollected({});
+              const pool = levelTargets[nextLevel] || levelTargets[4];
+              setTargetKey(pool[Math.floor(Math.random() * pool.length)]);
+              setChemTimeLeft(30);
             }
-          })();
-          return 0;
+            return nextLives;
+          });
+          return 30;
         }
         return t - 1;
       });
     }, 1000);
     return () => clearInterval(id);
-  }, [chemOpen, chemOver, chemScore, addCredits]);
+  }, [chemOpen, chemOver, chemLevel]);
 
   // Keyboard controls for container
   useEffect(() => {
@@ -600,12 +625,13 @@ export default function Tests() {
           setChemScore((s) => s + gain);
           toast.success(`Compound crafted! +${gain} XP`);
 
-          // advance level and new target
+          // advance level and new target, reset timer
           const nextLevel = Math.min(4, chemLevel + 1);
           setChemLevel(nextLevel);
           setCollected({});
           const pool = levelTargets[nextLevel] || levelTargets[4];
           setTargetKey(pool[Math.floor(Math.random() * pool.length)]);
+          setChemTimeLeft(30);
           // small celebratory shake via container move
           setContainerX((x) => Math.max(6, Math.min(94, x + (Math.random() < 0.5 ? -4 : 4))));
         }
