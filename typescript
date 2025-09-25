@@ -1,0 +1,55 @@
+// src/convex/_shared/authFlags.ts
+export const PASSWORD_AUTH_ENABLED = false; // Toggle for rollout
+
+// src/lib/authFlags.ts  
+export const PASSWORD_AUTH_ENABLED = false; // Keep in sync
+
+// src/convex/_shared/authHelpers.ts
+// Cookie serialization, token generation, user-agent/IP extraction
+
+// Add to existing users table:
+passwordHash: v.optional(v.string()),
+passwordAlgo: v.optional(v.literal("argon2")),
+lastLoginAt: v.optional(v.number()),
+
+// New tables:
+sessions: defineTable({
+  userId: v.id("users"),
+  tokenHash: v.string(),
+  userAgent: v.string(),
+  ip: v.string(),
+  expiresAt: v.number(),
+}).index("by_tokenHash", ["tokenHash"])
+  .index("by_userId_and_expiresAt", ["userId", "expiresAt"]),
+
+passwordResetTokens: defineTable({
+  userId: v.id("users"),
+  tokenHash: v.string(),
+  expiresAt: v.number(),
+  used: v.boolean(),
+}).index("by_tokenHash", ["tokenHash"])
+  .index("by_userId_and_expiresAt", ["userId", "expiresAt"]),
+
+rateLimits: defineTable({
+  key: v.string(),
+  windowStart: v.number(),
+  count: v.number(),
+}).index("by_key_and_windowStart", ["key", "windowStart"]),
+
+// Password operations
+hashPassword(password: string): Promise<string>
+verifyPassword(password: string, hash: string): Promise<boolean>
+
+// Token operations  
+generateToken(): string
+hashToken(rawToken: string): string
+
+// Cookie management
+setSessionCookie(token: string, maxAgeSeconds: number): string
+clearSessionCookie(): string
+
+// Session management
+getSession(ctx, req): Promise<{ session, user } | null>
+
+// Rate limiting
+ensureRateLimit(ctx, key: string, limit: number, windowMs: number): Promise<void>
