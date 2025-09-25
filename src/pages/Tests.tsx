@@ -228,6 +228,36 @@ export default function Tests() {
   };
 
   // Available element tiles (include required + distractors)
+  // Element sprite mappings for chemistry games (custom icons)
+  const ELEMENT_SPRITES: Record<string, string> = {
+    H: "https://harmless-tapir-303.convex.cloud/api/storage/b15803ea-472a-48d9-bd14-f8d113926db5",
+    O: "https://harmless-tapir-303.convex.cloud/api/storage/899e9313-b9ba-42f9-ad9b-49c071bb4aa7",
+    Cl: "https://harmless-tapir-303.convex.cloud/api/storage/ca9c41f2-062d-4470-af11-ea98cbdd84c0",
+    Na: "https://harmless-tapir-303.convex.cloud/api/storage/450fca0e-9236-4d07-a1bc-f482d381babd",
+    C: "https://harmless-tapir-303.convex.cloud/api/storage/5626b986-4793-4bd1-ae35-56e50c57d437",
+    N: "https://harmless-tapir-303.convex.cloud/api/storage/f4ade3bd-4a72-440a-adb3-9cf4c0c49112",
+    Mg: "https://harmless-tapir-303.convex.cloud/api/storage/a37edbbb-b94b-4da3-9af3-4ed6d80d9ede",
+  };
+
+  function getElementSprite(symbol: string): string | undefined {
+    return ELEMENT_SPRITES[symbol];
+  }
+
+  function renderElementContent(symbol: string) {
+    const url = getElementSprite(symbol);
+    if (url) {
+      return (
+        <img
+          src={url}
+          alt={`${symbol} sprite`}
+          className="w-full h-full object-contain"
+          style={{ imageRendering: "pixelated" }}
+        />
+      );
+    }
+    return <>{symbol}</>;
+  }
+
   const mixerAvailableSymbols: Array<string> = [
     "H", "O", "Na", "Cl", "C", "N", "S", "Ca", "Mg",
   ];
@@ -2042,7 +2072,7 @@ export default function Tests() {
                       className="w-10 h-10 flex items-center justify-center bg-cyan-300 border-4 border-cyan-700 text-black font-bold shadow-[0_0_10px_rgba(0,255,255,0.5)]"
                       style={{ imageRendering: "pixelated", fontFamily: "'Pixelify Sans', monospace" }}
                     >
-                      {f.symbol}
+                      {renderElementContent(f.symbol)}
                     </div>
                   </motion.div>
                 ))}
@@ -2168,7 +2198,7 @@ export default function Tests() {
                           style={{ imageRendering: "pixelated", fontFamily: "'Pixelify Sans', monospace" }}
                           title={`Drag ${sym}`}
                         >
-                          {sym}
+                          {renderElementContent(sym)}
                         </div>
                       ))}
                     </div>
