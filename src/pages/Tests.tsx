@@ -351,13 +351,48 @@ export default function Tests() {
         if (next === 0) setMixerOver(true);
         return next;
       });
-      toast.error("Wrong element! -1 life");
+      {
+  // Animate beaker (bounce) on wrong/over drop
+  const el = document.getElementById("mixer-beaker") as HTMLImageElement | null;
+  if (el) {
+    el.style.transformOrigin = "50% 0%";
+    el.animate(
+      [
+        { transform: "translateY(0)" },
+        { transform: "translateY(-16px)" },
+        { transform: "translateY(0)" },
+        { transform: "translateY(-10px)" },
+        { transform: "translateY(0)" },
+      ],
+      { duration: 550, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }
+    );
+  }
+}
+toast.error("Wrong element! -1 life");
       return;
     }
 
     // Accept
     const nextCollected = { ...mixerCollected, [symbol]: have + 1 };
     setMixerCollected(nextCollected);
+
+// Animate beaker (pendulum swing) on correct drop
+{
+  const el = document.getElementById("mixer-beaker") as HTMLImageElement | null;
+  if (el) {
+    el.style.transformOrigin = "50% 0%";
+    el.animate(
+      [
+        { transform: "rotate(-10deg)" },
+        { transform: "rotate(10deg)" },
+        { transform: "rotate(-6deg)" },
+        { transform: "rotate(6deg)" },
+        { transform: "rotate(0deg)" },
+      ],
+      { duration: 600, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }
+    );
+  }
+}
 
     // Check success
     const success = Object.keys(mixerTargetCounts).every(
@@ -2121,7 +2156,13 @@ export default function Tests() {
                     style={{ imageRendering: "pixelated" }}
                     title="Mixer"
                   >
-                    <img src="https://harmless-tapir-303.convex.cloud/api/storage/3acb5efd-f6c5-4652-961a-5a28583dc16f" alt="Mixer" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                    <img
+  id="mixer-beaker"
+  src="https://harmless-tapir-303.convex.cloud/api/storage/3acb5efd-f6c5-4652-961a-5a28583dc16f"
+  alt="Mixer"
+  className="w-[95%] h-[95%] md:w-[98%] md:h-[98%] object-contain"
+  style={{ imageRendering: "pixelated" }}
+/>
                   </div>
                 </motion.div>
 
@@ -2242,7 +2283,7 @@ export default function Tests() {
                       Drag elements here to mix
                     </div>
                     <div
-                      onDrop={onDropIntoChamber}
+                      onDrop={onDropIntoChamber} style={{ background: "transparent" }}
                       onDragOver={onDropIntoChamber}
                       className="w-64 h-40 bg-yellow-300 border-4 border-yellow-700 shadow-[0_0_16px_rgba(255,255,0,0.6)] flex items-center justify-center"
                       style={{ imageRendering: "pixelated" }}
