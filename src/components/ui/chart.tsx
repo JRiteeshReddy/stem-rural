@@ -100,6 +100,7 @@ function ChartTooltipContent({
   hideIndicator = false,
   label,
   labelFormatter,
+  /* labelClassName removed */
   formatter,
   color,
   nameKey,
@@ -115,6 +116,7 @@ function ChartTooltipContent({
   payload?: Array<any>
   label?: React.ReactNode
   labelFormatter?: (value: any, payload?: Array<any>) => React.ReactNode
+  labelClassName?: string
   formatter?: (...args: any[]) => React.ReactNode
   color?: string
 }) {
@@ -123,6 +125,7 @@ function ChartTooltipContent({
   // If not in an active charting context, render nothing.
   if (!active || !payload?.length) return null
 
+  // Very lightweight generic tooltip to avoid runtime crashes.
   const title =
     !hideLabel && (typeof label === "string" || React.isValidElement(label))
       ? label
@@ -136,9 +139,7 @@ function ChartTooltipContent({
       )}
       {...divProps}
     >
-      {title ? (
-        <div className={cn("font-medium")}>{title}</div>
-      ) : null}
+      {title ? <div className={cn("font-medium")}>{title}</div> : null}
       <div className="grid gap-1.5">
         {payload.map((item, index) => {
           const key = `${nameKey || item?.name || item?.dataKey || "value"}`
