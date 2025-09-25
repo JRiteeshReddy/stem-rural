@@ -74,10 +74,12 @@ export const revokeSessionByTokenHash = internalMutation({
 export const getUserByEmail = internalQuery({
   args: { email: v.string() },
   handler: async (ctx, { email }) => {
-    return await ctx.db
+    // Return the first match (or null) instead of unique() to avoid errors if duplicates exist
+    const rows = await ctx.db
       .query("users")
       .withIndex("email", (q) => q.eq("email", email.toLowerCase()))
-      .unique();
+      .take(1);
+    return rows[0] ?? null;
   },
 });
 
@@ -117,5 +119,44 @@ export const getSessionByTokenHash = internalQuery({
     }
     
     return session;
+  },
+});
+
+// Add: Update user fields during registration if a user already exists (OTP-created user)
+export const updateUserOnRegister = internalMutation({
+  args: {
+    userId: v.id("users"),
+    name: v.string(),
+    role: v.union(v.literal("teacher"), v.literal("student")),
+    userClass: v.union(
+      v.literal("Class 6"),
+      v.literal("Class 7"),
+      v.literal("Class 8"),
+      v.literal("Class 9"),
+      v.literal("Class 10"),
+      v.literal("Class 11"),
+      v.literal("Class 12"),
+    ),
+  },
+  handler: async (ctx, { userId, name, role, userClass }) => {
+    const user = await ctx.db.get(userId);
+    if (!user) return;
+
+    const patch: Record<string, any> = {
+      name: user.name ?? name,
+      role,
+      userClass,
+    };
+
+    if (role === "student") {
+      patch.credits = user.credits ?? 0;
+      patch.rank = user.rank ?? "Bronze";
+      patch.totalTestsCompleted = user.totalTestsCompleted ?? 0;
+    } else if (role === "teacher") {
+      patch.totalCoursesCreated = user.totalCoursesCreated ?? 0;
+      patch.totalStudentsEnrolled = user.totalStudentsEnrolled ?? 0;
+    }
+
+    await ctx.db.patch(userId, patch);
   },
 });

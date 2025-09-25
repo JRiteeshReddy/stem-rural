@@ -74,13 +74,32 @@ export const register = internalAction({
       throw new Error("Invalid registration data");
     }
 
+    // Safe email lookup (won't throw on duplicates)
     const existing: any = await ctx.runQuery(internal.passwordAuth.getUserByEmail, { email: emailLower });
-    if (existing) {
-      throw new Error("Account already exists");
-    }
 
     const passwordHash = await hashPassword(password);
 
+    if (existing) {
+      // If the account already has a password, treat as duplicate account
+      if (existing.passwordHash) {
+        throw new Error("Account already exists");
+      }
+      // Convert OTP-created account into password account
+      await ctx.runMutation(internal.passwordAuth.setUserPassword, {
+        userId: existing._id,
+        passwordHash,
+        passwordAlgo: "scrypt",
+      });
+      await ctx.runMutation(internal.passwordAuth.updateUserOnRegister, {
+        userId: existing._id,
+        name,
+        role,
+        userClass,
+      });
+      return { ok: true };
+    }
+
+    // Create a new user
     await ctx.runMutation(internal.passwordAuth.createUser, {
       name,
       email: emailLower,

@@ -47,7 +47,8 @@ http.route({
         headers: { "Content-Type": "application/json" },
       });
     } catch (error) {
-      return new Response(JSON.stringify({ error: "Registration failed" }), {
+      const message = error instanceof Error ? error.message : "Registration failed";
+      return new Response(JSON.stringify({ error: message }), {
         status: 500,
         headers: { "Content-Type": "application/json" },
       });
