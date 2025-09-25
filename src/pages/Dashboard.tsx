@@ -53,7 +53,7 @@ export default function Dashboard() {
   const studentCourses = useQuery(api.courses.getAllCoursesForStudent);
 
   // Teacher admin queries
-  const allCourses = useQuery(api.courses.listAllCoursesForTeacher, user?.role === "teacher" ? {} : "skip");
+  const allCourses = useQuery(api.courses.getCoursesByTeacher, user?.role === "teacher" ? {} : "skip");
   const allTests = useQuery(api.tests.listAllTestsForTeacher, user?.role === "teacher" ? {} : "skip");
   const allStudents = useQuery(api.users.listStudents, user?.role === "teacher" ? {} : "skip");
   const allAnnouncements = useQuery(api.announcements.listAllAnnouncements, user?.role === "teacher" ? {} : "skip");
@@ -83,8 +83,8 @@ export default function Dashboard() {
   const [studentDialog, setStudentDialog] = useState({ open: false, student: null as any });
   const [announcementDialog, setAnnouncementDialog] = useState({ open: false, announcement: null as any });
   const [searchTerm, setSearchTerm] = useState("");
-  const [classFilter, setClassFilter] = useState("ALL_CLASSES");
-  const [difficultyFilter, setDifficultyFilter] = useState("ALL_LEVELS");
+  const [classFilter, setClassFilter] = useState("");
+  const [difficultyFilter, setDifficultyFilter] = useState("");
 
   // ... keep existing useEffect for student defaults
 
@@ -427,24 +427,24 @@ export default function Dashboard() {
 
   if (isTeacher) {
     // Teacher Control Center
-    const filteredCourses = allCourses?.filter(course =>
-      (classFilter === "ALL_CLASSES" || course.targetClass === classFilter) &&
+    const filteredCourses = allCourses?.filter(course => 
+      (!classFilter || course.targetClass === classFilter) &&
       (!searchTerm || course.title.toLowerCase().includes(searchTerm.toLowerCase()))
     ) || [];
 
-    const filteredTests = allTests?.filter(test =>
-      (classFilter === "ALL_CLASSES" || test.targetClass === classFilter) &&
-      (difficultyFilter === "ALL_LEVELS" || test.difficulty === difficultyFilter) &&
+    const filteredTests = allTests?.filter(test => 
+      (!classFilter || test.targetClass === classFilter) &&
+      (!difficultyFilter || test.difficulty === difficultyFilter) &&
       (!searchTerm || test.title.toLowerCase().includes(searchTerm.toLowerCase()))
     ) || [];
 
-    const filteredStudents = allStudents?.filter(student =>
-      (classFilter === "ALL_CLASSES" || student.userClass === classFilter) &&
+    const filteredStudents = allStudents?.filter(student => 
+      (!classFilter || student.userClass === classFilter) &&
       (!searchTerm || student.name.toLowerCase().includes(searchTerm.toLowerCase()))
     ) || [];
 
-    const filteredAnnouncements = allAnnouncements?.filter(announcement =>
-      (classFilter === "ALL_CLASSES" || announcement.targetClass === classFilter) &&
+    const filteredAnnouncements = allAnnouncements?.filter(announcement => 
+      (!classFilter || announcement.targetClass === classFilter) &&
       (!searchTerm || announcement.title.toLowerCase().includes(searchTerm.toLowerCase()))
     ) || [];
 
@@ -520,7 +520,7 @@ export default function Dashboard() {
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-48"
                     />
-                    <Select value={classFilter} onValueChange={(v) => setClassFilter(v)}>
+                    <Select value={classFilter || undefined} onValueChange={(v) => setClassFilter(v === "ALL_CLASSES" ? "" : v)}>
                       <SelectTrigger className="w-32">
                         <SelectValue placeholder="Class" />
                       </SelectTrigger>
@@ -582,7 +582,7 @@ export default function Dashboard() {
                               {course.subjectType || "custom"}
                             </Badge>
                           </TableCell>
-                          <TableCell>{course.chaptersCount}</TableCell>
+                          <TableCell>{(course as any).chaptersCount ?? "-"}</TableCell>
                           <TableCell>
                             <Badge variant={course.isPublished ? "default" : "secondary"}>
                               {course.isPublished ? "Published" : "Draft"}
@@ -627,7 +627,7 @@ export default function Dashboard() {
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-48"
                     />
-                    <Select value={difficultyFilter} onValueChange={(v) => setDifficultyFilter(v)}>
+                    <Select value={difficultyFilter || undefined} onValueChange={(v) => setDifficultyFilter(v === "ALL_LEVELS" ? "" : v)}>
                       <SelectTrigger className="w-32">
                         <SelectValue placeholder="Difficulty" />
                       </SelectTrigger>
@@ -714,7 +714,7 @@ export default function Dashboard() {
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-48"
                     />
-                    <Select value={classFilter} onValueChange={(v) => setClassFilter(v)}>
+                    <Select value={classFilter || undefined} onValueChange={(v) => setClassFilter(v === "ALL_CLASSES" ? "" : v)}>
                       <SelectTrigger className="w-32">
                         <SelectValue placeholder="Class" />
                       </SelectTrigger>
@@ -958,7 +958,7 @@ function CourseForm({ course, onSubmit, onCancel }: any) {
       </div>
       <div>
         <label className="text-sm font-medium">Target Class</label>
-        <Select value={formData.targetClass} onValueChange={(value) => setFormData({ ...formData, targetClass: value })}>
+        <Select value={formData.targetClass || undefined} onValueChange={(value) => setFormData({ ...formData, targetClass: value })}>
           <SelectTrigger>
             <SelectValue placeholder="Select class" />
           </SelectTrigger>
@@ -1019,7 +1019,7 @@ function StudentForm({ student, onSubmit, onCancel }: any) {
       </div>
       <div>
         <label className="text-sm font-medium">Class</label>
-        <Select value={formData.userClass} onValueChange={(value) => setFormData({ ...formData, userClass: value })}>
+        <Select value={formData.userClass || undefined} onValueChange={(value) => setFormData({ ...formData, userClass: value })}>
           <SelectTrigger>
             <SelectValue placeholder="Select class" />
           </SelectTrigger>
