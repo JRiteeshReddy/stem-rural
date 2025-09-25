@@ -211,6 +211,9 @@ export default function Tests() {
     }
   }, [location.search]);
 
+  // Add: Math game intro modal state
+  const [showMathIntro, setShowMathIntro] = useState(false);
+
   // ========================
   // Chemistry Game: Element Mixer (NEW - drag & drop)
   // ========================
@@ -1342,7 +1345,7 @@ export default function Tests() {
 
         {/* Add: Math Game launcher */}
         <div className="mb-4 flex gap-3">
-          <PixelButton size="sm" onClick={startGame}>Play Math Game</PixelButton>
+          <PixelButton size="sm" onClick={() => setShowMathIntro(true)}>Play Math Game</PixelButton>
           <PixelButton size="sm" onClick={startElementMixerGame}>Play Chemistry Game</PixelButton>
           
         </div>
@@ -1610,6 +1613,40 @@ export default function Tests() {
             </div>
           </div>
         )}
+
+        {/* Math Game Intro Dialog */}
+        <Dialog open={showMathIntro} onOpenChange={setShowMathIntro}>
+          <DialogContent className="sm:max-w-md rounded-none border-4 border-yellow-600">
+            <DialogHeader>
+              <DialogTitle className="text-black" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                Mathematics — Equation Defense
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <PixelCard variant="orange" className="p-4">
+                <p className="text-black font-bold" style={{ fontFamily: "'Pixelify Sans', monospace" }}>
+                  Help the hero defeat the Shadows by solving and entering the solutions for the math problems
+                </p>
+              </PixelCard>
+              <div className="flex justify-end gap-2">
+                <PixelButton
+                  variant="secondary"
+                  onClick={() => setShowMathIntro(false)}
+                >
+                  Exit
+                </PixelButton>
+                <PixelButton
+                  onClick={() => {
+                    setShowMathIntro(false);
+                    startGame();
+                  }}
+                >
+                  Play
+                </PixelButton>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Chemistry Game Overlay */}
         {chemOpen && (
