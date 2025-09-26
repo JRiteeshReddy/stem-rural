@@ -12,6 +12,7 @@ import Landing from "./pages/Landing.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import RoleSelection from "./pages/RoleSelection.tsx";
 import SafeDashboard from "./pages/SafeDashboard.tsx";
+import SafeAuth from "./pages/SafeAuth.tsx";
 import Tests from "./pages/Tests.tsx";
 import Leaderboard from "./pages/Leaderboard.tsx";
 import Announcements from "./pages/Announcements.tsx";
@@ -65,7 +66,7 @@ createRoot(document.getElementById("root")!).render(
               <Route path="/extended-setup" element={<ExtendedSetup />} />
               <Route path="/courses" element={<Courses />} />
               <Route path="/" element={<Landing />} />
-              <Route path="/auth" element={<AuthPage redirectAfterAuth="/role-selection" />} />
+              <Route path="/auth" element={<SafeAuth />} />
               <Route path="/role-selection" element={<RoleSelection />} />
               <Route path="/dashboard" element={<SafeDashboard />} />
               <Route path="/student-portal" element={<SafeDashboard />} />
