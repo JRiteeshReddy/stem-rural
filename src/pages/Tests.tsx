@@ -405,15 +405,20 @@ export default function Tests() {
     // Pendulum swing on correct drop + pop notification
     const beakerEl = document.getElementById("mixer-beaker");
     if (beakerEl) {
+      // Ensure pivot is around the neck of the beaker for a nice shake feel
+      (beakerEl as HTMLElement).style.transformOrigin = "50% 0%";
       beakerEl.animate(
         [
-          { transform: "rotate(-6deg)" },
-          { transform: "rotate(6deg)" },
-          { transform: "rotate(-4deg)" },
-          { transform: "rotate(4deg)" },
-          { transform: "rotate(0deg)" },
+          { transform: "translateX(0) rotate(0deg)" },
+          { transform: "translateX(-6px) rotate(-2deg)" },
+          { transform: "translateX(6px) rotate(2deg)" },
+          { transform: "translateX(-5px) rotate(-1.5deg)" },
+          { transform: "translateX(5px) rotate(1.5deg)" },
+          { transform: "translateX(-3px) rotate(-1deg)" },
+          { transform: "translateX(3px) rotate(1deg)" },
+          { transform: "translateX(0) rotate(0deg)" },
         ],
-        { duration: 1000, easing: "ease-in-out" }
+        { duration: 800, easing: "ease-in-out" }
       );
     }
     toast("Right One!");
