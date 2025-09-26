@@ -339,33 +339,22 @@ export default function Tests() {
     const el = document.getElementById("mixer-beaker") as HTMLImageElement | null;
     if (!el) return;
 
-    let cancelled = false;
-    let timeoutId: number | null = null;
-
-    const runIdle = () => {
-      if (cancelled || !el) return;
-      el.style.transformOrigin = "50% 100%";
-
-      // Gentle bob + micro scale to simulate bubbling
-      el.animate(
-        [
-          { transform: "translateY(0px) scale(1)" },
-          { transform: "translateY(-3px) scale(1.02)" },
-          { transform: "translateY(0px) scale(1)" },
-        ],
-        { duration: 1200, easing: "ease-in-out" }
-      );
-
-      // Loop with a small pause to feel organic
-      timeoutId = window.setTimeout(runIdle, 800);
+    // Run a smooth bob + scale loop using the Web Animations API
+    const keyframes: Keyframe[] = [
+      { transform: "translateY(0px) scale(1)" },
+      { transform: "translateY(-6px) scale(1.03)" },
+      { transform: "translateY(0px) scale(1)" },
+    ];
+    const options: KeyframeAnimationOptions = {
+      duration: 1200,
+      easing: "ease-in-out",
+      iterations: Infinity,
     };
 
-    // Slight delay before starting the loop
-    timeoutId = window.setTimeout(runIdle, 300);
+    const animation = el.animate(keyframes, options);
 
     return () => {
-      cancelled = true;
-      if (timeoutId) window.clearTimeout(timeoutId);
+      animation.cancel();
     };
   }, [elementMixerOpen, mixerOver]);
 
