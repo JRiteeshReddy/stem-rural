@@ -29,6 +29,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import CourseForm from "@/components/dashboard/CourseForm";
 import StudentForm from "@/components/dashboard/StudentForm";
 import TeacherHub from "@/components/dashboard/TeacherHub";
@@ -66,6 +67,11 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [classFilter, setClassFilter] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("");
+
+  // Add loading flags for teacher data
+  const isCoursesLoading = user?.role === "teacher" && allCourses === undefined;
+  const isTestsLoading = user?.role === "teacher" && allTests === undefined;
+  const isStudentsLoading = user?.role === "teacher" && allStudents === undefined;
 
   // ... keep existing useEffect for student defaults
 
@@ -316,58 +322,83 @@ export default function Dashboard() {
           >
             <h2 className="text-2xl font-bold mb-6 text-center text-yellow-300">📚 Your Courses</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {studentCourses?.map((course) => (
-                <div
-                  key={course._id}
-                  className="bg-black/60 p-4 rounded-none border-2 border-yellow-700"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-2xl">
-                      {course.title === "Mathematics"
-                        ? "📐"
-                        : course.title === "Chemistry"
-                        ? "🧪"
-                        : course.title === "Biology"
-                        ? "🌱"
-                        : course.title === "Computer Science"
-                        ? "💻"
-                        : course.title === "Robotics"
-                        ? "🤖"
-                        : course.title === "Astronomy"
-                        ? "🌟"
-                        : "📖"}
-                    </span>
-                    <span className="font-bold text-yellow-100">{course.title}</span>
-                    {course.isNew && (
-                      <Badge className="bg-red-500 text-white text-xs">★ NEW ★</Badge>
-                    )}
-                  </div>
-                  <Badge variant="outline" className="mb-2 border-yellow-700 text-yellow-200">
-                    {course.subjectType || "default"}
-                  </Badge>
-                  <p className="text-yellow-100/80 text-sm mb-3">{course.description}</p>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-yellow-200/80">Progress</span>
-                      <span className="text-yellow-200/80">
-                        {Math.round(course.progress)}%
-                      </span>
+              {studentCourses === undefined ? (
+                // Loading skeletons for student courses
+                <>
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="bg-black/60 p-4 rounded-none border-2 border-yellow-700 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-6 w-6 rounded" />
+                        <Skeleton className="h-5 w-40" />
+                        <Skeleton className="h-5 w-14 ml-auto" />
+                      </div>
+                      <Skeleton className="h-5 w-24" />
+                      <Skeleton className="h-4 w-full" />
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <Skeleton className="h-4 w-16" />
+                          <Skeleton className="h-4 w-10" />
+                        </div>
+                        <Skeleton className="h-2 w-full" />
+                      </div>
+                      <Skeleton className="h-9 w-full" />
                     </div>
-                    <div className="w-full bg-neutral-900 border border-yellow-800 h-2">
-                      <div
-                        className="h-2 bg-green-500"
-                        style={{ width: `${course.progress}%` }}
-                      />
-                    </div>
-                  </div>
-                  <PixelButton
-                    onClick={() => handleOpenCourse(course._id, course.title)}
-                    className="w-full mt-3 bg-blue-500 hover:bg-blue-600"
+                  ))}
+                </>
+              ) : (
+                studentCourses?.map((course) => (
+                  <div
+                    key={course._id}
+                    className="bg-black/60 p-4 rounded-none border-2 border-yellow-700"
                   >
-                    {course.progress > 0 ? "Continue" : "Play"}
-                  </PixelButton>
-                </div>
-              ))}
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl">
+                        {course.title === "Mathematics"
+                          ? "📐"
+                          : course.title === "Chemistry"
+                          ? "🧪"
+                          : course.title === "Biology"
+                          ? "🌱"
+                          : course.title === "Computer Science"
+                          ? "💻"
+                          : course.title === "Robotics"
+                          ? "🤖"
+                          : course.title === "Astronomy"
+                          ? "🌟"
+                          : "📖"}
+                      </span>
+                      <span className="font-bold text-yellow-100">{course.title}</span>
+                      {course.isNew && (
+                        <Badge className="bg-red-500 text-white text-xs">★ NEW ★</Badge>
+                      )}
+                    </div>
+                    <Badge variant="outline" className="mb-2 border-yellow-700 text-yellow-200">
+                      {course.subjectType || "default"}
+                    </Badge>
+                    <p className="text-yellow-100/80 text-sm mb-3">{course.description}</p>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-yellow-200/80">Progress</span>
+                        <span className="text-yellow-200/80">
+                          {Math.round(course.progress)}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-neutral-900 border border-yellow-800 h-2">
+                        <div
+                          className="h-2 bg-green-500"
+                          style={{ width: `${course.progress}%` }}
+                        />
+                      </div>
+                    </div>
+                    <PixelButton
+                      onClick={() => handleOpenCourse(course._id, course.title)}
+                      className="w-full mt-3 bg-blue-500 hover:bg-blue-600"
+                    >
+                      {course.progress > 0 ? "Continue" : "Play"}
+                    </PixelButton>
+                  </div>
+                ))
+              )}
             </div>
           </PixelCard>
 
@@ -607,44 +638,66 @@ export default function Dashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredCourses.map((course) => (
-                        <TableRow key={course._id}>
-                          <TableCell className="font-medium">{course.title}</TableCell>
-                          <TableCell>{course.targetClass}</TableCell>
-                          <TableCell>
-                            <Badge variant={course.subjectType === "default" ? "secondary" : "default"}>
-                              {course.subjectType || "custom"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{course.chaptersCount}</TableCell>
-                          <TableCell>
-                            <Badge variant={course.isPublished ? "default" : "secondary"}>
-                              {course.isPublished ? "Published" : "Draft"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {course.updatedAt ? new Date(course.updatedAt).toLocaleDateString() : "N/A"}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setCourseDialog({ open: true, course })}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleDeleteCourse(course._id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {isCoursesLoading ? (
+                        // Skeleton rows while courses load
+                        <>
+                          {[0, 1, 2].map((i) => (
+                            <TableRow key={i}>
+                              <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                              <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                              <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                              <TableCell><Skeleton className="h-5 w-10" /></TableCell>
+                              <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                              <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Skeleton className="h-8 w-8" />
+                                  <Skeleton className="h-8 w-8" />
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </>
+                      ) : (
+                        filteredCourses.map((course) => (
+                          <TableRow key={course._id}>
+                            <TableCell className="font-medium">{course.title}</TableCell>
+                            <TableCell>{course.targetClass}</TableCell>
+                            <TableCell>
+                              <Badge variant={course.subjectType === "default" ? "secondary" : "default"}>
+                                {course.subjectType || "custom"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{course.chaptersCount}</TableCell>
+                            <TableCell>
+                              <Badge variant={course.isPublished ? "default" : "secondary"}>
+                                {course.isPublished ? "Published" : "Draft"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {course.updatedAt ? new Date(course.updatedAt).toLocaleDateString() : "N/A"}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setCourseDialog({ open: true, course })}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDeleteCourse(course._id)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -693,45 +746,66 @@ export default function Dashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredTests.map((test) => (
-                        <TableRow key={test._id}>
-                          <TableCell className="font-medium">{test.title}</TableCell>
-                          <TableCell>{test.courseName}</TableCell>
-                          <TableCell>{test.targetClass}</TableCell>
-                          <TableCell>
-                            <Badge variant={
-                              test.difficulty === "easy" ? "secondary" :
-                              test.difficulty === "medium" ? "default" : "destructive"
-                            }>
-                              {test.difficulty || "N/A"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{test.questions.length}/10</TableCell>
-                          <TableCell>
-                            <Badge variant={test.isPublished ? "default" : "secondary"}>
-                              {test.isPublished ? "Published" : "Draft"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setTestDialog({ open: true, test })}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleDeleteTest(test._id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {isTestsLoading ? (
+                        <>
+                          {[0, 1, 2].map((i) => (
+                            <TableRow key={i}>
+                              <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                              <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                              <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                              <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                              <TableCell><Skeleton className="h-5 w-10" /></TableCell>
+                              <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Skeleton className="h-8 w-8" />
+                                  <Skeleton className="h-8 w-8" />
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </>
+                      ) : (
+                        filteredTests.map((test) => (
+                          <TableRow key={test._id}>
+                            <TableCell className="font-medium">{test.title}</TableCell>
+                            <TableCell>{test.courseName}</TableCell>
+                            <TableCell>{test.targetClass}</TableCell>
+                            <TableCell>
+                              <Badge variant={
+                                test.difficulty === "easy" ? "secondary" :
+                                test.difficulty === "medium" ? "default" : "destructive"
+                              }>
+                                {test.difficulty || "N/A"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{test.questions.length}/10</TableCell>
+                            <TableCell>
+                              <Badge variant={test.isPublished ? "default" : "secondary"}>
+                                {test.isPublished ? "Published" : "Draft"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setTestDialog({ open: true, test })}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDeleteTest(test._id)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -780,41 +854,62 @@ export default function Dashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredStudents.map((student) => (
-                        <TableRow key={student._id}>
-                          <TableCell className="font-medium">{student.name}</TableCell>
-                          <TableCell>{student.userClass}</TableCell>
-                          <TableCell>{student.credits}</TableCell>
-                          <TableCell>{student.totalTestsCompleted}</TableCell>
-                          <TableCell>
-                            <Badge>{student.rank}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            {student.lastLoginAt ? 
-                              new Date(student.lastLoginAt).toLocaleDateString() : 
-                              "Never"
-                            }
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setStudentDialog({ open: true, student })}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleDeleteStudent(student._id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {isStudentsLoading ? (
+                        <>
+                          {[0, 1, 2, 3].map((i) => (
+                            <TableRow key={i}>
+                              <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                              <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                              <TableCell><Skeleton className="h-5 w-10" /></TableCell>
+                              <TableCell><Skeleton className="h-5 w-10" /></TableCell>
+                              <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                              <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Skeleton className="h-8 w-8" />
+                                  <Skeleton className="h-8 w-8" />
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </>
+                      ) : (
+                        filteredStudents.map((student) => (
+                          <TableRow key={student._id}>
+                            <TableCell className="font-medium">{student.name}</TableCell>
+                            <TableCell>{student.userClass}</TableCell>
+                            <TableCell>{student.credits}</TableCell>
+                            <TableCell>{student.totalTestsCompleted}</TableCell>
+                            <TableCell>
+                              <Badge>{student.rank}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              {student.lastLoginAt ?
+                                new Date(student.lastLoginAt).toLocaleDateString() :
+                                "Never"
+                              }
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setStudentDialog({ open: true, student })}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDeleteStudent(student._id)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
                     </TableBody>
                   </Table>
                 </div>
