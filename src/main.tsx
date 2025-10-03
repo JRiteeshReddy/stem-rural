@@ -23,6 +23,21 @@ import "./types/global.d.ts";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
+const MISSING_BACKEND = !import.meta.env.VITE_CONVEX_URL;
+
+// Small always-on-top warning when Convex URL is not configured
+function BackendWarningBanner() {
+  if (!MISSING_BACKEND) return null;
+  return (
+    <div
+      className="fixed top-0 left-0 right-0 z-[1000] bg-red-600 text-white text-sm px-4 py-2"
+      style={{ fontFamily: "'Pixelify Sans', monospace" }}
+    >
+      Backend not configured: Set VITE_CONVEX_URL to your Convex deployment URL (e.g., https://your-project.convex.cloud) in Integrations / API Keys, then hard refresh.
+    </div>
+  );
+}
+
 function RouteSyncer() {
   const location = useLocation();
   useEffect(() => {
@@ -52,6 +67,7 @@ createRoot(document.getElementById("root")!).render(
     <InstrumentationProvider>
       <ConvexAuthProvider client={convex}>
         <BrowserRouter>
+          <BackendWarningBanner />
           <RouteSyncer />
           <Suspense
             fallback={
