@@ -1796,6 +1796,59 @@ export default function Tests() {
     );
   }
 
+  // Add: API error handling toasts
+  useEffect(() => {
+    function handleRejection(event: PromiseRejectionEvent) {
+      // Try to extract a readable error message
+      const reason = event.reason;
+      const message =
+        (typeof reason === "string" && reason) ||
+        (reason?.message as string) ||
+        "Request failed. Please try again.";
+      // Common network hint
+      const hint =
+        !navigator.onLine
+          ? "You appear to be offline."
+          : !import.meta.env.VITE_CONVEX_URL
+            ? "Backend not configured (VITE_CONVEX_URL)."
+            : "Network or backend error.";
+      // Log full details for debugging; keep UI concise
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error("[Tests] Unhandled API error:", reason);
+      }
+      // Use Sonner toast (already used in this file already)
+      try {
+        // @ts-expect-error toast is available in this file already
+        toast.error(`${message} ${hint}`);
+      } catch {
+        // no-op if toast is not available for some reason
+      }
+    }
+
+    function handleOffline() {
+      try {
+        // @ts-expect-error toast is available in this file already
+        toast.error("You went offline. Actions may fail until connection is restored.");
+      } catch {}
+    }
+    function handleOnline() {
+      try {
+        // @ts-expect-error toast is available in this file already
+        toast.success("Back online. You can continue where you left off.");
+      } catch {}
+    }
+
+    window.addEventListener("unhandledrejection", handleRejection);
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
+    return () => {
+      window.removeEventListener("unhandledrejection", handleRejection);
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-transparent">
       <GlobalHeader />
