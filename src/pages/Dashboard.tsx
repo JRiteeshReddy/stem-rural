@@ -34,6 +34,22 @@ import CourseForm from "@/components/dashboard/CourseForm";
 import StudentForm from "@/components/dashboard/StudentForm";
 import TeacherHub from "@/components/dashboard/TeacherHub";
 
+// Add a small retry helper with exponential backoff
+async function retryAsync<T>(fn: () => Promise<T>, attempts = 3, baseDelayMs = 300): Promise<T> {
+  let lastErr: unknown = null;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      // brief exponential backoff
+      const delay = baseDelayMs * Math.pow(2, i);
+      await new Promise((res) => setTimeout(res, delay));
+    }
+  }
+  throw lastErr;
+}
+
 export default function Dashboard() {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -144,21 +160,27 @@ export default function Dashboard() {
   // Profile image upload is handled on the Profile page.
 
   const handleOpenCourse = async (courseId: string, courseTitle: string) => {
-    await markCourseAccessed({ courseId: courseId as any });
-    if (courseTitle === "Mathematics") {
-      navigate("/tests?game=math");
-    } else {
-      navigate("/tests");
+    try {
+      await retryAsync(() => markCourseAccessed({ courseId: courseId as any }), 3);
+      if (courseTitle === "Mathematics") {
+        navigate("/tests?game=math");
+      } else {
+        navigate("/tests");
+      }
+    } catch (error) {
+      toast.error("Failed to open course. Please try again.");
     }
   };
 
   // Teacher admin handlers
   const handleCreateCourse = async (data: { title: string; description: string; targetClass?: string }) => {
     try {
-      await createCourse({
-        title: data.title,
-        description: data.description,
-      });
+      await retryAsync(() =>
+        createCourse({
+          title: data.title,
+          description: data.description,
+        }), 3
+      );
       toast.success("Course created successfully!");
       setCourseDialog({ open: false, course: null });
     } catch (error) {
@@ -168,7 +190,7 @@ export default function Dashboard() {
 
   const handleUpdateCourse = async (courseId: string, data: any) => {
     try {
-      await updateCourse({ courseId, ...data });
+      await retryAsync(() => updateCourse({ courseId, ...data }), 3);
       toast.success("Course updated successfully!");
       setCourseDialog({ open: false, course: null });
     } catch (error) {
@@ -179,7 +201,7 @@ export default function Dashboard() {
   const handleDeleteCourse = async (courseId: string) => {
     if (confirm("Are you sure you want to delete this course?")) {
       try {
-        await deleteCourse({ courseId: courseId as any });
+        await retryAsync(() => deleteCourse({ courseId: courseId as any }), 3);
         toast.success("Course deleted successfully!");
       } catch (error) {
         toast.error("Failed to delete course");
@@ -189,7 +211,7 @@ export default function Dashboard() {
 
   const handleUpdateTest = async (testId: string, data: any) => {
     try {
-      await updateTestMeta({ testId, ...data });
+      await retryAsync(() => updateTestMeta({ testId, ...data }), 3);
       toast.success("Test updated successfully!");
       setTestDialog({ open: false, test: null });
     } catch (error) {
@@ -200,7 +222,7 @@ export default function Dashboard() {
   const handleDeleteTest = async (testId: string) => {
     if (confirm("Are you sure you want to delete this test?")) {
       try {
-        await deleteTest({ testId: testId as any });
+        await retryAsync(() => deleteTest({ testId: testId as any }), 3);
         toast.success("Test deleted successfully!");
       } catch (error) {
         toast.error("Failed to delete test");
@@ -210,18 +232,19 @@ export default function Dashboard() {
 
   const handleUpdateStudent = async (studentId: string, data: any) => {
     try {
-      await updateStudentProfile({ studentId, ...data });
-      toast.success("Student updated successfully!");
-      setStudentDialog({ open: false, student: null });
+      await retryAsync(() => updateStudentProfile({ studentId, ...data }), 3);
     } catch (error) {
       toast.error("Failed to update student");
+      return;
     }
+    toast.success("Student updated successfully!");
+    setStudentDialog({ open: false, student: null });
   };
 
   const handleDeleteStudent = async (studentId: string) => {
     if (confirm("Are you sure you want to delete this student account?")) {
       try {
-        await deleteStudentAccount({ targetUserId: studentId as any });
+        await retryAsync(() => deleteStudentAccount({ targetUserId: studentId as any }), 3);
         toast.success("Student account deleted successfully!");
       } catch (error) {
         toast.error("Failed to delete student account");
