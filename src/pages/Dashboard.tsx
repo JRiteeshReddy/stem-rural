@@ -424,6 +424,15 @@ export default function Dashboard() {
     const baseCredits = user.credits || 0;
     const baseTests = user.totalTestsCompleted || 0;
 
+    // Add strict "today" activity check based on course access
+    const accessedToday = Array.isArray(optStudentCourses)
+      ? (optStudentCourses as any[]).some((c) => {
+          const la = c?.lastAccessed;
+          if (!la) return false;
+          return Date.now() - la < 24 * 60 * 60 * 1000; // within last 24 hours
+        })
+      : false;
+
     const subjects = [
       { name: "Mathematics", icon: "📐", pct: 0, level: 1, color: "bg-yellow-500" },
       { name: "Chemistry", icon: "🧪", pct: 0, level: 1, color: "bg-green-500" },
@@ -436,6 +445,7 @@ export default function Dashboard() {
     const goals = [
       { text: "Complete any 1 Test", achieved: baseTests >= 1 },
       { text: "Earn 10 XP", achieved: baseCredits >= 10 },
+      { text: "Access any course today", achieved: accessedToday },
       { text: "Set Display Name", achieved: !!user.name },
       { text: "Upload Profile Picture", achieved: !!user.image },
     ];
@@ -740,12 +750,20 @@ export default function Dashboard() {
 
     // Announcements filtered list will be implemented when the "News" tab is expanded.
 
-    // Analytics data
+    // Analytics data (use "today" for activity window)
     const analyticsData = {
-      activeStudents: filteredStudents.filter(s => s.lastLoginAt && (Date.now() - s.lastLoginAt) < 7 * 24 * 60 * 60 * 1000).length,
+      activeStudents: filteredStudents.filter(
+        (s) => s.lastLoginAt && Date.now() - s.lastLoginAt < 24 * 60 * 60 * 1000
+      ).length,
       totalStudents: filteredStudents.length,
-      avgScore: filteredStudents.reduce((sum, s) => sum + (s.credits || 0), 0) / (filteredStudents.length || 1),
-      testParticipation: Math.round((filteredStudents.filter(s => (s.totalTestsCompleted || 0) > 0).length / (filteredStudents.length || 1)) * 100),
+      avgScore:
+        filteredStudents.reduce((sum, s) => sum + (s.credits || 0), 0) /
+        (filteredStudents.length || 1),
+      testParticipation: Math.round(
+        (filteredStudents.filter((s) => (s.totalTestsCompleted || 0) > 0).length /
+          (filteredStudents.length || 1)) *
+          100
+      ),
     };
 
     // Chart data removed for now (using textual summary instead).
