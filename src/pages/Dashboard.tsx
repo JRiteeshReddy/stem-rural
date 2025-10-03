@@ -18,7 +18,8 @@ import {
   Settings,
   Plus,
   Edit,
-  Trash2
+  Trash2,
+  Loader2
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -97,6 +98,13 @@ export default function Dashboard() {
   const isCoursesLoading = user?.role === "teacher" && allCourses === undefined;
   const isTestsLoading = user?.role === "teacher" && allTests === undefined;
   const isStudentsLoading = user?.role === "teacher" && allStudents === undefined;
+
+  // Add loading indicators for optimistic updates
+  const [openingCourseId, setOpeningCourseId] = useState<string | null>(null);
+  const [isCreatingCourse, setIsCreatingCourse] = useState(false);
+  const [pendingCourses, setPendingCourses] = useState<Record<string, "updating" | "deleting">>({});
+  const [pendingTests, setPendingTests] = useState<Record<string, "updating" | "deleting">>({});
+  const [pendingStudents, setPendingStudents] = useState<Record<string, "updating" | "deleting">>({});
 
   // Sync optimistic state with server data whenever queries change
   useEffect(() => {
@@ -177,6 +185,8 @@ export default function Dashboard() {
   // Profile image upload is handled on the Profile page.
 
   const handleOpenCourse = async (courseId: string, courseTitle: string) => {
+    // Add loading indicator for this course
+    setOpeningCourseId(courseId);
     // Optimistically mark course as accessed (remove NEW tag) for student view
     const prev = optStudentCourses ? [...optStudentCourses] : null;
     if (optStudentCourses) {
@@ -198,11 +208,14 @@ export default function Dashboard() {
       // Rollback optimistic change on failure
       if (prev) setOptStudentCourses(prev);
       toast.error("Failed to open course. Please try again.");
+    } finally {
+      setOpeningCourseId(null);
     }
   };
 
   // Teacher admin handlers
   const handleCreateCourse = async (data: { title: string; description: string; targetClass?: string }) => {
+    setIsCreatingCourse(true);
     // Optimistically add a temporary course row
     const tempId = `temp-${Date.now()}`;
     const tempCourse: any = {
@@ -229,15 +242,18 @@ export default function Dashboard() {
       );
       toast.success("Course created successfully!");
       setCourseDialog({ open: false, course: null });
-      // Server subscription will reconcile; keep optimistic state as-is
     } catch (error) {
       // Rollback
       setOptCourses(prev);
       toast.error("Failed to create course");
+    } finally {
+      setIsCreatingCourse(false);
     }
   };
 
   const handleUpdateCourse = async (courseId: string, data: any) => {
+    // Mark pending update
+    setPendingCourses((p) => ({ ...p, [courseId]: "updating" }));
     // Optimistically patch the course
     const prev = optCourses ? [...optCourses] : [];
     setOptCourses(
@@ -254,12 +270,18 @@ export default function Dashboard() {
       // Rollback
       setOptCourses(prev);
       toast.error("Failed to update course");
+    } finally {
+      setPendingCourses((p) => {
+        const { [courseId]: _, ...rest } = p;
+        return rest;
+      });
     }
   };
 
   const handleDeleteCourse = async (courseId: string) => {
     if (confirm("Are you sure you want to delete this course?")) {
-      // Optimistically remove the course
+      // Mark pending delete and optimistically remove the course
+      setPendingCourses((p) => ({ ...p, [courseId]: "deleting" }));
       const prev = optCourses ? [...optCourses] : [];
       setOptCourses((optCourses || []).filter((c: any) => c._id !== courseId));
 
@@ -270,11 +292,17 @@ export default function Dashboard() {
         // Rollback
         setOptCourses(prev);
         toast.error("Failed to delete course");
+      } finally {
+        setPendingCourses((p) => {
+          const { [courseId]: _, ...rest } = p;
+          return rest;
+        });
       }
     }
   };
 
   const handleUpdateTest = async (testId: string, data: any) => {
+    setPendingTests((p) => ({ ...p, [testId]: "updating" }));
     // Optimistically patch the test
     const prev = optTests ? [...optTests] : [];
     setOptTests(
@@ -291,11 +319,17 @@ export default function Dashboard() {
       // Rollback
       setOptTests(prev);
       toast.error("Failed to update test");
+    } finally {
+      setPendingTests((p) => {
+        const { [testId]: _, ...rest } = p;
+        return rest;
+      });
     }
   };
 
   const handleDeleteTest = async (testId: string) => {
     if (confirm("Are you sure you want to delete this test?")) {
+      setPendingTests((p) => ({ ...p, [testId]: "deleting" }));
       // Optimistically remove the test
       const prev = optTests ? [...optTests] : [];
       setOptTests((optTests || []).filter((t: any) => t._id !== testId));
@@ -307,11 +341,17 @@ export default function Dashboard() {
         // Rollback
         setOptTests(prev);
         toast.error("Failed to delete test");
+      } finally {
+        setPendingTests((p) => {
+          const { [testId]: _, ...rest } = p;
+          return rest;
+        });
       }
     }
   };
 
   const handleUpdateStudent = async (studentId: string, data: any) => {
+    setPendingStudents((p) => ({ ...p, [studentId]: "updating" }));
     // Optimistically patch the student row
     const prev = optStudents ? [...optStudents] : [];
     setOptStudents(
@@ -326,14 +366,23 @@ export default function Dashboard() {
       // Rollback
       setOptStudents(prev);
       toast.error("Failed to update student");
+      setPendingStudents((p) => {
+        const { [studentId]: _, ...rest } = p;
+        return rest;
+      });
       return;
     }
     toast.success("Student updated successfully!");
     setStudentDialog({ open: false, student: null });
+    setPendingStudents((p) => {
+      const { [studentId]: _, ...rest } = p;
+      return rest;
+    });
   };
 
   const handleDeleteStudent = async (studentId: string) => {
     if (confirm("Are you sure you want to delete this student account?")) {
+      setPendingStudents((p) => ({ ...p, [studentId]: "deleting" }));
       // Optimistically remove the student
       const prev = optStudents ? [...optStudents] : [];
       setOptStudents((optStudents || []).filter((s: any) => s._id !== studentId));
@@ -345,6 +394,11 @@ export default function Dashboard() {
         // Rollback
         setOptStudents(prev);
         toast.error("Failed to delete student account");
+      } finally {
+        setPendingStudents((p) => {
+          const { [studentId]: _, ...rest } = p;
+          return rest;
+        });
       }
     }
   };
@@ -572,8 +626,14 @@ export default function Dashboard() {
                     <PixelButton
                       onClick={() => handleOpenCourse(course._id, course.title)}
                       className="w-full mt-3 bg-blue-500 hover:bg-blue-600"
+                      disabled={openingCourseId === course._id}
                     >
-                      {course.progress > 0 ? "Continue" : "Play"}
+                      {openingCourseId === course._id ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Opening...
+                        </span>
+                      ) : course.progress > 0 ? "Continue" : "Play"}
                     </PixelButton>
                   </div>
                 ))
@@ -782,9 +842,18 @@ export default function Dashboard() {
                     </Select>
                     <Dialog open={courseDialog.open} onOpenChange={(open) => setCourseDialog({ open, course: null })}>
                       <DialogTrigger asChild>
-                        <Button className="bg-green-500 hover:bg-green-600">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add Course
+                        <Button className="bg-green-500 hover:bg-green-600" disabled={isCreatingCourse}>
+                          {isCreatingCourse ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Creating...
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="w-4 h-4 mr-2" />
+                              Add Course
+                            </>
+                          )}
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
@@ -839,44 +908,59 @@ export default function Dashboard() {
                           ))}
                         </>
                       ) : (
-                        filteredCourses.map((course) => (
-                          <TableRow key={course._id}>
-                            <TableCell className="font-medium">{course.title}</TableCell>
-                            <TableCell>{course.targetClass}</TableCell>
-                            <TableCell>
-                              <Badge variant={course.subjectType === "default" ? "secondary" : "default"}>
-                                {course.subjectType || "custom"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>{course.chaptersCount}</TableCell>
-                            <TableCell>
-                              <Badge variant={course.isPublished ? "default" : "secondary"}>
-                                {course.isPublished ? "Published" : "Draft"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {course.updatedAt ? new Date(course.updatedAt).toLocaleDateString() : "N/A"}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setCourseDialog({ open: true, course })}
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleDeleteCourse(course._id)}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
+                        filteredCourses.map((course) => {
+                          const pending = pendingCourses[course._id];
+                          const isUpdating = pending === "updating";
+                          const isDeleting = pending === "deleting";
+                          return (
+                            <TableRow key={course._id}>
+                              <TableCell className="font-medium">{course.title}</TableCell>
+                              <TableCell>{course.targetClass}</TableCell>
+                              <TableCell>
+                                <Badge variant={course.subjectType === "default" ? "secondary" : "default"}>
+                                  {course.subjectType || "custom"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{course.chaptersCount}</TableCell>
+                              <TableCell>
+                                <Badge variant={course.isPublished ? "default" : "secondary"}>
+                                  {course.isPublished ? "Published" : "Draft"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {course.updatedAt ? new Date(course.updatedAt).toLocaleDateString() : "N/A"}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setCourseDialog({ open: true, course })}
+                                    disabled={isUpdating || isDeleting}
+                                  >
+                                    {isUpdating ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <Edit className="w-4 h-4" />
+                                    )}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleDeleteCourse(course._id)}
+                                    disabled={isUpdating || isDeleting}
+                                  >
+                                    {isDeleting ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="w-4 h-4" />
+                                    )}
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
                       )}
                     </TableBody>
                   </Table>
@@ -946,45 +1030,60 @@ export default function Dashboard() {
                           ))}
                         </>
                       ) : (
-                        filteredTests.map((test) => (
-                          <TableRow key={test._id}>
-                            <TableCell className="font-medium">{test.title}</TableCell>
-                            <TableCell>{test.courseName}</TableCell>
-                            <TableCell>{test.targetClass}</TableCell>
-                            <TableCell>
-                              <Badge variant={
-                                test.difficulty === "easy" ? "secondary" :
-                                test.difficulty === "medium" ? "default" : "destructive"
-                              }>
-                                {test.difficulty || "N/A"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>{test.questions.length}/10</TableCell>
-                            <TableCell>
-                              <Badge variant={test.isPublished ? "default" : "secondary"}>
-                                {test.isPublished ? "Published" : "Draft"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setTestDialog({ open: true, test })}
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleDeleteTest(test._id)}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
+                        filteredTests.map((test) => {
+                          const pending = pendingTests[test._id];
+                          const isUpdating = pending === "updating";
+                          const isDeleting = pending === "deleting";
+                          return (
+                            <TableRow key={test._id}>
+                              <TableCell className="font-medium">{test.title}</TableCell>
+                              <TableCell>{test.courseName}</TableCell>
+                              <TableCell>{test.targetClass}</TableCell>
+                              <TableCell>
+                                <Badge variant={
+                                  test.difficulty === "easy" ? "secondary" :
+                                  test.difficulty === "medium" ? "default" : "destructive"
+                                }>
+                                  {test.difficulty || "N/A"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{test.questions.length}/10</TableCell>
+                              <TableCell>
+                                <Badge variant={test.isPublished ? "default" : "secondary"}>
+                                  {test.isPublished ? "Published" : "Draft"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setTestDialog({ open: true, test })}
+                                    disabled={isUpdating || isDeleting}
+                                  >
+                                    {isUpdating ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <Edit className="w-4 h-4" />
+                                    )}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleDeleteTest(test._id)}
+                                    disabled={isUpdating || isDeleting}
+                                  >
+                                    {isDeleting ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="w-4 h-4" />
+                                    )}
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
                       )}
                     </TableBody>
                   </Table>
@@ -1054,41 +1153,56 @@ export default function Dashboard() {
                           ))}
                         </>
                       ) : (
-                        filteredStudents.map((student) => (
-                          <TableRow key={student._id}>
-                            <TableCell className="font-medium">{student.name}</TableCell>
-                            <TableCell>{student.userClass}</TableCell>
-                            <TableCell>{student.credits}</TableCell>
-                            <TableCell>{student.totalTestsCompleted}</TableCell>
-                            <TableCell>
-                              <Badge>{student.rank}</Badge>
-                            </TableCell>
-                            <TableCell>
-                              {student.lastLoginAt ?
-                                new Date(student.lastLoginAt).toLocaleDateString() :
-                                "Never"
-                              }
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setStudentDialog({ open: true, student })}
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleDeleteStudent(student._id)}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
+                        filteredStudents.map((student) => {
+                          const pending = pendingStudents[student._id];
+                          const isUpdating = pending === "updating";
+                          const isDeleting = pending === "deleting";
+                          return (
+                            <TableRow key={student._id}>
+                              <TableCell className="font-medium">{student.name}</TableCell>
+                              <TableCell>{student.userClass}</TableCell>
+                              <TableCell>{student.credits}</TableCell>
+                              <TableCell>{student.totalTestsCompleted}</TableCell>
+                              <TableCell>
+                                <Badge>{student.rank}</Badge>
+                              </TableCell>
+                              <TableCell>
+                                {student.lastLoginAt ?
+                                  new Date(student.lastLoginAt).toLocaleDateString() :
+                                  "Never"
+                                }
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setStudentDialog({ open: true, student })}
+                                    disabled={isUpdating || isDeleting}
+                                  >
+                                    {isUpdating ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <Edit className="w-4 h-4" />
+                                    )}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleDeleteStudent(student._id)}
+                                    disabled={isUpdating || isDeleting}
+                                  >
+                                    {isDeleting ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="w-4 h-4" />
+                                    )}
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
                       )}
                     </TableBody>
                   </Table>
