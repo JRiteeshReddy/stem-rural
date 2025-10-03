@@ -87,10 +87,29 @@ export default function Dashboard() {
   const [classFilter, setClassFilter] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("");
 
+  // Add optimistic UI state mirrors (teacher and student views)
+  const [optCourses, setOptCourses] = useState<any[] | null>(null);
+  const [optTests, setOptTests] = useState<any[] | null>(null);
+  const [optStudents, setOptStudents] = useState<any[] | null>(null);
+  const [optStudentCourses, setOptStudentCourses] = useState<any[] | null>(null);
+
   // Add loading flags for teacher data
   const isCoursesLoading = user?.role === "teacher" && allCourses === undefined;
   const isTestsLoading = user?.role === "teacher" && allTests === undefined;
   const isStudentsLoading = user?.role === "teacher" && allStudents === undefined;
+
+  // Sync optimistic state with server data whenever queries change
+  useEffect(() => {
+    if (user?.role === "teacher") {
+      if (allCourses !== undefined) setOptCourses(allCourses || []);
+      if (allTests !== undefined) setOptTests(allTests || []);
+      if (allStudents !== undefined) setOptStudents(allStudents || []);
+    }
+  }, [user?.role, allCourses, allTests, allStudents]);
+
+  useEffect(() => {
+    if (studentCourses !== undefined) setOptStudentCourses(studentCourses || []);
+  }, [studentCourses]);
 
   // Add environment and network error checks
   useEffect(() => {
@@ -155,11 +174,19 @@ export default function Dashboard() {
     }
   }, [user?.role, user?.userClass, ensureDefaults]);
 
-  // ... keep existing handlers
-
   // Profile image upload is handled on the Profile page.
 
   const handleOpenCourse = async (courseId: string, courseTitle: string) => {
+    // Optimistically mark course as accessed (remove NEW tag) for student view
+    const prev = optStudentCourses ? [...optStudentCourses] : null;
+    if (optStudentCourses) {
+      setOptStudentCourses(
+        optStudentCourses.map((c: any) =>
+          c._id === courseId ? { ...c, isNew: false } : c
+        )
+      );
+    }
+
     try {
       await retryAsync(() => markCourseAccessed({ courseId: courseId as any }), 3);
       if (courseTitle === "Mathematics") {
@@ -168,72 +195,136 @@ export default function Dashboard() {
         navigate("/tests");
       }
     } catch (error) {
+      // Rollback optimistic change on failure
+      if (prev) setOptStudentCourses(prev);
       toast.error("Failed to open course. Please try again.");
     }
   };
 
   // Teacher admin handlers
   const handleCreateCourse = async (data: { title: string; description: string; targetClass?: string }) => {
+    // Optimistically add a temporary course row
+    const tempId = `temp-${Date.now()}`;
+    const tempCourse: any = {
+      _id: tempId,
+      title: data.title,
+      description: data.description,
+      targetClass: user?.userClass || "Unknown",
+      subjectType: "custom",
+      chaptersCount: 0,
+      isPublished: false,
+      updatedAt: Date.now(),
+    };
+    const prev = optCourses ? [...optCourses] : [];
+    setOptCourses([tempCourse, ...prev]);
+
     try {
-      await retryAsync(() =>
-        createCourse({
-          title: data.title,
-          description: data.description,
-        }), 3
+      await retryAsync(
+        () =>
+          createCourse({
+            title: data.title,
+            description: data.description,
+          }),
+        3
       );
       toast.success("Course created successfully!");
       setCourseDialog({ open: false, course: null });
+      // Server subscription will reconcile; keep optimistic state as-is
     } catch (error) {
+      // Rollback
+      setOptCourses(prev);
       toast.error("Failed to create course");
     }
   };
 
   const handleUpdateCourse = async (courseId: string, data: any) => {
+    // Optimistically patch the course
+    const prev = optCourses ? [...optCourses] : [];
+    setOptCourses(
+      (optCourses || []).map((c: any) =>
+        c._id === courseId ? { ...c, ...data, updatedAt: Date.now() } : c
+      )
+    );
+
     try {
       await retryAsync(() => updateCourse({ courseId, ...data }), 3);
       toast.success("Course updated successfully!");
       setCourseDialog({ open: false, course: null });
     } catch (error) {
+      // Rollback
+      setOptCourses(prev);
       toast.error("Failed to update course");
     }
   };
 
   const handleDeleteCourse = async (courseId: string) => {
     if (confirm("Are you sure you want to delete this course?")) {
+      // Optimistically remove the course
+      const prev = optCourses ? [...optCourses] : [];
+      setOptCourses((optCourses || []).filter((c: any) => c._id !== courseId));
+
       try {
         await retryAsync(() => deleteCourse({ courseId: courseId as any }), 3);
         toast.success("Course deleted successfully!");
       } catch (error) {
+        // Rollback
+        setOptCourses(prev);
         toast.error("Failed to delete course");
       }
     }
   };
 
   const handleUpdateTest = async (testId: string, data: any) => {
+    // Optimistically patch the test
+    const prev = optTests ? [...optTests] : [];
+    setOptTests(
+      (optTests || []).map((t: any) =>
+        t._id === testId ? { ...t, ...data } : t
+      )
+    );
+
     try {
       await retryAsync(() => updateTestMeta({ testId, ...data }), 3);
       toast.success("Test updated successfully!");
       setTestDialog({ open: false, test: null });
     } catch (error) {
+      // Rollback
+      setOptTests(prev);
       toast.error("Failed to update test");
     }
   };
 
   const handleDeleteTest = async (testId: string) => {
     if (confirm("Are you sure you want to delete this test?")) {
+      // Optimistically remove the test
+      const prev = optTests ? [...optTests] : [];
+      setOptTests((optTests || []).filter((t: any) => t._id !== testId));
+
       try {
         await retryAsync(() => deleteTest({ testId: testId as any }), 3);
         toast.success("Test deleted successfully!");
       } catch (error) {
+        // Rollback
+        setOptTests(prev);
         toast.error("Failed to delete test");
       }
     }
   };
 
   const handleUpdateStudent = async (studentId: string, data: any) => {
+    // Optimistically patch the student row
+    const prev = optStudents ? [...optStudents] : [];
+    setOptStudents(
+      (optStudents || []).map((s: any) =>
+        s._id === studentId ? { ...s, ...data } : s
+      )
+    );
+
     try {
       await retryAsync(() => updateStudentProfile({ studentId, ...data }), 3);
     } catch (error) {
+      // Rollback
+      setOptStudents(prev);
       toast.error("Failed to update student");
       return;
     }
@@ -243,10 +334,16 @@ export default function Dashboard() {
 
   const handleDeleteStudent = async (studentId: string) => {
     if (confirm("Are you sure you want to delete this student account?")) {
+      // Optimistically remove the student
+      const prev = optStudents ? [...optStudents] : [];
+      setOptStudents((optStudents || []).filter((s: any) => s._id !== studentId));
+
       try {
         await retryAsync(() => deleteStudentAccount({ targetUserId: studentId as any }), 3);
         toast.success("Student account deleted successfully!");
       } catch (error) {
+        // Rollback
+        setOptStudents(prev);
         toast.error("Failed to delete student account");
       }
     }
@@ -428,7 +525,7 @@ export default function Dashboard() {
                   ))}
                 </>
               ) : (
-                studentCourses?.map((course) => (
+                (optStudentCourses || []).map((course) => (
                   <div
                     key={course._id}
                     className="bg-black/60 p-4 rounded-none border-2 border-yellow-700"
@@ -565,21 +662,21 @@ export default function Dashboard() {
 
   if (isTeacher) {
     // Teacher Control Center
-    const filteredCourses = allCourses?.filter(course => 
+    const filteredCourses = (optCourses || []).filter(course =>
       (!classFilter || course.targetClass === classFilter) &&
       (!searchTerm || course.title.toLowerCase().includes(searchTerm.toLowerCase()))
-    ) || [];
+    );
 
-    const filteredTests = allTests?.filter(test => 
+    const filteredTests = (optTests || []).filter(test =>
       (!classFilter || test.targetClass === classFilter) &&
       (!difficultyFilter || test.difficulty === difficultyFilter) &&
       (!searchTerm || test.title.toLowerCase().includes(searchTerm.toLowerCase()))
-    ) || [];
+    );
 
-    const filteredStudents = allStudents?.filter(student => 
+    const filteredStudents = (optStudents || []).filter(student =>
       (!classFilter || student.userClass === classFilter) &&
-      (!searchTerm || student.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    ) || [];
+      (!searchTerm || (student.name || "").toLowerCase().includes(searchTerm.toLowerCase()))
+    );
 
     // Announcements filtered list will be implemented when the "News" tab is expanded.
 
