@@ -38,6 +38,9 @@ export default function Dashboard() {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
 
+  // Add local error messages state
+  const [errors, setErrors] = useState<string[]>([]);
+
   // Data queries
   const studentCourses = useQuery(api.courses.getAllCoursesForStudent, {});
 
@@ -72,6 +75,61 @@ export default function Dashboard() {
   const isCoursesLoading = user?.role === "teacher" && allCourses === undefined;
   const isTestsLoading = user?.role === "teacher" && allTests === undefined;
   const isStudentsLoading = user?.role === "teacher" && allStudents === undefined;
+
+  // Add environment and network error checks
+  useEffect(() => {
+    const msgs: Array<string> = [];
+    // Detect missing Convex URL (most common source of "Failed to fetch")
+    if (!import.meta.env.VITE_CONVEX_URL) {
+      msgs.push(
+        "Backend not configured: Set VITE_CONVEX_URL in the Integrations / API Keys tab to your Convex deployment URL, then hard refresh."
+      );
+    }
+    // Initial offline status
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      msgs.push("You are offline. Check your internet connection.");
+    }
+    setErrors(msgs);
+
+    // Live network updates
+    const onOnline = () => {
+      setErrors((prev) => prev.filter((m) => !m.includes("offline")));
+      toast.success("Back online");
+    };
+    const onOffline = () => {
+      setErrors((prev) => {
+        if (prev.some((m) => m.includes("offline"))) return prev;
+        return [...prev, "You are offline. Check your internet connection."];
+      });
+      toast.warning("You are offline");
+    };
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+    };
+  }, []);
+
+  // Helper to render inline error banner
+  const renderErrorBanner = () =>
+    errors.length > 0 ? (
+      <PixelCard
+        variant="orange"
+        className="mb-4 border-red-600 bg-red-600/20 text-red-200"
+      >
+        <div className="space-y-2">
+          <div className="font-bold text-red-300">Connection Issues</div>
+          <ul className="list-disc pl-5 space-y-1">
+            {errors.map((e, i) => (
+              <li key={i} className="text-sm">
+                {e}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </PixelCard>
+    ) : null;
 
   // ... keep existing useEffect for student defaults
 
@@ -222,6 +280,7 @@ export default function Dashboard() {
       <div className="min-h-screen bg-transparent">
         <GlobalHeader />
         <div className="container mx-auto px-4 py-8 space-y-8">
+          {renderErrorBanner()}
           {/* Student Portal Header - Translucent black card like old UI */}
           <PixelCard
             variant="orange"
@@ -515,6 +574,7 @@ export default function Dashboard() {
       <div className="min-h-screen bg-transparent">
         <GlobalHeader />
         <div className="container mx-auto px-4 py-8">
+          {renderErrorBanner()}
           {/* Teacher Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
