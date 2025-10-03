@@ -438,3 +438,78 @@ export const getStudentTestResults = query({
       .collect();
   },
 });
+
+// Record game session result for analytics
+export const recordGameResult = mutation({
+  args: {
+    subject: v.string(),
+    difficulty: v.union(v.literal("easy"), v.literal("medium"), v.literal("hard")),
+    correctCount: v.number(),
+    totalQuestions: v.number(),
+    xpAwarded: v.number(),
+    durationMs: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "student") {
+      throw new Error("Unauthorized");
+    }
+
+    const resultId = await ctx.db.insert("gameResults", {
+      userId: user._id,
+      subject: args.subject,
+      difficulty: args.difficulty,
+      correctCount: args.correctCount,
+      totalQuestions: args.totalQuestions,
+      xpAwarded: args.xpAwarded,
+      durationMs: args.durationMs,
+      completedAt: Date.now(),
+      userClass: user.userClass,
+    });
+
+    return resultId;
+  },
+});
+
+// Get game results for teacher analytics
+export const getGameResultsByClass = query({
+  args: {
+    subject: v.optional(v.string()),
+    targetClass: v.optional(v.union(
+      v.literal("Class 6"),
+      v.literal("Class 7"),
+      v.literal("Class 8"),
+      v.literal("Class 9"),
+      v.literal("Class 10"),
+      v.literal("Class 11"),
+      v.literal("Class 12"),
+    )),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || user.role !== "teacher") {
+      throw new Error("Unauthorized");
+    }
+
+    let results = await ctx.db.query("gameResults").collect();
+
+    if (args.subject) {
+      results = results.filter(r => r.subject === args.subject);
+    }
+    if (args.targetClass) {
+      results = results.filter(r => r.userClass === args.targetClass);
+    }
+
+    const resultsWithStudents = await Promise.all(
+      results.map(async (result) => {
+        const student = await ctx.db.get(result.userId);
+        return {
+          ...result,
+          studentName: student?.name || "Unknown Student",
+        };
+      })
+    );
+
+    return resultsWithStudents.sort((a, b) => b.completedAt - a.completedAt);
+  },
+});

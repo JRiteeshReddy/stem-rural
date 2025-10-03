@@ -219,6 +219,22 @@ const schema = defineSchema(
       .index("by_student", ["studentId"])
       .index("by_chapter", ["chapterId"])
       .index("by_student_and_chapter", ["studentId", "chapterId"]),
+
+    // Game results tracking for analytics
+    gameResults: defineTable({
+      userId: v.id("users"),
+      subject: v.string(), // "math", "chemistry", "biology", "history", "physics", "english", "geography"
+      difficulty: v.union(v.literal("easy"), v.literal("medium"), v.literal("hard")),
+      correctCount: v.number(),
+      totalQuestions: v.number(),
+      xpAwarded: v.number(),
+      durationMs: v.number(),
+      completedAt: v.number(),
+      userClass: v.optional(v.string()),
+    })
+      .index("by_user", ["userId"])
+      .index("by_subject", ["subject"])
+      .index("by_user_and_subject", ["userId", "subject"]),
   },
   {
     schemaValidation: false,
