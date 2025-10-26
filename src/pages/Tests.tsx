@@ -87,6 +87,8 @@ export default function Tests() {
   type Zombie = { id: string; x: number; y: number; eq: string; ans: number };
   const [zombies, setZombies] = useState<Zombie[]>([]);
   const [gameOver, setGameOver] = useState(false);
+  // Add: blast animation state
+  const [showBlast, setShowBlast] = useState(false);
 
   // Add: helpers to generate equations with rising difficulty
   const genEquation = (level: number): { eq: string; ans: number } => {
@@ -106,6 +108,7 @@ export default function Tests() {
   const startGame = () => {
     setGameOpen(true);
     setGameOver(false);
+    setShowBlast(false);
     setGameScore(0);
     setAnswer("");
     setZombies([]);
@@ -169,16 +172,22 @@ export default function Tests() {
     if (!gameOpen || gameOver) return;
     const hit = zombies.some((z) => z.x <= 6); // reaches player side
     if (hit) {
-      setGameOver(true);
-      (async () => {
-        try {
-          const res = await addCredits({ amount: gameScore });
-          toast.success(`Game Over! +${gameScore} XP. Rank: ${res.rank}`);
-        } catch (e) {
-          console.error(e);
-          toast.error("Failed to save score");
-        }
-      })();
+      // Show blast first
+      setShowBlast(true);
+      // Then show game over after blast animation
+      setTimeout(() => {
+        setShowBlast(false);
+        setGameOver(true);
+        (async () => {
+          try {
+            const res = await addCredits({ amount: gameScore });
+            toast.success(`Game Over! +${gameScore} XP. Rank: ${res.rank}`);
+          } catch (e) {
+            console.error(e);
+            toast.error("Failed to save score");
+          }
+        })();
+      }, 1500); // 1.5 second blast duration
     }
   }, [zombies, gameOpen, gameOver, gameScore, addCredits]);
 
@@ -1875,6 +1884,25 @@ export default function Tests() {
                     </div>
                   </motion.div>
                 ))}
+
+                {/* Blast Animation */}
+                {showBlast && (
+                  <motion.div
+                    initial={{ scale: 0, opacity: 1 }}
+                    animate={{ scale: 8, opacity: 0 }}
+                    transition={{ duration: 1.5, ease: "easeOut" }}
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                  >
+                    <div
+                      className="text-9xl"
+                      style={{
+                        filter: "drop-shadow(0 0 40px rgba(255,100,0,1))",
+                      }}
+                    >
+                      💥
+                    </div>
+                  </motion.div>
+                )}
 
                 {/* Game Over */}
                 {gameOver && (
