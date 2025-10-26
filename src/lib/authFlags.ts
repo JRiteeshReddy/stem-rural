@@ -1,1 +1,1 @@
-export const PASSWORD_AUTH_ENABLED = true as const;
+export const PASSWORD_AUTH_ENABLED = false as const;
