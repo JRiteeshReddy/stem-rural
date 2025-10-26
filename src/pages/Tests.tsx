@@ -2044,13 +2044,13 @@ export default function Tests() {
                   className="absolute bottom-6"
                   style={{ left: `calc(${containerX}% - 9rem/2)` }}
                 >
-                  <div
-                    className="w-36 h-10 bg-yellow-300 border-4 border-yellow-700 shadow-[0_0_16px_rgba(255,255,0,0.6)] flex items-center justify-center"
+                  <img
+                    src="https://harmless-tapir-303.convex.cloud/api/storage/b4209dc4-270f-4556-a248-91430ca1fbcf"
+                    alt="Beaker"
+                    className="w-36 h-36 object-contain"
                     style={{ imageRendering: "pixelated" }}
                     title="Mixer"
-                  >
-                    MIX
-                  </div>
+                  />
                 </motion.div>
 
                 {/* Success/Overlays */}
@@ -2172,11 +2172,16 @@ export default function Tests() {
                     <div
                       onDrop={onDropIntoChamber}
                       onDragOver={onDragOverChamber}
-                      className="w-64 h-40 bg-yellow-300 border-4 border-yellow-700 shadow-[0_0_16px_rgba(255,255,0,0.6)] flex items-center justify-center"
+                      className="w-64 h-64 flex items-center justify-center"
                       style={{ imageRendering: "pixelated" }}
                       title="Mixing Chamber"
                     >
-                      MIX
+                      <img
+                        src="https://harmless-tapir-303.convex.cloud/api/storage/b4209dc4-270f-4556-a248-91430ca1fbcf"
+                        alt="Beaker"
+                        className="w-full h-full object-contain"
+                        style={{ imageRendering: "pixelated" }}
+                      />
                     </div>
                     {/* Success / Game Over overlay */}
                     {mixerOver && (
