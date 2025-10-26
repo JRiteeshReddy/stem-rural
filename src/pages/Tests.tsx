@@ -225,6 +225,25 @@ export default function Tests() {
     oscillator.stop(ctx.currentTime + 0.15);
   };
 
+  const playMathErrorSound = () => {
+    const ctx = initAudio();
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    oscillator.type = 'sawtooth';
+    oscillator.frequency.setValueAtTime(150, ctx.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.3);
+    
+    gainNode.gain.setValueAtTime(0.25, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 0.3);
+  };
+
   // Add: Audio context initialization (reuse from biology game)
   const audioContextRef = useRef<AudioContext | null>(null);
   const initAudio = () => {
@@ -267,6 +286,7 @@ export default function Tests() {
     setZombies((prev) => {
       const idx = prev.findIndex((z) => z.ans === val);
       if (idx === -1) {
+        playMathErrorSound();
         toast.error("Wrong answer!");
         return prev;
       }
