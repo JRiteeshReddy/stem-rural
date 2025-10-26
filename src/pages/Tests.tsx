@@ -946,6 +946,97 @@ export default function Tests() {
     const nextPowerupIdRef = useRef(1);
     const buffTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    // ADD: Audio context and sound effect functions
+    const audioContextRef = useRef<AudioContext | null>(null);
+
+    // Initialize audio context on first user interaction
+    const initAudio = () => {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      return audioContextRef.current;
+    };
+
+    // Sound effect for bacteria death (pop/splat sound)
+    const playBacteriaDeathSound = () => {
+      const ctx = initAudio();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      oscillator.type = 'sawtooth';
+      oscillator.frequency.setValueAtTime(200, ctx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.1);
+      
+      gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+      
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 0.15);
+    };
+
+    // Sound effect for virus death (shatter/break sound)
+    const playVirusDeathSound = () => {
+      const ctx = initAudio();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      oscillator.type = 'square';
+      oscillator.frequency.setValueAtTime(800, ctx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.2);
+      
+      gainNode.gain.setValueAtTime(0.25, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+      
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 0.2);
+    };
+
+    // Sound effect for toxin death (dissolve/fizz sound)
+    const playToxinDeathSound = () => {
+      const ctx = initAudio();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      oscillator.type = 'triangle';
+      oscillator.frequency.setValueAtTime(400, ctx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.25);
+      
+      gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+      
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 0.25);
+    };
+
+    // Sound effect for XP collection (positive chime)
+    const playXPCollectSound = () => {
+      const ctx = initAudio();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+      oscillator.frequency.setValueAtTime(659.25, ctx.currentTime + 0.05); // E5
+      
+      gainNode.gain.setValueAtTime(0.15, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+      
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 0.15);
+    };
+
     const enemyTypes: {
       virus: { hp: number; speed: number; labels: string[] };
       bacteria: { hp: number; speed: number; labels: string[] };
@@ -1107,12 +1198,21 @@ export default function Tests() {
           });
         });
 
-        // Remove dead enemies and add facts
+        // Remove dead enemies and add facts + PLAY SOUNDS
         const deadEnemies = newState.enemies.filter(e => e.hp <= 0);
         deadEnemies.forEach(enemy => {
           addFact(enemy.x, enemy.y);
           setBiocellScore(prev => prev + 10);
           setBiocellDefeated(prev => prev + 1);
+          
+          // PLAY SOUND BASED ON ENEMY TYPE
+          if (enemy.type === 'bacteria') {
+            playBacteriaDeathSound();
+          } else if (enemy.type === 'virus') {
+            playVirusDeathSound();
+          } else if (enemy.type === 'toxin') {
+            playToxinDeathSound();
+          }
         });
         newState.enemies = newState.enemies.filter(e => e.hp > 0);
 
@@ -1126,6 +1226,7 @@ export default function Tests() {
           ) {
             setBiocellFireRate(2);
             setBiocellBuffActive(true);
+            playXPCollectSound(); // PLAY SOUND FOR POWERUP
             if (buffTimeoutRef.current) clearTimeout(buffTimeoutRef.current);
             buffTimeoutRef.current = setTimeout(() => {
               setBiocellFireRate(1);
