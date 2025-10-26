@@ -33,12 +33,21 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
       // Do not auto-redirect; let users explicitly click the continue button.
     }
   }, [authLoading, isAuthenticated, navigate, redirectAfterAuth]);
+
+  // Cooldown timer for resend button
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -51,10 +60,29 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
       await signIn("resend-otp", { email });
       setStep({ email });
+      setResendCooldown(60); // Start 60 second cooldown
       toast.success("Check your email for the verification code!");
     } catch (error) {
       console.error("Sign in error:", error);
       setError("Failed to send verification code. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (typeof step === "string" || resendCooldown > 0) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await signIn("resend-otp", { email: step.email });
+      setResendCooldown(60); // Reset cooldown
+      toast.success("New verification code sent!");
+    } catch (error) {
+      console.error("Resend OTP error:", error);
+      setError("Failed to resend code. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -199,18 +227,32 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     {error && (
                       <p className="mt-2 text-sm text-red-500 text-center">{error}</p>
                     )}
-                    <Button
-                      type="button"
-                      variant="link"
-                      className="w-full"
-                      onClick={() => {
-                        setStep("signIn");
-                        setOtp("");
-                        setError(null);
-                      }}
-                    >
-                      Use a different email
-                    </Button>
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="w-full"
+                        onClick={() => {
+                          setStep("signIn");
+                          setOtp("");
+                          setError(null);
+                          setResendCooldown(0);
+                        }}
+                      >
+                        Use a different email
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="w-full"
+                        onClick={handleResendOtp}
+                        disabled={isLoading || resendCooldown > 0}
+                      >
+                        {resendCooldown > 0
+                          ? `Resend code in ${resendCooldown}s`
+                          : "Resend verification code"}
+                      </Button>
+                    </div>
                   </CardContent>
                   <CardFooter>
                     <Button
