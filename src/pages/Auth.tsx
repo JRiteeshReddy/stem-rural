@@ -34,6 +34,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [otpExpiresIn, setOtpExpiresIn] = useState(0);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -49,6 +50,16 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     }
   }, [resendCooldown]);
 
+  // OTP expiration timer
+  useEffect(() => {
+    if (otpExpiresIn > 0) {
+      const timer = setTimeout(() => setOtpExpiresIn(otpExpiresIn - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (otpExpiresIn === 0 && typeof step !== "string") {
+      setError("Verification code has expired. Please request a new one.");
+    }
+  }, [otpExpiresIn, step]);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
@@ -61,6 +72,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       await signIn("resend-otp", { email });
       setStep({ email });
       setResendCooldown(60); // Start 60 second cooldown
+      setOtpExpiresIn(600); // OTP expires in 10 minutes (600 seconds)
       toast.success("Check your email for the verification code!");
     } catch (error) {
       console.error("Sign in error:", error);
@@ -79,6 +91,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     try {
       await signIn("resend-otp", { email: step.email });
       setResendCooldown(60); // Reset cooldown
+      setOtpExpiresIn(600); // Reset OTP expiration to 10 minutes
+      setError(null); // Clear any expiration errors
       toast.success("New verification code sent!");
     } catch (error) {
       console.error("Resend OTP error:", error);
@@ -203,6 +217,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   <CardTitle className="text-xl">Enter Verification Code</CardTitle>
                   <CardDescription>
                     We sent a code to {step.email}
+                    {otpExpiresIn > 0 && (
+                      <span className="block mt-2 text-sm font-medium text-yellow-600">
+                        Code expires in {Math.floor(otpExpiresIn / 60)}:{String(otpExpiresIn % 60).padStart(2, '0')}
+                      </span>
+                    )}
                   </CardDescription>
                 </CardHeader>
                 <form onSubmit={handleOtpSubmit}>
@@ -237,6 +256,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                           setOtp("");
                           setError(null);
                           setResendCooldown(0);
+                          setOtpExpiresIn(0);
                         }}
                       >
                         Use a different email
@@ -258,7 +278,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     <Button
                       type="submit"
                       className="w-full rounded-none border-2 border-yellow-700 bg-yellow-300 text-black shadow-[2px_2px_0px_rgba(0,0,0,0.35)] hover:bg-yellow-200"
-                      disabled={isLoading || otp.length !== 6}
+                      disabled={isLoading || otp.length !== 6 || otpExpiresIn === 0}
                     >
                       {isLoading ? (
                         <>
