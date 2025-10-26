@@ -172,8 +172,31 @@ export default function Tests() {
     if (!gameOpen || gameOver) return;
     const hit = zombies.some((z) => z.x <= 6); // reaches player side
     if (hit) {
+      // Freeze game state
+      setZombies([]);
+      setMathProjectiles([]);
+      
       // Show blast first
       setShowBlast(true);
+      
+      // Play dramatic sound effect
+      const ctx = initAudio();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      oscillator.type = 'sawtooth';
+      oscillator.frequency.setValueAtTime(400, ctx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.8);
+      
+      gainNode.gain.setValueAtTime(0.4, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.2);
+      
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 1.2);
+      
       // Then show game over after blast animation
       setTimeout(() => {
         setShowBlast(false);
@@ -187,7 +210,7 @@ export default function Tests() {
             toast.error("Failed to save score");
           }
         })();
-      }, 1500); // 1.5 second blast duration
+      }, 2000); // 2 second blast duration for more impact
     }
   }, [zombies, gameOpen, gameOver, gameScore, addCredits]);
 
@@ -1887,21 +1910,39 @@ export default function Tests() {
 
                 {/* Blast Animation */}
                 {showBlast && (
-                  <motion.div
-                    initial={{ scale: 0, opacity: 1 }}
-                    animate={{ scale: 8, opacity: 0 }}
-                    transition={{ duration: 1.5, ease: "easeOut" }}
-                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                  >
-                    <div
-                      className="text-9xl"
-                      style={{
-                        filter: "drop-shadow(0 0 40px rgba(255,100,0,1))",
-                      }}
+                  <>
+                    <motion.div
+                      initial={{ scale: 0, opacity: 1, rotate: 0 }}
+                      animate={{ scale: 12, opacity: 0, rotate: 360 }}
+                      transition={{ duration: 2, ease: "easeOut" }}
+                      className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
                     >
-                      💥
-                    </div>
-                  </motion.div>
+                      <div
+                        className="text-9xl"
+                        style={{
+                          filter: "drop-shadow(0 0 60px rgba(255,100,0,1)) drop-shadow(0 0 30px rgba(255,200,0,1))",
+                        }}
+                      >
+                        💥
+                      </div>
+                    </motion.div>
+                    {/* Secondary shockwave effect */}
+                    <motion.div
+                      initial={{ scale: 0, opacity: 0.8 }}
+                      animate={{ scale: 15, opacity: 0 }}
+                      transition={{ duration: 1.8, ease: "easeOut", delay: 0.1 }}
+                      className="absolute inset-0 flex items-center justify-center pointer-events-none z-40"
+                    >
+                      <div className="w-32 h-32 rounded-full bg-orange-500/50 blur-xl" />
+                    </motion.div>
+                    {/* Screen flash */}
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: [0, 0.6, 0] }}
+                      transition={{ duration: 0.5, times: [0, 0.3, 1] }}
+                      className="absolute inset-0 bg-white pointer-events-none z-30"
+                    />
+                  </>
                 )}
 
                 {/* Game Over */}
