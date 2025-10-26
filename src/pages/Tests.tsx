@@ -182,7 +182,81 @@ export default function Tests() {
     }
   }, [zombies, gameOpen, gameOver, gameScore, addCredits]);
 
-  // Add: answer submit
+  // Add: projectile state for math game
+  type MathProjectile = { id: string; x: number; y: number; targetX: number; targetY: number };
+  const [mathProjectiles, setMathProjectiles] = useState<MathProjectile[]>([]);
+
+  // Add: Audio for math game
+  const playMathAttackSound = () => {
+    const ctx = initAudio();
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(440, ctx.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1);
+    
+    gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+    
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 0.2);
+  };
+
+  const playMathHitSound = () => {
+    const ctx = initAudio();
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    oscillator.type = 'square';
+    oscillator.frequency.setValueAtTime(200, ctx.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.15);
+    
+    gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+    
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 0.15);
+  };
+
+  // Add: Audio context initialization (reuse from biology game)
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const initAudio = () => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    return audioContextRef.current;
+  };
+
+  // Add: projectile animation loop
+  useEffect(() => {
+    if (!gameOpen || gameOver || mathProjectiles.length === 0) return;
+    const interval = setInterval(() => {
+      setMathProjectiles((prev) => {
+        return prev.map((proj) => {
+          const dx = proj.targetX - proj.x;
+          const dy = proj.targetY - proj.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 5) return { ...proj, x: proj.targetX, y: proj.targetY };
+          const speed = 8;
+          return {
+            ...proj,
+            x: proj.x + (dx / dist) * speed,
+            y: proj.y + (dy / dist) * speed,
+          };
+        });
+      });
+    }, 50);
+    return () => clearInterval(interval);
+  }, [gameOpen, gameOver, mathProjectiles.length]);
+
+  // Add: answer submit with projectile
   const submitAnswer = () => {
     if (!answer.trim()) return;
     const val = Number(answer);
@@ -192,12 +266,33 @@ export default function Tests() {
     }
     setZombies((prev) => {
       const idx = prev.findIndex((z) => z.ans === val);
-      if (idx === -1) return prev;
-      const next = [...prev];
-      next.splice(idx, 1);
-      setGameScore((s) => s + 1);
-      toast.message("Zombie defeated! +1 XP");
-      return next;
+      if (idx === -1) {
+        toast.error("Wrong answer!");
+        return prev;
+      }
+      const target = prev[idx];
+      
+      // Create projectile
+      const proj: MathProjectile = {
+        id: crypto.randomUUID(),
+        x: 12,
+        y: 50,
+        targetX: target.x,
+        targetY: target.y,
+      };
+      setMathProjectiles((p) => [...p, proj]);
+      playMathAttackSound();
+
+      // Remove zombie after projectile hits
+      setTimeout(() => {
+        setZombies((z) => z.filter((zombie) => zombie.id !== target.id));
+        setMathProjectiles((p) => p.filter((pr) => pr.id !== proj.id));
+        setGameScore((s) => s + 1);
+        playMathHitSound();
+        toast.message("Zombie defeated! +1 XP");
+      }, 400);
+
+      return prev;
     });
     setAnswer("");
   };
@@ -274,6 +369,65 @@ export default function Tests() {
     return () => clearInterval(id);
   }, [elementMixerOpen, mixerOver]);
 
+  // Add: Chemistry audio effects
+  const playChemDropSound = () => {
+    const ctx = initAudio();
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(600, ctx.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.1);
+    
+    gainNode.gain.setValueAtTime(0.15, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+    
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 0.15);
+  };
+
+  const playChemSuccessSound = () => {
+    const ctx = initAudio();
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(523.25, ctx.currentTime);
+    oscillator.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
+    oscillator.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2);
+    
+    gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 0.3);
+  };
+
+  const playChemErrorSound = () => {
+    const ctx = initAudio();
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    oscillator.type = 'sawtooth';
+    oscillator.frequency.setValueAtTime(150, ctx.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.2);
+    
+    gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+    
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 0.2);
+  };
+
   // Drag handlers
   const onDragStartTile = (e: React.DragEvent<HTMLDivElement>, symbol: string) => {
     e.dataTransfer.setData("text/plain", symbol);
@@ -288,6 +442,7 @@ export default function Tests() {
     const have = mixerCollected[symbol] || 0;
     if (need === 0 || have + 1 > need) {
       // Wrong or over-collection
+      playChemErrorSound();
       setMixerLives((l) => {
         const next = Math.max(0, l - 1);
         if (next === 0) setMixerOver(true);
@@ -298,6 +453,7 @@ export default function Tests() {
     }
 
     // Accept
+    playChemDropSound();
     const nextCollected = { ...mixerCollected, [symbol]: have + 1 };
     setMixerCollected(nextCollected);
 
@@ -307,6 +463,7 @@ export default function Tests() {
     );
 
     if (success) {
+      playChemSuccessSound();
       // Time bonus (faster is better)
       const elapsedSec = Math.floor((Date.now() - mixerStartAt) / 1000);
       const timeBonus = Math.max(0, 5 - Math.floor(elapsedSec / 10)); // up to +5 → decays every 10s
@@ -1675,6 +1832,27 @@ export default function Tests() {
                       className="object-contain"
                       style={{ imageRendering: "pixelated", transform: "scaleX(-1)", width: 61, height: 61 }}
                     />
+                  </motion.div>
+                ))}
+
+                {/* Math Projectiles */}
+                {mathProjectiles.map((proj) => (
+                  <motion.div
+                    key={proj.id}
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="absolute"
+                    style={{ left: `${proj.x}%`, top: `${proj.y}%` }}
+                  >
+                    <div
+                      className="text-2xl"
+                      style={{
+                        filter: "drop-shadow(0 0 8px rgba(255,215,0,0.8))",
+                        transform: "rotate(45deg)",
+                      }}
+                    >
+                      ✨
+                    </div>
                   </motion.div>
                 ))}
 
