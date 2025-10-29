@@ -30,7 +30,8 @@ export default function ExtendedSetup() {
     if (!isLoading) {
       if (!isAuthenticated) navigate("/auth");
       else if (user && !user.role) {
-        // still allow extended setup first, then role selection can happen
+        // User needs to select role first
+        navigate("/role-selection");
       }
     }
   }, [isLoading, isAuthenticated, user, navigate]);
@@ -67,7 +68,7 @@ export default function ExtendedSetup() {
         userClass: userClass as any,
       });
       toast.success("Profile details saved!");
-      navigate("/role-selection");
+      navigate("/dashboard");
     } catch (e) {
       console.error(e);
       toast.error("Failed to save details");

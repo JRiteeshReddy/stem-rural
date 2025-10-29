@@ -29,8 +29,8 @@ export default function RoleSelection() {
     setIsLoading(true);
     try {
       await setupUserRole({ role: selectedRole, name: name.trim() });
-      toast.success("Welcome to SmartBanana! 🍌");
-      navigate("/dashboard");
+      toast.success("Welcome to STEM! 🍌");
+      navigate("/extended-setup");
     } catch (error) {
       toast.error("Failed to set up your account");
       console.error(error);
