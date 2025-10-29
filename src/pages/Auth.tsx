@@ -123,6 +123,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     }
   };
 
+  const handleGuestContinue = () => {
+    const redirect = redirectAfterAuth || "/dashboard";
+    navigate(redirect);
+    toast.success("Continuing as guest - some features may be limited");
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Auth Content */}
@@ -179,7 +185,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       <p className="mt-2 text-sm text-red-500">{error}</p>
                     )}
                   </CardContent>
-                  <CardFooter>
+                  <CardFooter className="flex flex-col gap-2">
                     <Button
                       type="submit"
                       className="w-full rounded-none border-2 border-yellow-700 bg-yellow-300 text-black shadow-[2px_2px_0px_rgba(0,0,0,0.35)] hover:bg-yellow-200"
@@ -196,6 +202,14 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </>
                       )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full rounded-none border-2 border-gray-400 bg-gray-100 text-gray-700 shadow-[2px_2px_0px_rgba(0,0,0,0.25)] hover:bg-gray-200"
+                      onClick={handleGuestContinue}
+                    >
+                      Continue as Guest
                     </Button>
                   </CardFooter>
                 </form>
